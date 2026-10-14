@@ -25,6 +25,8 @@ const TYPE_LABELS = {
 };
 
 let currentEntry = null;
+let busy = false; // verrou anti double-clic pendant les générations longues
+let historyToken = 0; // invalide les rendus d'historique concurrents
 
 /* ---------- utilitaires DOM ---------- */
 
@@ -56,6 +58,7 @@ async function api(path, options = {}) {
 }
 
 function setLoading(text) {
+  busy = Boolean(text);
   if (text) {
     document.getElementById("loading-text").textContent = text;
     show("create-loading");
@@ -64,6 +67,7 @@ function setLoading(text) {
 }
 
 function setError(message) {
+  busy = false;
   hide("create-loading");
   const box = document.getElementById("create-error");
   box.textContent = message;
@@ -75,7 +79,10 @@ function setError(message) {
 document.getElementById("main-tabs").addEventListener("click", (e) => {
   const btn = e.target.closest(".tab");
   if (!btn) return;
-  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === btn));
+  document.querySelectorAll(".tab").forEach((t) => {
+    t.classList.toggle("active", t === btn);
+    t.setAttribute("aria-selected", String(t === btn));
+  });
   document.querySelectorAll(".tab-panel").forEach((p) =>
     p.classList.toggle("active", p.id === `tab-${btn.dataset.tab}`),
   );
@@ -107,6 +114,7 @@ async function loadHealth() {
 
 document.getElementById("brief-form").addEventListener("submit", async (e) => {
   e.preventDefault();
+  if (busy) return;
   const platforms = [...document.querySelectorAll('input[name="platform"]:checked')].map((c) => c.value);
   const payload = {
     idea: document.getElementById("f-idea").value,
@@ -193,6 +201,7 @@ function renderAngles(entry) {
 /* ---------- étape 2 : scripts + scores ---------- */
 
 async function generateScripts(angleIndex) {
+  if (busy) return;
   setLoading("Écriture des scripts par plateforme, puis évaluation critique (2 passes IA)…");
   hide("step-scripts");
   try {
@@ -248,7 +257,7 @@ function scorePanel(script) {
   return panel;
 }
 
-function renderScripts(entry) {
+function renderScripts(entry, activePlatform) {
   const container = document.getElementById("step-scripts");
   container.textContent = "";
   const card = el("div", { class: "card" });
@@ -260,22 +269,26 @@ function renderScripts(entry) {
   );
 
   const platforms = Object.keys(entry.scripts || {});
+  const active = activePlatform && entry.scripts?.[activePlatform] ? activePlatform : platforms[0];
   const tabsBar = el("div", { class: "script-tabs" });
   const panels = {};
 
-  platforms.forEach((p, idx) => {
+  platforms.forEach((p) => {
     const script = entry.scripts[p];
-    const tabBtn = el("button", { class: `script-tab${idx === 0 ? " active" : ""}` },
+    const tabBtn = el("button", { class: `script-tab${p === active ? " active" : ""}`, "aria-selected": String(p === active) },
       PLATFORM_LABELS[p] || p,
       el("span", { class: "score-pill" }, String(script.score?.final ?? "")),
     );
     tabBtn.addEventListener("click", () => {
-      tabsBar.querySelectorAll(".script-tab").forEach((b) => b.classList.toggle("active", b === tabBtn));
+      tabsBar.querySelectorAll(".script-tab").forEach((b) => {
+        b.classList.toggle("active", b === tabBtn);
+        b.setAttribute("aria-selected", String(b === tabBtn));
+      });
       Object.entries(panels).forEach(([key, node]) => node.classList.toggle("hidden", key !== p));
     });
     tabsBar.append(tabBtn);
 
-    const panel = el("div", { class: idx === 0 ? "" : "hidden" });
+    const panel = el("div", { class: p === active ? "" : "hidden" });
     panel.append(scorePanel(script));
     if (script.score?.comparaison) {
       panel.append(el("p", { class: "comparison" }, script.score.comparaison));
@@ -309,13 +322,14 @@ function renderScripts(entry) {
 }
 
 async function rewrite(platform) {
+  if (busy) return;
   setLoading(`Réécriture du script ${PLATFORM_LABELS[platform]} puis réévaluation…`);
   try {
     currentEntry = await api("/api/rewrite", {
       method: "POST",
       body: JSON.stringify({ id: currentEntry.id, platform }),
     });
-    renderScripts(currentEntry);
+    renderScripts(currentEntry, platform);
     setLoading(null);
   } catch (err) {
     setError(err.message);
@@ -328,6 +342,8 @@ document.getElementById("radar-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const q = document.getElementById("radar-q").value.trim();
   const box = document.getElementById("radar-results");
+  const submitBtn = e.target.querySelector("button");
+  submitBtn.disabled = true;
   box.textContent = "";
   box.append(el("p", { class: "muted" }, "Scan en cours…"));
   try {
@@ -338,12 +354,15 @@ document.getElementById("radar-form").addEventListener("submit", async (e) => {
   } catch (err) {
     box.textContent = "";
     box.append(el("p", { class: "error" }, err.message));
+  } finally {
+    submitBtn.disabled = false;
   }
 });
 
 /* ---------- historique & calibration ---------- */
 
 async function loadHistory() {
+  const token = ++historyToken;
   const list = document.getElementById("history-list");
   const banner = document.getElementById("calibration-banner");
   list.textContent = "";
@@ -352,9 +371,11 @@ async function loadHistory() {
   try {
     data = await api("/api/history");
   } catch (err) {
+    if (token !== historyToken) return;
     list.append(el("p", { class: "error" }, err.message));
     return;
   }
+  if (token !== historyToken) return;
 
   const cal = data.calibration;
   banner.append(
@@ -371,12 +392,25 @@ async function loadHistory() {
   }
 
   const settings = await api("/api/settings").catch(() => ({ medianViews: {} }));
+  if (token !== historyToken) return;
 
   for (const entry of data.entries) {
     const card = el("div", { class: "card history-entry" });
     const date = new Date(entry.createdAt).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" });
     const body = el("div", { class: "hidden" });
-    const head = el("div", { class: "history-head", onclick: () => body.classList.toggle("hidden") },
+    const toggle = () => body.classList.toggle("hidden");
+    const head = el("div", {
+      class: "history-head",
+      role: "button",
+      tabindex: "0",
+      onclick: toggle,
+      onkeydown: (ev) => {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          toggle();
+        }
+      },
+    },
       el("h3", {}, entry.brief.idea.slice(0, 90) + (entry.brief.idea.length > 90 ? "…" : "")),
       el("span", { class: "muted small" }, date),
     );
@@ -434,6 +468,14 @@ function buildStatsForm(id, platform, medianDefault) {
     btn,
   );
   btn.addEventListener("click", async () => {
+    if (views.value.trim() === "" || !Number.isFinite(Number(views.value)) || Number(views.value) < 0) {
+      alert("Renseigne le nombre de vues (0 ou plus).");
+      return;
+    }
+    if (median.value.trim() === "" || Number(median.value) <= 0) {
+      alert("Renseigne tes vues médianes habituelles (nécessaire pour normaliser).");
+      return;
+    }
     btn.disabled = true;
     try {
       await api("/api/stats", {
@@ -473,7 +515,8 @@ document.getElementById("settings-form").addEventListener("submit", async (e) =>
   const medianViews = {};
   for (const p of ["linkedin", "reels", "x", "youtube"]) {
     const v = Number(document.getElementById(`s-median-${p}`).value);
-    if (v > 0) medianViews[p] = v;
+    // 0 explicite pour un champ vidé : permet d'effacer une médiane enregistrée.
+    medianViews[p] = Number.isFinite(v) && v > 0 ? v : 0;
   }
   try {
     await api("/api/settings", {

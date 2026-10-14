@@ -17,10 +17,10 @@
       </div>
     </div>
     <nav class="tabs" id="main-tabs">
-      <button class="tab active" data-tab="create">Créer</button>
-      <button class="tab" data-tab="radar">Radar</button>
-      <button class="tab" data-tab="history">Historique</button>
-      <button class="tab" data-tab="settings">Réglages</button>
+      <button class="tab active" data-tab="create" aria-selected="true">Créer</button>
+      <button class="tab" data-tab="radar" aria-selected="false">Radar</button>
+      <button class="tab" data-tab="history" aria-selected="false">Historique</button>
+      <button class="tab" data-tab="settings" aria-selected="false">Réglages</button>
     </nav>
   </header>
 
@@ -84,7 +84,7 @@
         <h2>Radar de tendances</h2>
         <p class="muted">Ce qui circule en ce moment sur ton sujet (Google Trends, actualité, YouTube, Reddit, Hacker News).</p>
         <form id="radar-form" class="inline-form">
-          <input id="radar-q" type="text" placeholder="Sujet, niche, mot-clé…" required />
+          <input id="radar-q" type="text" placeholder="Sujet, niche, mot-clé…" aria-label="Sujet à scanner" required />
           <button type="submit" class="primary">Scanner</button>
         </form>
         <div id="radar-results"></div>

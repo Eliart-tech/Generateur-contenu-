@@ -19,6 +19,7 @@ import {
   getEntry,
   createEntry,
   updateEntry,
+  updateEntryWith,
   getSettings,
   saveSettings,
 } from "./lib/store.mjs";
@@ -69,10 +70,8 @@ function readBody(req) {
 // Combine heuristiques locales + évaluation du juge en un score affichable.
 function combineScores(platform, script, evaluation) {
   const heur = heuristicScore(platform, script);
-  const judgeGlobal = evaluation
-    ? Math.round(
-        evaluation.facteurs.reduce((s, f) => s + f.score, 0) / (evaluation.facteurs.length || 1),
-      )
+  const judgeGlobal = evaluation?.facteurs?.length
+    ? Math.round(evaluation.facteurs.reduce((s, f) => s + f.score, 0) / evaluation.facteurs.length)
     : null;
   const final =
     judgeGlobal === null ? heur.global : Math.round(0.45 * heur.global + 0.55 * judgeGlobal);
@@ -151,12 +150,12 @@ const routes = {
       goal: (goal || "").trim(),
       platforms: chosen,
     };
-    const entry = createEntry(brief);
     const trends = await getTrends({ query: [brief.idea, brief.niche].filter(Boolean).join(" ").slice(0, 120) });
     const trendsText = trendsAsText(trends);
     const settings = getSettings();
     const result = await proposeAngles({ brief, trendsText, voice: settings.voice });
-    return updateEntry(entry.id, { trends, angles: result });
+    // L'entrée n'est créée qu'en cas de succès : pas d'entrée fantôme en historique.
+    return createEntry(brief, { trends, angles: result });
   },
 
   "POST /api/scripts": async (_req, body) => {
@@ -167,13 +166,20 @@ const routes = {
     if (!angle) throw new Error("Angle introuvable");
     const trendsText = trendsAsText(entry.trends || { sources: {} });
     const settings = getSettings();
-    const { scripts } = await writeScripts({
+    const out = await writeScripts({
       brief: entry.brief,
       angle,
       trendsText,
       voice: settings.voice,
       platforms: entry.brief.platforms,
     });
+    const scripts = out.scripts.filter((s) => entry.brief.platforms.includes(s.plateforme));
+    const missing = entry.brief.platforms.filter((p) => !scripts.some((s) => s.plateforme === p));
+    if (missing.length) {
+      throw new Error(
+        `Le modèle n'a pas produit de script pour : ${missing.join(", ")}. Relance la génération.`,
+      );
+    }
     const { evaluations } = await judgeScripts({ brief: entry.brief, scripts, trendsText });
     const byPlatform = {};
     for (const script of scripts) {
@@ -211,11 +217,16 @@ const routes = {
       trendsText,
     });
     const evaluation = evaluations.find((e) => e.plateforme === platform) || evaluations[0] || null;
-    const scripts = {
-      ...entry.scripts,
-      [platform]: { ...rewritten, score: combineScores(platform, rewritten, evaluation) },
-    };
-    return updateEntry(id, { scripts });
+    // Patch calculé sur l'état relu : une autre réécriture terminée pendant
+    // les appels IA ne sera pas écrasée par notre instantané périmé.
+    const updated = updateEntryWith(id, (fresh) => ({
+      scripts: {
+        ...fresh.scripts,
+        [platform]: { ...rewritten, score: combineScores(platform, rewritten, evaluation) },
+      },
+    }));
+    if (!updated) throw new Error("Génération introuvable");
+    return updated;
   },
 
   "GET /api/history": async () => ({
@@ -228,6 +239,9 @@ const routes = {
     const entry = getEntry(id);
     if (!entry) throw new Error("Génération introuvable");
     if (!entry.scripts?.[platform]) throw new Error("Pas de script pour cette plateforme");
+    if (views === "" || views === null || views === undefined) {
+      throw new Error("Renseigne le nombre de vues");
+    }
     const v = Number(views);
     const median = Number(medianViews);
     if (!Number.isFinite(v) || v < 0) throw new Error("Nombre de vues invalide");
