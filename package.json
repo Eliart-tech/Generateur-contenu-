@@ -1,0 +1,17 @@
+{
+  "name": "generateur-contenu",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Générateur de contenu personnel : tendances → angles → scripts (LinkedIn, Reels, X, YouTube) → score prédictif explicable",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.134.0",
+    "zod": "^4.6.7"
+  }
+}

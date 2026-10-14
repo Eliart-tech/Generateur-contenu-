@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Générateur de contenu</title>
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-bolt">⚡</span>
+      <div>
+        <h1>Générateur de contenu</h1>
+        <p id="status-line" class="muted">Connexion…</p>
+      </div>
+    </div>
+    <nav class="tabs" id="main-tabs">
+      <button class="tab active" data-tab="create">Créer</button>
+      <button class="tab" data-tab="radar">Radar</button>
+      <button class="tab" data-tab="history">Historique</button>
+      <button class="tab" data-tab="settings">Réglages</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ======== CRÉER ======== -->
+    <section id="tab-create" class="tab-panel active">
+      <div id="step-brief" class="card">
+        <h2>1 · Ton idée</h2>
+        <form id="brief-form">
+          <label>Idée brute <span class="req">*</span>
+            <textarea id="f-idea" rows="3" required placeholder="Ex. : pourquoi les artisans devraient publier une vidéo par semaine…"></textarea>
+          </label>
+          <div class="grid-2">
+            <label>Niche / activité
+              <input id="f-niche" type="text" placeholder="Ex. : coaching sportif, SaaS B2B, restauration…" />
+            </label>
+            <label>Audience cible
+              <input id="f-audience" type="text" placeholder="Ex. : indépendants 25-45 ans" />
+            </label>
+          </div>
+          <div class="grid-2">
+            <label>Objectif
+              <select id="f-goal">
+                <option value="notoriété">Notoriété</option>
+                <option value="abonnés">Gagner des abonnés</option>
+                <option value="leads">Générer des leads</option>
+                <option value="ventes">Vendre</option>
+                <option value="communauté">Engager ma communauté</option>
+              </select>
+            </label>
+            <fieldset class="platforms">
+              <legend>Plateformes</legend>
+              <label><input type="checkbox" name="platform" value="linkedin" checked /> LinkedIn</label>
+              <label><input type="checkbox" name="platform" value="reels" checked /> Reels</label>
+              <label><input type="checkbox" name="platform" value="x" checked /> X</label>
+              <label><input type="checkbox" name="platform" value="youtube" checked /> YouTube</label>
+            </fieldset>
+          </div>
+          <button type="submit" class="primary" id="btn-angles">Analyser les tendances et proposer des angles</button>
+        </form>
+      </div>
+
+      <div id="step-angles" class="hidden">
+        <div class="card" id="trends-card"></div>
+        <div class="card" id="angles-card"></div>
+      </div>
+
+      <div id="step-scripts" class="hidden"></div>
+
+      <div id="create-loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p id="loading-text">Analyse en cours…</p>
+        <p class="muted small">Les générations durent 1 à 3 minutes (raisonnement approfondi).</p>
+      </div>
+      <div id="create-error" class="error hidden"></div>
+    </section>
+
+    <!-- ======== RADAR ======== -->
+    <section id="tab-radar" class="tab-panel">
+      <div class="card">
+        <h2>Radar de tendances</h2>
+        <p class="muted">Ce qui circule en ce moment sur ton sujet (Google Trends, actualité, YouTube, Reddit, Hacker News).</p>
+        <form id="radar-form" class="inline-form">
+          <input id="radar-q" type="text" placeholder="Sujet, niche, mot-clé…" required />
+          <button type="submit" class="primary">Scanner</button>
+        </form>
+        <div id="radar-results"></div>
+      </div>
+    </section>
+
+    <!-- ======== HISTORIQUE ======== -->
+    <section id="tab-history" class="tab-panel">
+      <div class="card">
+        <h2>Historique &amp; calibration</h2>
+        <p class="muted">Renseigne les stats réelles de tes posts (J+2 ou J+7) : l'outil compare la bande prédite à la bande observée — c'est ta boucle d'apprentissage.</p>
+        <div id="calibration-banner"></div>
+      </div>
+      <div id="history-list"></div>
+    </section>
+
+    <!-- ======== RÉGLAGES ======== -->
+    <section id="tab-settings" class="tab-panel">
+      <div class="card">
+        <h2>Réglages</h2>
+        <form id="settings-form">
+          <label>Ta voix (ton, style, expressions à garder / éviter)
+            <textarea id="s-voice" rows="3" placeholder="Ex. : tutoiement, direct, pas de jargon marketing, une pointe d'humour sec…"></textarea>
+          </label>
+          <h3>Vues médianes habituelles par plateforme</h3>
+          <p class="muted small">Sert à normaliser tes stats réelles : un post est « outlier » par rapport à TA médiane, pas dans l'absolu.</p>
+          <div class="grid-4">
+            <label>LinkedIn <input id="s-median-linkedin" type="number" min="0" placeholder="ex. 1200" /></label>
+            <label>Reels <input id="s-median-reels" type="number" min="0" placeholder="ex. 3000" /></label>
+            <label>X <input id="s-median-x" type="number" min="0" placeholder="ex. 800" /></label>
+            <label>YouTube <input id="s-median-youtube" type="number" min="0" placeholder="ex. 500" /></label>
+          </div>
+          <button type="submit" class="primary">Enregistrer</button>
+          <span id="settings-saved" class="muted small hidden">Enregistré ✓</span>
+        </form>
+        <hr />
+        <div id="env-info" class="muted small"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
