@@ -1,0 +1,951 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-15T22:22:56+00:00",
+  "title": "Design System: Amorce",
+  "extensions": {
+    "colorMeta": {
+      "shell": {
+        "role": "primary",
+        "displayName": "Map Blue",
+        "canonical": "#0C315C",
+        "night": "#11294A",
+        "purpose": "Sidebar shell and mobile top bar; browser theme-color.",
+        "oklch": "oklch(31.4% 0.087 254.9)",
+        "tonalRamp": [
+          "#000B1F",
+          "#00244E",
+          "#1E436F",
+          "#3E6392",
+          "#5E85B6",
+          "#80A8DB",
+          "#A5CCFF",
+          "#E4F0FF"
+        ]
+      },
+      "act": {
+        "role": "primary",
+        "displayName": "Action Blue",
+        "canonical": "#1C57B0",
+        "night": "#4A86E8",
+        "purpose": "Actions and the forecast's instruments: buttons, links, caret, focus, confidence dots, route progress, calibration.",
+        "oklch": "oklch(47.2% 0.154 259.0)",
+        "tonalRamp": [
+          "#000923",
+          "#002155",
+          "#003C8E",
+          "#235DB7",
+          "#4580DD",
+          "#6BA5FF",
+          "#A9CBFF",
+          "#E5EFFF"
+        ]
+      },
+      "act-hover": {
+        "role": "primary",
+        "displayName": "Action Blue Deep",
+        "canonical": "#174A97",
+        "night": "#6698EC",
+        "purpose": "Hover state of Action Blue fills.",
+        "oklch": "oklch(42.2% 0.137 259.0)",
+        "tonalRamp": [
+          "#000923",
+          "#002155",
+          "#083D89",
+          "#2C5FAE",
+          "#4D81D3",
+          "#6FA5FA",
+          "#A9CBFF",
+          "#E5EFFF"
+        ]
+      },
+      "act-soft": {
+        "role": "primary",
+        "displayName": "Action Wash",
+        "canonical": "#E3ECF9",
+        "night": "#16325A",
+        "purpose": "Selected platform chip fill, angle tags.",
+        "oklch": "oklch(94.0% 0.020 257.5)",
+        "tonalRamp": [
+          "#060B14",
+          "#1F252F",
+          "#3B434D",
+          "#5A626D",
+          "#7B838F",
+          "#9DA6B2",
+          "#C1CAD6",
+          "#E6EFFC"
+        ]
+      },
+      "act-ink": {
+        "role": "primary",
+        "displayName": "Action Ink",
+        "canonical": "#FFFFFF",
+        "night": "#06101F",
+        "purpose": "Text on Action Blue (primary buttons, skip link); by rule also ticks on Action Blue or Verified Green, though the shipped platform-chip and run-stage ticks are still a literal #fff that stays white at night.",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "cold": {
+        "role": "secondary",
+        "displayName": "Cold",
+        "canonical": "#7FAAE6",
+        "night": "#86AFEA",
+        "purpose": "Thermal scale: scores below 40; band Bas 50 %.",
+        "oklch": "oklch(73.0% 0.099 256.8)",
+        "tonalRamp": [
+          "#000A21",
+          "#002351",
+          "#1B4176",
+          "#3A6299",
+          "#5B84BD",
+          "#7CA7E3",
+          "#A7CCFF",
+          "#E4F0FF"
+        ]
+      },
+      "mild": {
+        "role": "secondary",
+        "displayName": "Mild",
+        "canonical": "#F2C845",
+        "night": "#F2CD55",
+        "purpose": "Thermal scale: scores 40-59; band Top 50 %; shell warning dot.",
+        "oklch": "oklch(84.7% 0.150 90.6)",
+        "tonalRamp": [
+          "#100A00",
+          "#2F2400",
+          "#524000",
+          "#775E00",
+          "#9F7E00",
+          "#C8A000",
+          "#EEC440",
+          "#FFEEBD"
+        ]
+      },
+      "tepid": {
+        "role": "secondary",
+        "displayName": "Tepid",
+        "canonical": "#F5A630",
+        "night": "#F5AE42",
+        "purpose": "Thermal scale: scores 60-74; format-flag bullets, notice border tint.",
+        "oklch": "oklch(78.4% 0.154 71.6)",
+        "tonalRamp": [
+          "#130800",
+          "#362000",
+          "#5C3900",
+          "#865500",
+          "#B27300",
+          "#E09205",
+          "#FFBA5F",
+          "#FFEBD4"
+        ]
+      },
+      "warm": {
+        "role": "secondary",
+        "displayName": "Warm",
+        "canonical": "#F08A24",
+        "night": "#F3953A",
+        "purpose": "Thermal scale: scores 75-84; band Top 25 %; the brand's sun (brand mark, active nav icon, selection, onboarding final station).",
+        "oklch": "oklch(72.9% 0.162 58.8)",
+        "tonalRamp": [
+          "#160700",
+          "#3B1C00",
+          "#643400",
+          "#904D00",
+          "#C06900",
+          "#ED8820",
+          "#FFB77F",
+          "#FFEADB"
+        ]
+      },
+      "hot": {
+        "role": "secondary",
+        "displayName": "Hot",
+        "canonical": "#CC3A22",
+        "night": "#E5583F",
+        "purpose": "Thermal scale: scores 85+; band Top 10 %; warm-front glyph.",
+        "oklch": "oklch(56.4% 0.187 32.0)",
+        "tonalRamp": [
+          "#1E0100",
+          "#4A0600",
+          "#7D1100",
+          "#B31D00",
+          "#DB4931",
+          "#FF745B",
+          "#FFB3A4",
+          "#FFE9E4"
+        ]
+      },
+      "thermal-ink": {
+        "role": "secondary",
+        "displayName": "Thermal Ink",
+        "canonical": "#0D2240",
+        "night": "#06101F",
+        "purpose": "Text on cold, mild, tepid and warm fills.",
+        "oklch": "oklch(25.3% 0.063 257.6)",
+        "tonalRamp": [
+          "#000A21",
+          "#102543",
+          "#2C4363",
+          "#4A6285",
+          "#6B84A8",
+          "#8DA7CD",
+          "#B0CBF3",
+          "#E5EFFF"
+        ]
+      },
+      "hot-ink": {
+        "role": "secondary",
+        "displayName": "Hot Ink",
+        "canonical": "#FFFFFF",
+        "night": "#06101F",
+        "purpose": "Text on hot fills (white by day, dark ink at night).",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "ok": {
+        "role": "tertiary",
+        "displayName": "Verified Green",
+        "canonical": "#1F7A4D",
+        "night": "#5BC48F",
+        "purpose": "Matched forecast, saved, format OK, done run stages, Réécrit stamp.",
+        "oklch": "oklch(51.5% 0.110 156.8)",
+        "tonalRamp": [
+          "#000F05",
+          "#002E18",
+          "#00502D",
+          "#157347",
+          "#409667",
+          "#65BA89",
+          "#8ADFAC",
+          "#C4FFDA"
+        ]
+      },
+      "ok-soft": {
+        "role": "tertiary",
+        "displayName": "Verified Wash",
+        "canonical": "#E2F3EA",
+        "night": "#10331F",
+        "purpose": "Background of the Juste match badge.",
+        "oklch": "oklch(94.9% 0.022 163.1)",
+        "tonalRamp": [
+          "#040E09",
+          "#1B2822",
+          "#38463F",
+          "#57655E",
+          "#77877F",
+          "#9AAAA1",
+          "#BDCEC5",
+          "#E2F3EA"
+        ]
+      },
+      "warn-ink": {
+        "role": "tertiary",
+        "displayName": "Rust Ink",
+        "canonical": "#8A4210",
+        "night": "#F7B977",
+        "purpose": "One band off, notices, format flags, Priorité tag.",
+        "oklch": "oklch(46.4% 0.114 49.7)",
+        "tonalRamp": [
+          "#180600",
+          "#3F1800",
+          "#6A2E00",
+          "#934A1B",
+          "#B86C3F",
+          "#DE8F62",
+          "#FFB68E",
+          "#FFEADE"
+        ]
+      },
+      "warn-soft": {
+        "role": "tertiary",
+        "displayName": "Rust Wash",
+        "canonical": "#FDF0E1",
+        "night": "#3A2412",
+        "purpose": "Notice and near-match backgrounds.",
+        "oklch": "oklch(96.1% 0.024 71.5)",
+        "tonalRamp": [
+          "#120902",
+          "#2D2318",
+          "#4A4034",
+          "#6A5F52",
+          "#8C8073",
+          "#AFA395",
+          "#D3C7B8",
+          "#F9ECDD"
+        ]
+      },
+      "err": {
+        "role": "tertiary",
+        "displayName": "Alert Red",
+        "canonical": "#B42318",
+        "night": "#FF8A80",
+        "purpose": "Field errors, alerts, band misses, over-length tweets.",
+        "oklch": "oklch(50.0% 0.182 29.5)",
+        "tonalRamp": [
+          "#1F0000",
+          "#4D0100",
+          "#800200",
+          "#B12015",
+          "#DA4A3B",
+          "#FF7462",
+          "#FFB3A7",
+          "#FFE9E5"
+        ]
+      },
+      "err-soft": {
+        "role": "tertiary",
+        "displayName": "Alert Wash",
+        "canonical": "#FDECEA",
+        "night": "#3A1614",
+        "purpose": "Alert and miss backgrounds.",
+        "oklch": "oklch(95.6% 0.019 25.6)",
+        "tonalRamp": [
+          "#120807",
+          "#2E2220",
+          "#4C3E3D",
+          "#6C5D5C",
+          "#8D7E7D",
+          "#B1A19F",
+          "#D5C5C3",
+          "#FBEAE8"
+        ]
+      },
+      "sky": {
+        "role": "neutral",
+        "displayName": "Cold Sky",
+        "canonical": "#E8F0FA",
+        "night": "#0A1628",
+        "purpose": "Page ground; deep navy at night.",
+        "oklch": "oklch(95.2% 0.016 253.9)",
+        "tonalRamp": [
+          "#070C12",
+          "#20262D",
+          "#3C434B",
+          "#5B626A",
+          "#7C838C",
+          "#9EA6AF",
+          "#C2CAD4",
+          "#E7EFF9"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Bulletin Paper",
+        "canonical": "#FFFFFF",
+        "night": "#10213A",
+        "purpose": "Cards, bulletin, inputs, secondary buttons.",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "surface-2": {
+        "role": "neutral",
+        "displayName": "Paper Shade",
+        "canonical": "#F5F8FC",
+        "night": "#0D1C33",
+        "purpose": "Side panel, open history detail, secondary-button hover.",
+        "oklch": "oklch(97.8% 0.006 255.5)",
+        "tonalRamp": [
+          "#090B0E",
+          "#232528",
+          "#404245",
+          "#5F6165",
+          "#808286",
+          "#A2A5A9",
+          "#C6C9CD",
+          "#ECEFF3"
+        ]
+      },
+      "surface-3": {
+        "role": "neutral",
+        "displayName": "Paper Wash",
+        "canonical": "#EDF3FA",
+        "night": "#13284A",
+        "purpose": "Skeletons, empty tracks, quiet hover, pending reading.",
+        "oklch": "oklch(96.2% 0.011 252.1)",
+        "tonalRamp": [
+          "#080C10",
+          "#21262B",
+          "#3E4248",
+          "#5D6268",
+          "#7E8389",
+          "#A0A6AC",
+          "#C4CAD1",
+          "#E9EFF6"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Chart Rule",
+        "canonical": "#D2DEEC",
+        "night": "#22395B",
+        "purpose": "Default 1px borders.",
+        "oklch": "oklch(89.6% 0.023 252.2)",
+        "tonalRamp": [
+          "#050C15",
+          "#1D2630",
+          "#39434E",
+          "#58626E",
+          "#798490",
+          "#9BA6B4",
+          "#BFCAD8",
+          "#E4F0FE"
+        ]
+      },
+      "line-2": {
+        "role": "neutral",
+        "displayName": "Faint Rule",
+        "canonical": "#E2EAF4",
+        "night": "#1A2F4E",
+        "purpose": "Dividers inside a panel.",
+        "oklch": "oklch(93.4% 0.016 253.9)",
+        "tonalRamp": [
+          "#070C12",
+          "#20262D",
+          "#3C434B",
+          "#5B626A",
+          "#7C838C",
+          "#9EA6AF",
+          "#C2CAD4",
+          "#E7EFF9"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Strong Rule",
+        "canonical": "#9DB6D6",
+        "night": "#3C5C86",
+        "purpose": "Hover borders, route line, empty chip outlines, dashed provisional borders, scrollbar thumb.",
+        "oklch": "oklch(76.8% 0.054 254.7)",
+        "tonalRamp": [
+          "#000B1F",
+          "#12263F",
+          "#2E435E",
+          "#4C6380",
+          "#6D84A2",
+          "#8FA7C7",
+          "#B2CCEC",
+          "#E4F0FF"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Deep Ink",
+        "canonical": "#0D2240",
+        "night": "#E7EEF8",
+        "purpose": "Primary text.",
+        "oklch": "oklch(25.3% 0.063 257.6)",
+        "tonalRamp": [
+          "#000A21",
+          "#102543",
+          "#2C4363",
+          "#4A6285",
+          "#6B84A8",
+          "#8DA7CD",
+          "#B0CBF3",
+          "#E5EFFF"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Slate Ink",
+        "canonical": "#3B5373",
+        "night": "#AEC1DB",
+        "purpose": "Secondary text, verdict sentence, meta; small text on Cold Sky, Paper Wash and the band-tinted verdict strip.",
+        "oklch": "oklch(43.7% 0.061 255.9)",
+        "tonalRamp": [
+          "#000A20",
+          "#0F2542",
+          "#2C4362",
+          "#4A6384",
+          "#6A84A7",
+          "#8CA7CB",
+          "#B0CCF1",
+          "#E4F0FF"
+        ]
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "Mist Ink",
+        "canonical": "#5C7392",
+        "night": "#8BA2C2",
+        "purpose": "Tertiary meta and labels on Bulletin Paper and Paper Shade only (not on Cold Sky, Paper Wash or the band-tinted verdict strip).",
+        "oklch": "oklch(54.9% 0.056 256.0)",
+        "tonalRamp": [
+          "#000A20",
+          "#122540",
+          "#2E435F",
+          "#4C6381",
+          "#6D84A4",
+          "#8EA7C8",
+          "#B2CBEE",
+          "#E4F0FF"
+        ]
+      },
+      "ink-on-shell": {
+        "role": "neutral",
+        "displayName": "Shell Ink",
+        "canonical": "#C6D6EB",
+        "night": "#B9CBE4",
+        "purpose": "Nav text on Map Blue.",
+        "oklch": "oklch(87.1% 0.034 255.2)",
+        "tonalRamp": [
+          "#030B19",
+          "#1A2635",
+          "#364354",
+          "#556275",
+          "#758497",
+          "#97A7BB",
+          "#BBCBDF",
+          "#E4F0FF"
+        ]
+      },
+      "ink-on-shell-2": {
+        "role": "neutral",
+        "displayName": "Shell Ink Dim",
+        "canonical": "#8EA8CA",
+        "night": "#7F98BA",
+        "purpose": "Shell labels and status line.",
+        "oklch": "oklch(72.4% 0.058 255.3)",
+        "tonalRamp": [
+          "#000B1F",
+          "#102540",
+          "#2D4360",
+          "#4B6382",
+          "#6B84A5",
+          "#8DA7C9",
+          "#B1CCEF",
+          "#E4F0FF"
+        ]
+      },
+      "shell-hi": {
+        "role": "neutral",
+        "displayName": "Shell Highlight",
+        "canonical": "rgba(255, 255, 255, 0.12)",
+        "night": "rgba(255, 255, 255, 0.08)",
+        "purpose": "Hover wash on shell items.",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display reading",
+        "purpose": "The score in the verdict's reading block; 48px at 640px and below. One per screen."
+      },
+      "headline": {
+        "displayName": "Band title",
+        "purpose": "« Top 25 % de ta niche »; 26px on phones."
+      },
+      "title-page": {
+        "displayName": "Page title",
+        "purpose": "Page h1, balanced; 24px on phones."
+      },
+      "title-flow": {
+        "displayName": "Idea title",
+        "purpose": "The idea heading the result screen; 22px on phones."
+      },
+      "title-script": {
+        "displayName": "Script title",
+        "purpose": "The script's own title; card titles step down to 18px and 16px."
+      },
+      "title-section": {
+        "displayName": "Section title",
+        "purpose": "Section heads, running-forecast title, empty-state headings."
+      },
+      "script": {
+        "displayName": "Script",
+        "purpose": "The script to publish, max 66ch; 16.5px on phones. Largest running text on screen."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Interface text; meta runs 12.5-14.5px."
+      },
+      "field": {
+        "displayName": "Field",
+        "purpose": "Text inputs, textareas and selects at 15px/1.45; the idea field 18px/1.5."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase. Names the field, value or group directly beside or below it; never above a heading. Mist Ink on paper, Slate Ink on the band-tinted verdict strip."
+      },
+      "numeral": {
+        "displayName": "Numeral",
+        "purpose": "Thermal chips (13px small); clocks at 30px and 18px in weight 600."
+      }
+    },
+    "themes": {
+      "light": "default :root",
+      "dark": "@media (prefers-color-scheme: dark) redefines every colour and shadow token; values in colorMeta.<token>.night and shadows[].night",
+      "bandMix": {
+        "light": "11%",
+        "dark": "24%"
+      },
+      "bandLine": {
+        "light": "26%",
+        "dark": "42%"
+      }
+    },
+    "thermal": {
+      "scoreToHeat": [
+        {
+          "min": 85,
+          "heat": "hot"
+        },
+        {
+          "min": 75,
+          "heat": "warm"
+        },
+        {
+          "min": 60,
+          "heat": "tepid"
+        },
+        {
+          "min": 40,
+          "heat": "mild"
+        },
+        {
+          "min": 0,
+          "heat": "cold"
+        }
+      ],
+      "bandToHeat": {
+        "top10": "hot",
+        "top25": "warm",
+        "top50": "mild",
+        "moitie_basse": "cold"
+      },
+      "confidenceDots": {
+        "faible": 2,
+        "moyenne": 3,
+        "haute": 4,
+        "max": 5,
+        "neverFilled": 5
+      },
+      "noBandStrip": "line-strong",
+      "priorityBelow": 80,
+      "priorityPick": "lowest factor score, first on ties",
+      "matchGap": {
+        "0": {
+          "status": "ok",
+          "label": "Juste"
+        },
+        "1": {
+          "status": "near",
+          "label": "À une bande"
+        },
+        ">=2": {
+          "status": "miss",
+          "label": "Écart de N bandes"
+        }
+      },
+      "calibrationBars": {
+        "count": 10,
+        "filled": "round(adjacent / 10)",
+        "noReading": 0
+      },
+      "recommendedAngle": "max score_tendance (first on ties) gets the primary « Écrire cet angle » and the « Le plus porté » tag; « Angle actuel » replaces the tag when it is the current angle"
+    },
+    "shadows": [
+      {
+        "name": "shadow-1",
+        "value": "0 1px 2px rgba(13, 34, 64, 0.06), 0 1px 1px rgba(13, 34, 64, 0.04)",
+        "night": "0 1px 2px rgba(0, 0, 0, 0.35)",
+        "purpose": "Hairline rest: cards, bulletin, angle cards, history entries."
+      },
+      {
+        "name": "shadow-2",
+        "value": "0 10px 28px -14px rgba(13, 34, 64, 0.28), 0 2px 6px rgba(13, 34, 64, 0.06)",
+        "night": "0 14px 30px -16px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.3)",
+        "purpose": "Lift: hovered angle card (fine pointers, with -2px translate) and the toast."
+      },
+      {
+        "name": "shadow-sticky",
+        "value": "0 12px 30px -18px rgba(13, 34, 64, 0.45)",
+        "night": "0 14px 34px -18px rgba(0, 0, 0, 0.8)",
+        "purpose": "Sticky action bar once engaged."
+      },
+      {
+        "name": "focus-ring",
+        "value": "0 0 0 3px color-mix(in srgb, var(--act) 22%, transparent)",
+        "purpose": "Text inputs, the select and the median and stat inputs on focus; the Radar search field rings its whole card on focus-within at 20%. Other controls: outline 2px solid var(--act), offset 2px."
+      },
+      {
+        "name": "route-current-halo",
+        "value": "0 0 0 4px color-mix(in srgb, var(--act) 18%, transparent)",
+        "purpose": "Current station on the route stepper."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Movement: press, toast, chevrons, view entrances, sticky bar, card lift, live signals and the bulletin drop. Colour and border changes use the CSS `ease` keyword instead."
+      },
+      {
+        "name": "ease-in-out",
+        "value": "cubic-bezier(0.77, 0, 0.175, 1)",
+        "purpose": "The needle sliding to its band."
+      },
+      {
+        "name": "t-fast",
+        "value": "140ms",
+        "purpose": "Hover colour and border changes (on `ease`) and the button press (on ease-out)."
+      },
+      {
+        "name": "t-ui",
+        "value": "200ms",
+        "purpose": "Disclosure chevrons, toast, confidence dot fill, rewrite blur."
+      },
+      {
+        "name": "t-move",
+        "value": "260ms",
+        "purpose": "View entrances (rise 8px), sticky bar slide, live signals."
+      },
+      {
+        "name": "view-transition",
+        "value": "out 120ms fade; in 240ms fade-in-up 6px",
+        "purpose": "Route changes between views."
+      },
+      {
+        "name": "bulletin-drop",
+        "value": "reading 460ms drop -12px scale .96 + count-up 900ms; title/verdict rise 180/260ms; needle 720ms ease-in-out from 240ms; confidence dots 220ms from 480ms +90ms; factor bars scaleX 560ms from 320ms +60ms; improvements rise from 640ms +70ms; tab chips 240ms from 200ms +60ms",
+        "purpose": "« Le bulletin tombe »: the one authored moment, once per forecast. Reduced motion: opacity 0.4 to 1 over 200ms."
+      },
+      {
+        "name": "rewrite",
+        "value": "script blur(2px) opacity .5 while working; clear 260ms; numeral counts old to new 700ms",
+        "purpose": "Rewrite feedback."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animations 1ms (spinner stops); view transitions off; view entrances 160ms fade; press scale off; sticky bar fades (200ms); verdict strip opacity 0.4→1 200ms; rewrite: script opacity 0.5→1 200ms, no count-up; smooth scroll → auto",
+        "purpose": "Less and softer, not zero."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide-max",
+        "value": "1180px",
+        "purpose": "Reading column 112px; verdict meta drops below in two columns; side panel 330px; running-forecast side stacks."
+      },
+      {
+        "name": "tablet-max",
+        "value": "960px",
+        "purpose": "Shell becomes a sticky top bar (brand name, status text and recents hidden; nav links 38px tall, 11px side padding); content top padding 24px; bulletin body single column; flow head stacks."
+      },
+      {
+        "name": "phone-max",
+        "value": "640px",
+        "purpose": "Icon-only nav; 88px reading, 15.5px verdict sentence, verdict padding 18px with 16px gaps; script and side panel padding 18px; tabs 14px without hint; sticky bar drops its score switch and button labels; route collapses to bare stations."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one main action of a view (« Lancer la prévision », « Réécrire »). Large variant on the brief.",
+      "html": "<button class=\"ds-btn-primary ds-btn-lg\"><svg class=\"ds-ico\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8\"/><circle cx=\"12\" cy=\"12\" r=\"3.5\"/><path d=\"M12 12l5.5-5.5\"/></svg>Lancer la prévision</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:9px;font:500 14.5px/1 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;white-space:nowrap;cursor:pointer;transition:background-color 140ms ease,border-color 140ms ease,color 140ms ease,transform 140ms cubic-bezier(0.23,1,0.32,1);background:var(--act, #1C57B0);border:1px solid var(--act, #1C57B0);color:var(--act-ink, #FFFFFF);font-weight:600;}.ds-btn-primary:hover{background:var(--act-hover, #174A97);border-color:var(--act-hover, #174A97);}.ds-btn-primary:active{transform:scale(0.98);}.ds-btn-primary:focus-visible{outline:2px solid var(--act, #1C57B0);outline-offset:2px;}.ds-btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;}.ds-btn-lg{height:48px;padding:0 22px;font-size:15.5px;border-radius:10px;}.ds-ico{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Paper button for supporting actions such as « Copier ».",
+      "html": "<button class=\"ds-btn\"><svg class=\"ds-ico\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"8\" y=\"8\" width=\"11\" height=\"11\" rx=\"2\"/><path d=\"M5 15V6a1 1 0 0 1 1-1h9\"/></svg>Copier</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:9px;font:500 14.5px/1 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;white-space:nowrap;cursor:pointer;transition:background-color 140ms ease,border-color 140ms ease,color 140ms ease,transform 140ms cubic-bezier(0.23,1,0.32,1);background:var(--surface, #FFFFFF);border:1px solid var(--line, #D2DEEC);color:var(--ink, #0D2240);}.ds-btn:hover{border-color:var(--line-strong, #9DB6D6);background:var(--surface-2, #F5F8FC);}.ds-btn:active{transform:scale(0.98);}.ds-btn:focus-visible{outline:2px solid var(--act, #1C57B0);outline-offset:2px;}.ds-ico{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;}"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Borderless action in the flow head (« Nouvelle idée », « Changer d'angle »).",
+      "html": "<button class=\"ds-btn-quiet\"><svg class=\"ds-ico\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\"/></svg>Nouvelle idée</button>",
+      "css": ".ds-btn-quiet{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:9px;font:500 14.5px/1 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;white-space:nowrap;cursor:pointer;transition:background-color 140ms ease,border-color 140ms ease,color 140ms ease,transform 140ms cubic-bezier(0.23,1,0.32,1);background:transparent;border:1px solid transparent;color:var(--ink-2, #3B5373);}.ds-btn-quiet:hover{background:var(--surface-3, #EDF3FA);color:var(--ink, #0D2240);}.ds-btn-quiet:active{transform:scale(0.98);}.ds-btn-quiet:focus-visible{outline:2px solid var(--act, #1C57B0);outline-offset:2px;}.ds-ico{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Labelled field: uppercase condensed label above, 9px paper input, Action Blue focus ring.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Niche</span><input class=\"ds-input\" type=\"text\" placeholder=\"Ex. : artisanat, coaching sportif\"></label>",
+      "css": ".ds-field{display:grid;gap:7px;max-width:320px;}.ds-field-label{font:600 12px/1.2 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3, #5C7392);}.ds-input{width:100%;border:1px solid var(--line, #D2DEEC);border-radius:9px;background:var(--surface, #FFFFFF);color:var(--ink, #0D2240);padding:10px 12px;font:400 15px/1.45 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;transition:border-color 140ms ease,box-shadow 140ms ease;}.ds-input::placeholder{color:var(--ink-3, #5C7392);}.ds-input:hover{border-color:var(--line-strong, #9DB6D6);}.ds-input:focus{outline:none;border-color:var(--act, #1C57B0);box-shadow:0 0 0 3px color-mix(in srgb,var(--act, #1C57B0) 22%,transparent);}"
+    },
+    {
+      "name": "Shell Navigation",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Map-blue sidebar: Warm brand mark, nav links, current page white 14% with a Warm icon.",
+      "html": "<nav class=\"ds-shell\"><a class=\"ds-brand\" href=\"#\"><span class=\"ds-brand-mark\">A</span><span class=\"ds-brand-name\">Amorce</span></a><a class=\"ds-nav-link\" href=\"#\" aria-current=\"page\"><svg class=\"ds-ico\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 20h4L19 9l-4-4L4 16z\"/><path d=\"M13 7l4 4\"/></svg><span>Créer</span></a><a class=\"ds-nav-link\" href=\"#\"><svg class=\"ds-ico\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8\"/><circle cx=\"12\" cy=\"12\" r=\"3.5\"/><path d=\"M12 12l5.5-5.5\"/></svg><span>Radar</span></a><a class=\"ds-nav-link\" href=\"#\"><svg class=\"ds-ico\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8\"/><path d=\"M12 8v4l3 2\"/></svg><span>Historique</span></a></nav>",
+      "css": ".ds-shell{display:grid;gap:2px;width:236px;padding:22px 14px 18px;background:var(--shell, #0C315C);color:var(--ink-on-shell, #C6D6EB);font:400 15px/1.5 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;}.ds-brand{display:flex;align-items:center;gap:10px;padding:0 8px 22px;color:#fff;text-decoration:none;}.ds-brand-mark{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--warm, #F08A24);color:#0D2240;font:700 17px/1 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;}.ds-brand-name{font:600 19px/1 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;letter-spacing:-.01em;}.ds-nav-link{display:flex;align-items:center;gap:11px;height:42px;padding:0 12px;border-radius:8px;color:var(--ink-on-shell, #C6D6EB);text-decoration:none;font-weight:500;transition:background-color 140ms ease,color 140ms ease;}.ds-nav-link:hover{background:var(--shell-hi, rgba(255,255,255,.12));color:#fff;}.ds-nav-link[aria-current=page]{background:rgba(255,255,255,.14);color:#fff;}.ds-nav-link[aria-current=page] .ds-ico{color:var(--warm, #F08A24);}.ds-nav-link:focus-visible{outline:2px solid var(--act, #1C57B0);outline-offset:2px;}.ds-ico{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;}"
+    },
+    {
+      "name": "Platform Toggle Chip",
+      "kind": "chip",
+      "refersTo": "chip-platform",
+      "description": "Pill toggle for choosing platforms on the brief; checked fills the circle Action Blue.",
+      "html": "<div class=\"ds-pf-row\"><label class=\"ds-pf\"><input type=\"checkbox\" checked><span><i class=\"ds-check\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12l4.5 4.5L19 7\"/></svg></i>LinkedIn</span></label><label class=\"ds-pf\"><input type=\"checkbox\"><span><i class=\"ds-check\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12l4.5 4.5L19 7\"/></svg></i>X</span></label></div>",
+      "css": ".ds-pf-row{display:flex;gap:8px;flex-wrap:wrap;}.ds-pf{position:relative;}.ds-pf input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer;}.ds-pf>span{display:inline-flex;align-items:center;gap:9px;height:42px;padding:0 14px 0 12px;border:1px solid var(--line, #D2DEEC);border-radius:999px;background:var(--surface, #FFFFFF);color:var(--ink-2, #3B5373);font:500 15px/1 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;cursor:pointer;transition:background-color 140ms ease,border-color 140ms ease,color 140ms ease;}.ds-check{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--line-strong, #9DB6D6);display:grid;place-items:center;}.ds-check svg{width:10px;height:10px;stroke:var(--act-ink, #FFFFFF);stroke-width:3;fill:none;opacity:0;}.ds-pf input:checked+span{border-color:var(--act, #1C57B0);background:var(--act-soft, #E3ECF9);color:var(--ink, #0D2240);}.ds-pf input:checked+span .ds-check{background:var(--act, #1C57B0);box-shadow:none;}.ds-pf input:checked+span .ds-check svg{opacity:1;}.ds-pf input:focus-visible+span{outline:2px solid var(--act, #1C57B0);outline-offset:2px;}"
+    },
+    {
+      "name": "Platform Tabs with Thermal Chips",
+      "kind": "custom",
+      "refersTo": "tab-platform",
+      "description": "Result tabs; each carries its score as a small thermal chip coloured by its own value. The selected tab joins the bulletin sheet.",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\"><button class=\"ds-tab\" role=\"tab\" aria-selected=\"true\">LinkedIn <span class=\"ds-t\" style=\"--t:var(--warm,#F08A24)\">78</span></button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">Reels <span class=\"ds-t ds-t-hot\" style=\"--t:var(--hot,#CC3A22)\">86</span></button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">X <span class=\"ds-t\" style=\"--t:var(--mild,#F2C845)\">52</span></button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">YouTube <span class=\"ds-t ds-t-empty\">—</span></button></div><div class=\"ds-sheet\"></div>",
+      "css": ".ds-tabs{display:flex;align-items:flex-end;gap:4px;position:relative;z-index:1;}.ds-tab{display:flex;align-items:center;gap:10px;height:48px;padding:0 14px 0 16px;border:1px solid transparent;border-bottom:0;border-radius:11px 11px 0 0;background:transparent;color:var(--ink-2, #3B5373);font:500 15px/1 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;cursor:pointer;transition:background-color 140ms ease,color 140ms ease;}.ds-tab:hover{color:var(--ink, #0D2240);background:color-mix(in srgb,var(--surface, #FFFFFF) 55%,transparent);}.ds-tab[aria-selected=true]{background:var(--surface, #FFFFFF);border-color:var(--line, #D2DEEC);color:var(--ink, #0D2240);font-weight:600;margin-bottom:-1px;height:49px;}.ds-tab:focus-visible{outline:2px solid var(--act, #1C57B0);outline-offset:2px;}.ds-t{display:inline-grid;place-items:center;min-width:28px;height:22px;padding:0 5px;border-radius:5px;background:var(--t,var(--mild, #F2C845));color:var(--thermal-ink, #0D2240);font:700 13px/1 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;font-variant-numeric:tabular-nums;}.ds-t-hot{color:var(--hot-ink, #FFFFFF);}.ds-t-empty{background:transparent;box-shadow:inset 0 0 0 1px var(--line-strong, #9DB6D6);color:var(--ink-3, #5C7392);}.ds-sheet{height:24px;background:var(--surface, #FFFFFF);border:1px solid var(--line, #D2DEEC);border-radius:0 14px 14px 14px;}"
+    },
+    {
+      "name": "Bulletin Verdict Band",
+      "kind": "custom",
+      "refersTo": "verdict-reading",
+      "description": "Signature strip: reading block in the score's heat, band title and verdict, then the four-segment scale with needle, five confidence dots capped at four, and Prévu · relevé.",
+      "html": "<div class=\"ds-verdict\" style=\"--band:var(--warm,#F08A24)\"><div class=\"ds-temp\" style=\"--t:var(--warm,#F08A24)\"><b>78</b><span>/ 100</span></div><div class=\"ds-v-main\"><h2 class=\"ds-band-title\">Top 25 % de ta niche</h2><p class=\"ds-say\"><strong>Accroche nette et tendance portée</strong> : le format est bon, l'appel à l'action reste faible.</p></div><div class=\"ds-v-meta\"><div><span class=\"ds-label\">Échelle de potentiel</span><div class=\"ds-scale\"><div class=\"ds-track\"><i style=\"--t:var(--cold,#7FAAE6)\"></i><i style=\"--t:var(--mild,#F2C845)\"></i><i class=\"ds-cur\" style=\"--t:var(--warm,#F08A24)\"></i><i style=\"--t:var(--hot,#CC3A22)\"></i></div><div class=\"ds-needle\" style=\"transform:translateX(200%)\"></div></div><div class=\"ds-scale-labels\"><span>Bas 50 %</span><span>Top 50 %</span><span class=\"ds-cur\">Top 25 %</span><span>Top 10 %</span></div></div><div class=\"ds-row\"><span class=\"ds-label\">Indice de confiance</span><span class=\"ds-dots\"><i class=\"ds-on\"></i><i class=\"ds-on\"></i><i class=\"ds-on\"></i><i></i><i></i></span><b>3/5</b> moyenne</div><div class=\"ds-row\"><span class=\"ds-label\">Prévu · relevé</span><b>Top 25 %</b><svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg><a class=\"ds-pending\" href=\"#\">relevé à venir</a></div></div></div>",
+      "css": ".ds-verdict{display:grid;grid-template-columns:124px minmax(0,1fr) 384px;gap:28px;align-items:center;padding:22px 28px;font:400 15px/1.5 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;color:var(--ink, #0D2240);background:color-mix(in srgb,var(--band) 11%,var(--surface, #FFFFFF));border:1px solid var(--line, #D2DEEC);border-bottom-color:color-mix(in srgb,var(--band) 26%,var(--line, #D2DEEC));border-radius:0 14px 0 0;}.ds-temp{height:116px;border-radius:14px;background:var(--t);color:var(--thermal-ink, #0D2240);display:flex;flex-direction:column;align-items:center;justify-content:center;}.ds-temp b{font:700 68px/.9 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}.ds-temp span{margin-top:8px;font:600 12px/1 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:.08em;}.ds-band-title{margin:0;font:700 34px/1.08 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:-.005em;text-wrap:balance;}.ds-say{margin:10px 0 0;font-size:17px;line-height:1.45;color:var(--ink-2, #3B5373);max-width:52ch;}.ds-say strong{color:var(--ink, #0D2240);font-weight:500;}.ds-v-meta{border-left:1px solid color-mix(in srgb,var(--band) 26%,var(--line, #D2DEEC));padding-left:28px;display:grid;gap:16px;}.ds-label{font:600 12px/1.2 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2, #3B5373);}.ds-scale{position:relative;margin-top:18px;}.ds-track{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;}.ds-track i{height:8px;border-radius:2px;background:var(--t);opacity:.5;}.ds-track i.ds-cur{opacity:1;}.ds-needle{position:absolute;top:-11px;left:0;width:25%;height:28px;}.ds-needle::before{content:'';position:absolute;left:50%;top:0;transform:translateX(-50%);border:6px solid transparent;border-top:8px solid var(--ink, #0D2240);border-bottom:0;}.ds-needle::after{content:'';position:absolute;left:50%;top:7px;width:2px;height:14px;margin-left:-1px;border-radius:1px;background:var(--ink, #0D2240);}.ds-scale-labels{margin-top:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:3px;font:500 12px/1 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;color:var(--ink-2, #3B5373);}.ds-scale-labels .ds-cur{color:var(--ink, #0D2240);font-weight:700;}.ds-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13.5px;color:var(--ink-2, #3B5373);}.ds-row .ds-label{width:132px;flex:none;}.ds-row b{color:var(--ink, #0D2240);font-weight:600;}.ds-dots{display:flex;gap:4px;}.ds-dots i{width:10px;height:10px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--act, #1C57B0);}.ds-dots i.ds-on{background:var(--act, #1C57B0);}.ds-arrow{width:14px;height:14px;flex:none;fill:none;stroke:var(--ink-3, #5C7392);stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;}.ds-pending{border:1px dashed var(--line-strong, #9DB6D6);border-radius:5px;padding:2px 7px;color:var(--ink-2, #3B5373);text-decoration:none;font-size:13px;}.ds-pending:hover{color:var(--act, #1C57B0);border-color:var(--act, #1C57B0);}.ds-pending:focus-visible{outline:2px solid var(--act, #1C57B0);outline-offset:2px;}"
+    },
+    {
+      "name": "Route Stepper",
+      "kind": "custom",
+      "description": "Step progress as a route: five stations (Idée to Prévision), a 2px line, 12px stations, Action Blue when done, a 4px halo on the current station; labels in Slate Ink on Cold Sky.",
+      "html": "<ol class=\"ds-route\"><li class=\"ds-done\"><span class=\"ds-st\"></span>Idée</li><li class=\"ds-done\"><span class=\"ds-st\"></span>Tendances</li><li class=\"ds-done\"><span class=\"ds-st\"></span>Angle</li><li class=\"ds-done\"><span class=\"ds-st\"></span>Scripts</li><li class=\"ds-done ds-cur\"><span class=\"ds-st\"></span>Prévision</li></ol>",
+      "css": ".ds-route{display:flex;margin:0;padding:0;list-style:none;font:400 12.5px/1.2 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;}.ds-route li{position:relative;width:76px;display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--ink-2, #3B5373);white-space:nowrap;}.ds-route li+li::before{content:'';position:absolute;top:5px;right:50%;width:100%;height:2px;background:var(--line-strong, #9DB6D6);}.ds-route li.ds-done+li::before{background:var(--act, #1C57B0);}.ds-st{position:relative;z-index:1;width:12px;height:12px;border-radius:50%;background:var(--sky, #E8F0FA);box-shadow:inset 0 0 0 2px var(--line-strong, #9DB6D6);}.ds-route .ds-done .ds-st{background:var(--act, #1C57B0);box-shadow:none;}.ds-route .ds-cur{color:var(--ink, #0D2240);font-weight:600;}.ds-route .ds-cur .ds-st{background:var(--surface, #FFFFFF);box-shadow:inset 0 0 0 2px var(--act, #1C57B0),0 0 0 4px color-mix(in srgb,var(--act, #1C57B0) 18%,transparent);}.ds-route .ds-done.ds-cur .ds-st{background:var(--act, #1C57B0);box-shadow:0 0 0 4px color-mix(in srgb,var(--act, #1C57B0) 18%,transparent);}"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Bulletin Paper container on the sky: 14px radius, 1px Chart Rule, hairline rest shadow, 24px padding. Shown as the trend-fronts panel: retained fronts sit inside as unboxed rows led by the warm-front glyph and divided by a Faint Rule.",
+      "html": "<section class=\"ds-card\"><h2 class=\"ds-card-title\">Fronts de tendance retenus</h2><ul class=\"ds-fronts\"><li class=\"ds-front-row\"><svg class=\"ds-front\" viewBox=\"0 0 34 14\" aria-hidden=\"true\"><path d=\"M1 12h32\"/><path class=\"ds-front-fill\" d=\"M5 12a3.5 3.5 0 0 1 7 0M15 12a3.5 3.5 0 0 1 7 0M25 12a3.5 3.5 0 0 1 7 0\"/></svg><b>Les artisans passent au format court</b><p>Les vidéos de savoir-faire de moins d'une minute montent sur Reels et YouTube Shorts.</p><small>Google Trends</small></li><li class=\"ds-front-row\"><svg class=\"ds-front\" viewBox=\"0 0 34 14\" aria-hidden=\"true\"><path d=\"M1 12h32\"/><path class=\"ds-front-fill\" d=\"M5 12a3.5 3.5 0 0 1 7 0M15 12a3.5 3.5 0 0 1 7 0M25 12a3.5 3.5 0 0 1 7 0\"/></svg><b>L'atelier se montre en coulisses</b><p>Les posts qui montrent les étapes et les ratés d'une pièce gagnent en commentaires.</p><small>Reddit</small></li></ul></section>",
+      "css": ".ds-card{background:var(--surface, #FFFFFF);border:1px solid var(--line, #D2DEEC);border-radius:14px;box-shadow:var(--shadow-1, 0 1px 2px rgba(13,34,64,.06), 0 1px 1px rgba(13,34,64,.04));padding:24px;max-width:420px;font:400 15px/1.5 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;color:var(--ink, #0D2240);}.ds-card-title{margin:0;font:600 12.5px/1.2 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2, #3B5373);}.ds-fronts{list-style:none;margin:14px 0 0;padding:0;display:grid;}.ds-front-row{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:start;padding:12px 0;border-top:1px solid var(--line-2, #E2EAF4);}.ds-front-row:first-child{border-top:0;padding-top:0;}.ds-front-row:last-child{padding-bottom:0;}.ds-front{width:34px;height:14px;margin-top:4px;flex:none;fill:none;stroke:var(--hot, #CC3A22);stroke-width:1.7;stroke-linecap:round;}.ds-front .ds-front-fill{fill:var(--hot, #CC3A22);stroke:none;}.ds-front-row b{font-weight:600;font-size:14.5px;}.ds-front-row p{grid-column:2;margin:0;color:var(--ink-2, #3B5373);font-size:13.5px;line-height:1.45;}.ds-front-row small{grid-column:2;color:var(--ink-3, #5C7392);font-size:12px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Forecast Bulletin",
+    "overview": "Amorce reads like a weather bulletin for content. A score is a forecast, not a grade: a reading set on a thermal scale, a probability band (« Top 25 % de ta niche »), a confidence index, and a slot that waits for the observed reading which later verifies it (« Prévu · relevé »). Every screen is assembled from the instruments of a forecast — the thermometer block, the four-segment band scale with its needle, five confidence dots, the cartographic warm-front symbol for trends, and the route line that strings the steps of a forecast like weather stations. The world deliberately refuses the generic grey gauge dashboard and the \"AI\" look of violet gradients and sparkles; its colours come from the map and the thermometer.\n\nThe frame is a map-blue shell around a cold sky ground by day and a deep-blue night by night; the theme follows the device. Paper-white surfaces sit on the sky as flat tonal layers carrying a hairline shadow. Density is that of a working tool: 40px controls, 8–16px gaps inside groups, 28px between panel columns. The script being read is the largest running text on every screen, because the content is the product. Readings are set in Fira Sans Condensed, with tabular figures on scores, thermal chips and clocks; prose, headings and meta figures are set in Fira Sans.\n\nMotion is a single authored moment per forecast, « le bulletin tombe »: the reading drops in and counts up, the needle slides to its band, the confidence dots light one by one, the factor bars fill. Everything else is quiet: colour and border changes take 140ms on `ease` (200ms for the confidence fill and the rewrite blur); movement (press, toast, chevrons, view entrances, sticky bar) takes 140–260ms on the exponential ease-out cubic-bezier(0.23, 1, 0.32, 1). View changes cross-fade (out 120ms, in 240ms rising 6px). Reduced motion is honoured as less and softer, never as nothing: all CSS animations collapse to 1ms (the busy spinner stops), view transitions are off, view entrances become a 160ms fade, presses don't scale, the sticky bar fades, smooth scrolling jumps, the verdict strip fades 40%→100% over 200ms, and a rewrite only fades the script from 50% to full over 200ms with no count-up.",
+    "keyCharacteristics": [
+      "A five-step thermal scale (cold, mild, tepid, warm, hot) codes every potential value and every band; Warm doubles as the brand's sun.",
+      "Map-blue shell, cold-sky ground, paper surfaces; night is deep blue, never black.",
+      "Confidence is five dots and tops out at four: a forecast is never certain.",
+      "Step progress is a route line with stations, not a bar or a ring.",
+      "The warm-front glyph marks every retained trend and live signal.",
+      "Fira Sans for prose and meta, Fira Sans Condensed for readings; scores, chips, clocks and counted meta in tabular figures.",
+      "Flat at rest; lift only on hover or for a transient message."
+    ],
+    "rules": [
+      {
+        "name": "The Thermal Scale Rule",
+        "body": "A potential value is coloured by its own value and nothing else: 85 and above hot, 75 warm, 60 tepid, 40 mild, below 40 cold. A band is coloured by its band: Top 10 % hot, Top 25 % warm, Top 50 % mild, Bas 50 % cold. The verdict strip mixes its band colour into the paper at 11% (24% at night) and rules its edges at 26% (42% at night). With no band yet (pending or judging), the strip is tinted and ruled with Strong Rule instead of a thermal colour.",
+        "section": "colors"
+      },
+      {
+        "name": "The Blue Instrument Rule",
+        "body": "Action Blue carries interaction and the forecast's own instruments: confidence, route progress, calibration. It never encodes potential, and a thermal colour never marks an action.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Sun Rule",
+        "body": "The only non-data use of a thermal hue is Warm as the brand's sun: the brand mark, the active nav icon, text selection (Warm at 35%), and the final station of the onboarding route, « Le bulletin avant publication ». Every other thermal colour on screen is a score, a band, a trend front, or a warning marker.",
+        "section": "colors"
+      },
+      {
+        "name": "The Night Bulletin Rule",
+        "body": "Every colour token is redefined under `prefers-color-scheme: dark`; night is deep blue, never black. Components reference `var(--token)`, except deliberate fixed values on the always-dark shell (white text, the rgba(255, 255, 255, 0.14) active wash, status dots #5BC48F ready / #FF8A80 error) and the brand mark's #0D2240 « A ». Ticks drawn on Action Blue or Verified Green use a token (Action Ink), never #FFFFFF.",
+        "section": "colors"
+      },
+      {
+        "name": "The Condensed Reading Rule",
+        "body": "Fira Sans Condensed sets readings: scores, thermal chips, band titles, clocks, scale labels, labels. Fira Sans sets prose, headings and meta figures. Scores, thermal chips, clocks and tweet numbers carry tabular figures in the condensed cut; the Fira Sans meta figures that change or line up (calibration %, tweet length, script measure, signal counts, the stat and median inputs) take tabular-nums too; the confidence and route « n/5 », the improvement counters, dates and view counts are plain figures.",
+        "section": "typography"
+      },
+      {
+        "name": "The Script First Rule",
+        "body": "The script to publish is the largest running text on the screen (18px/1.62, at most 66ch); the verdict sentence (17px), the lede (16px) and interface text (15px) step down from it.",
+        "section": "typography"
+      },
+      {
+        "name": "The Label Names Its Neighbour Rule",
+        "body": "The uppercase condensed label names the field, value or group directly beside or below it. It never sits above a heading to introduce it.",
+        "section": "typography"
+      },
+      {
+        "name": "The Route Rule",
+        "body": "Step progress is a route: a 2px Strong Rule line threading 12–14px station dots. Completed dots and segments fill Action Blue and the current station wears a 4px Action Blue halo at 18%. On the onboarding route the final station is Warm and the first segment is drawn as a warm front. Steps are never drawn as a progress bar or a ring.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat Paper Rule",
+        "body": "Surfaces rest flat with the hairline shadow. Lift is a response to hover or a transient message, never a resting state. The one translucent surface is the sticky action bar (paper at 92% with `saturate(1.4) blur(10px)`), which needs it to stay legible over scrolled content.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Attached Tab Rule",
+        "body": "The bulletin's top-left corner is square (0 14px 14px 14px) so the selected platform tab, with 11px top corners, no bottom border and a 1px overlap, reads as one sheet with it.",
+        "section": "shapes"
+      },
+      {
+        "name": "The Dashed Provisional Rule",
+        "body": "A dashed 1px Strong Rule border marks what is not measured yet: the « relevé à venir » link and the « Exemple » tag on demonstration data.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do colour every potential number by its own value with the thermal thresholds (85 hot, 75 warm, 60 tepid, 40 mild, below cold) and every band by its band (Top 10 % hot, Top 25 % warm, Top 50 % mild, Bas 50 % cold).",
+      "Do set text on cold, mild, tepid and warm fills in Thermal Ink, and on hot in Hot Ink.",
+      "Do show confidence as five Action Blue dots: faible 2/5, moyenne 3/5, haute 4/5.",
+      "Do pair every forecast with its observed reading: a hollow ring on the band scale once entered, a dashed « relevé à venir » until then.",
+      "Do mark retained trends and live signals with the warm-front glyph in Hot.",
+      "Do draw step progress as a route line with stations (2px line, 12–14px dots, Action Blue when done).",
+      "Do use `var(--token)` for every colour so the night bulletin follows the device; the shell's fixed whites and status dots and the brand mark's « A » are the only literals, and a tick on Action Blue or Verified Green takes Action Ink, never #FFFFFF.",
+      "Do set every reading in Fira Sans Condensed with tabular figures on scores, chips and clocks, and give meta figures that change or line up (calibration %, tweet length, script measure, signal counts) tabular-nums.",
+      "Do keep Mist Ink (#5C7392) for text on Bulletin Paper and Paper Shade only (4.86:1, 4.56:1); on Cold Sky (4.23:1), Paper Wash (4.35:1) and the band-tinted verdict strip (4.13:1 on Top 10 %) use Slate Ink.",
+      "Do keep « le bulletin tombe » as the one authored motion moment, and give reduced motion a short fade rather than nothing."
+    ],
+    "donts": [
+      "Don't paint a score, band or bar with a colour its value did not earn, and don't use a thermal hue on chrome beyond Warm's brand uses and the warning markers (the Mild status dot, Tepid flag bullets and the Tepid notice border).",
+      "Don't fill the fifth confidence dot or present a score as a promise of views.",
+      "Don't reach for violet gradients, sparkles or a grey gauge dial: the instruments are the thermometer, the band scale and the front.",
+      "Don't put an uppercase label above a heading as a kicker or eyebrow; a heading stands on its own.",
+      "Don't render step progress as a progress bar or a ring.",
+      "Don't use Unicode characters or emoji as icons; interface icons are 24px-grid SVG strokes at 1.75px with round caps and joins (ticks inside 16–18px check circles at 3), and the cartographic warm-front glyph is the one authored symbol on its own 34 × 14 grid.",
+      "Don't make night black; it is deep blue.",
+      "Don't give a surface a resting lift or a hard offset shadow; depth is tonal, shadows are offset and soft."
+    ]
+  }
+}
