@@ -246,7 +246,7 @@ function bestOf(entry) {
   let best = null;
   for (const p of platformsOf(entry)) {
     const sc = entry.scripts[p].score;
-    if (isJudged(sc) && (!best || sc.final > best.final)) best = { final: sc.final, heat: BANDS[sc.bande].heat };
+    if (isJudged(sc) && (!best || sc.final > best.final)) best = { final: sc.final, heat: heatOf(sc.final) };
   }
   return best;
 }
@@ -693,16 +693,19 @@ function stepsList(entry, draftRun) {
     done = [true, true, Boolean(entry.scripts) || writing, Boolean(entry.scripts) && !writing, judged && !writing];
   }
   const names = ["Idée", "Tendances", "Angle", "Scripts", "Prévision"];
-  const now = done.indexOf(false);
-  return el("ol", { class: "steps", "aria-label": "Progression" },
-    names.map((name, i) => {
-      const cls = i === now ? "now" : done[i] ? null : "todo";
-      return el("li", { class: cls, "aria-current": i === now ? "step" : null },
-        el("i", { "aria-hidden": "true" }, done[i] ? svg("check", "") : null),
-        name,
-        done[i] ? el("span", { class: "sr-only" }, " (fait)") : null,
-      );
-    }),
+  const first = done.indexOf(false);
+  const current = first < 0 ? names.length - 1 : first;
+  return el("div", { class: "route-wrap" },
+    el("ol", { class: "route", "aria-label": "Progression" },
+      names.map((name, i) => {
+        const cls = [done[i] ? "done" : "todo", i === current ? "is-current" : null].filter(Boolean).join(" ");
+        return el("li", { class: cls, "aria-current": i === current ? "step" : null },
+          el("span", { class: "st-dot", "aria-hidden": "true" }),
+          el("span", { class: "st-label" }, name, done[i] ? el("span", { class: "sr-only" }, " (fait)") : null),
+        );
+      }),
+    ),
+    el("span", { class: "route-now", "aria-hidden": "true" }, `${current + 1}/${names.length} · ${names[current]}`),
   );
 }
 
@@ -717,6 +720,7 @@ function flowHead(entry, draftRun) {
     bits.push(el("span", {}, brief.platforms.map((p) => PF[p].name).join(" · ")));
   }
   const meta = el("div", { class: "flow-meta" });
+  if (entry.demo) meta.append(el("span", { class: "tag-demo" }, "Exemple"));
   bits.forEach((b, i) => {
     if (i) meta.append(el("span", { class: "meta-sep", "aria-hidden": "true" }));
     meta.append(b);
@@ -730,7 +734,6 @@ function flowHead(entry, draftRun) {
       ),
     );
   }
-  if (entry.demo) meta.append(el("span", { class: "tag-demo" }, "Exemple"));
 
   if (!draftRun) {
     const actions = el("div", { class: "head-actions" });
@@ -743,10 +746,10 @@ function flowHead(entry, draftRun) {
       );
     }
     actions.append(el("button", { type: "button", class: "btn btn-quiet", onclick: newIdea }, svg("plus"), "Nouvelle idée"));
-    return [el("h1", { class: "flow-title", tabindex: "-1" }, brief.idea), stepsList(entry, draftRun), meta, actions];
+    return [el("h1", { class: "flow-title", tabindex: "-1" }, brief.idea), actions, meta, stepsList(entry, draftRun)];
   }
 
-  return [el("h1", { class: "flow-title", tabindex: "-1" }, brief.idea), stepsList(entry, draftRun), meta];
+  return [el("h1", { class: "flow-title", tabindex: "-1" }, brief.idea), meta, stepsList(entry, draftRun)];
 }
 
 function toggleAngles(on) {
@@ -928,15 +931,16 @@ function angleCard(entry, angle, index, recommended) {
   const current = entry.scripts && entry.chosenAngle?.titre === angle.titre;
   const tag = current ? "Angle actuel" : recommended ? "Le plus porté" : null;
   return el("article", { class: "angle enter", vars: { "--i": index } },
-    el("div", { class: "angle-top" },
-      el("span", { class: "angle-type" }, TYPE_LABELS[angle.type] || angle.type),
+    el("div", { class: "angle-head" },
+      el("h3", {}, angle.titre),
       tag ? el("span", { class: "cur-tag" }, tag) : null,
     ),
-    el("h3", {}, angle.titre),
     el("p", { class: "hook" }, `« ${angle.accroche} »`),
     el("p", { class: "why" }, angle.justification),
     el("div", { class: "angle-foot" },
       el("span", { class: "fit" },
+        el("span", { class: "angle-type" }, TYPE_LABELS[angle.type] || angle.type),
+        el("span", { class: "meta-sep", "aria-hidden": "true" }),
         "Tendance",
         el("span", { class: "fit-bar", "aria-hidden": "true" }, bar(angle.score_tendance, heat)),
         tchip(angle.score_tendance, heat, true),
@@ -1011,7 +1015,7 @@ function tabButton(entry, p) {
   },
     svg(PF[p].icon, "ico pf-ico"),
     PF[p].name,
-    judged ? tchip(sc.final, BANDS[sc.bande].heat, true) : tchip(null, null, true),
+    judged ? tchip(sc.final, heatOf(sc.final), true) : tchip(null, null, true),
   );
 }
 
@@ -1067,21 +1071,23 @@ function derivedVerdict(sc) {
   return `${strong} solide ; ${weak} à renforcer en priorité.`;
 }
 
-function scaleBlock(band) {
+function scaleBlock(band, observed) {
   const idx = band ? band.idx : -1;
+  const obs = observed ? observed.idx : -1;
   return el("div", { class: "scale-block" },
     el("span", { class: "label" }, "Échelle de potentiel"),
     el("div", {
       class: "scale",
       role: "img",
       "aria-label": band
-        ? `Position sur l'échelle : ${band.label}, de Bas 50 % à Top 10 %`
+        ? `Échelle de Bas 50 % à Top 10 % : prévu ${band.label}${observed ? `, relevé ${observed.label}` : ""}`
         : "Position sur l'échelle : à venir",
     },
       el("div", { class: "scale-track" },
         BAND_ORDER.map((k, i) => el("span", { class: i === idx ? "cur" : null, vars: { "--t": `var(--${BANDS[k].heat})` } })),
       ),
       el("div", { class: "scale-needle", hidden: idx < 0, vars: { transform: `translateX(${Math.max(idx, 0) * 100}%)` } }),
+      obs >= 0 ? el("div", { class: "scale-obs", vars: { transform: `translateX(${obs * 100}%)` } }) : null,
     ),
     el("div", { class: "scale-labels", "aria-hidden": "true" },
       BAND_ORDER.map((k, i) => el("span", { class: i === idx ? "cur" : null }, BANDS[k].label)),
@@ -1106,14 +1112,22 @@ function matchBadge(predicted, observed) {
   return el("span", { class: "match miss" }, `Écart de ${gap} bandes`);
 }
 
+// Prévu → relevé sur une ligne ; le relevé est aussi marqué sur l'échelle (pastille creuse).
 function observedRow(entry, p, sc) {
   const real = entry.realStats?.[p];
-  const row = el("div", { class: "meta-row" }, el("span", { class: "label" }, "Prévu · relevé"));
-  if (isJudged(sc)) row.append(el("b", {}, BANDS[sc.bande].label));
+  const row = el("div", { class: "meta-row" },
+    el("span", { class: "label" }, "Prévu · relevé"),
+    el("b", {}, isJudged(sc) ? BANDS[sc.bande].label : "—"),
+    el("span", { class: "arrow", "aria-hidden": "true" }, "→"),
+  );
   if (real && BANDS[real.band]) {
     row.append(
-      el("span", { class: "observed" }, "→ ", el("b", {}, BANDS[real.band].label), ` (×${fmtRatio(real.ratio)})`),
-      matchBadge(sc.bande, real.band),
+      el("span", { class: "observed", title: `${fmt(real.views)} vues, ×${fmtRatio(real.ratio)} ta médiane` },
+        el("span", { class: "obs-key", "aria-hidden": "true" }),
+        el("span", { class: "sr-only" }, "relevé "),
+        el("b", {}, BANDS[real.band].label),
+      ),
+      isJudged(sc) ? matchBadge(sc.bande, real.band) : null,
     );
   } else {
     row.append(el("a", { class: "pending", href: "#historique", title: "À saisir dans l'Historique après publication" }, "relevé à venir"));
@@ -1132,7 +1146,8 @@ function verdictBlock(entry, p, job) {
     el("div", {
       class: "temp",
       role: "img",
-      "data-heat": band ? band.heat : "pending",
+      "data-heat": judged ? heatOf(sc.final) : "pending",
+      vars: judged ? { "--t": `var(--${heatOf(sc.final)})` } : null,
       "aria-label": judged ? `Potentiel ${sc.final} sur 100` : "Potentiel pas encore évalué",
     },
       el("b", { "aria-hidden": "true" }, judged ? String(sc.final) : "—"),
@@ -1171,7 +1186,7 @@ function verdictBlock(entry, p, job) {
   }
 
   verdict.append(
-    el("div", { class: "verdict-meta" }, scaleBlock(band), confidenceRow(judged ? sc.confiance : null), observedRow(entry, p, sc)),
+    el("div", { class: "verdict-meta" }, scaleBlock(band, BANDS[entry.realStats?.[p]?.band]), confidenceRow(judged ? sc.confiance : null), observedRow(entry, p, sc)),
   );
 
   if (!judged && !judging) {
@@ -1353,7 +1368,7 @@ function factorsList(facteurs) {
     facteurs.map((f) => {
       const heat = heatOf(f.score);
       const weak = f === weakest && f.score < 80;
-      const button = el("button", { type: "button", class: `factor${weak ? " weak" : ""}`, "aria-expanded": String(weak) },
+      const button = el("button", { type: "button", class: `factor${weak ? " weak" : ""}`, "aria-expanded": "false" },
         el("span", { class: "factor-row" },
           el("span", { class: "name" }, FACTOR_LABELS[f.nom] || f.nom),
           el("span", { class: "factor-bar", "aria-hidden": "true" }, bar(f.score, heat)),
@@ -1369,6 +1384,27 @@ function factorsList(facteurs) {
   );
 }
 
+// « Action courte : détail » → l'action reste visible, le détail se déplie.
+function splitTip(text) {
+  const t = String(text).trim();
+  const m = t.match(/^(.{10,80}?)(\s*[:;—–]\s+|\s+\(|\.\s+)/u);
+  if (!m) return { head: t, rest: "" };
+  let rest = t.slice(m[1].length).replace(/^\s*[:;—–.]\s*/u, "").trim();
+  if (!rest) return { head: t, rest: "" };
+  return { head: m[1].trim(), rest };
+}
+
+function tipItem(text) {
+  const { head, rest } = splitTip(text);
+  if (!rest) return el("li", {}, el("span", { class: "tip-head" }, head));
+  return el("li", {},
+    el("details", { class: "tip" },
+      el("summary", {}, el("span", { class: "tip-head" }, head), svg("chev", "ico chev")),
+      el("p", { class: "tip-rest" }, rest),
+    ),
+  );
+}
+
 function sideBlock(entry, p, job) {
   const sc = entry.scripts[p].score || {};
   const judged = isJudged(sc);
@@ -1381,7 +1417,7 @@ function sideBlock(entry, p, job) {
     if (tips.length) {
       side.append(el("section", {},
         el("h3", {}, plural(tips.length, "amélioration", "améliorations")),
-        el("ol", { class: "improve" }, tips.map((t) => el("li", {}, t))),
+        el("ol", { class: "improve" }, tips.map(tipItem)),
       ));
     }
   } else {
@@ -1560,7 +1596,7 @@ function observeSticky(verdict, entry, p, job) {
             selectTab(q);
             $(".pf-tabs")?.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
           },
-        }, PF[q].name, isJudged(sc) ? tchip(sc.final, BANDS[sc.bande].heat, true) : tchip(null, null, true));
+        }, PF[q].name, isJudged(sc) ? tchip(sc.final, heatOf(sc.final), true) : tchip(null, null, true));
       }),
     ),
     el("button", { type: "button", class: "btn", "aria-label": `Copier le script ${PF[p].name}`, onclick: () => copyScript(p) },
@@ -1731,6 +1767,9 @@ function renderHistory() {
           ", Amorce a vu juste à une bande près ", el("strong", {}, `${c.adjacent} %`),
           " du temps, dont ", el("strong", {}, `${c.exact} %`), " dans la bande exacte.")
       : el("p", {}, "Aucun relevé pour l'instant. Après publication, saisis les vues réelles d'un post : Amorce comparera la prévision à ce qui s'est passé et mesurera sa fiabilité."),
+    c.n && state.entries.some((e) => e.demo && Object.keys(e.realStats || {}).length)
+      ? el("span", { class: "tag-demo" }, "Inclut l'exemple")
+      : null,
   );
   list.replaceChildren(...state.entries.map(historyEntry));
 }
@@ -1741,7 +1780,10 @@ function historyEntry(entry) {
   const art = el("article", { class: "h-entry", "data-open": String(open) });
   const sub = [dateOf(entry.createdAt), entry.brief.niche].filter(Boolean).join(" · ");
   const row = el("button", { type: "button", class: "h-row", "aria-expanded": String(open), "aria-controls": `h-detail-${entry.id}` },
-    el("span", { class: "h-main" }, el("span", { class: "h-idea" }, entry.brief.idea), el("span", { class: "h-sub" }, sub)),
+    el("span", { class: "h-main" },
+      el("span", { class: "h-idea" }, entry.brief.idea),
+      el("span", { class: "h-sub" }, entry.demo ? [el("span", { class: "tag-demo" }, "Exemple"), " "] : null, sub),
+    ),
     el("span", { class: "h-pfs" },
       pfs.length
         ? pfs.map((p) => {
@@ -1749,7 +1791,7 @@ function historyEntry(entry) {
             const real = entry.realStats?.[p];
             return el("span", { class: "h-pf" },
               PF[p].name,
-              isJudged(sc) ? tchip(sc.final, BANDS[sc.bande].heat, true) : tchip(null, null, true),
+              isJudged(sc) ? tchip(sc.final, heatOf(sc.final), true) : tchip(null, null, true),
               real && BANDS[real.band]
                 ? [el("span", { class: "arrow", "aria-hidden": "true" }, "→"), el("span", { class: "sr-only" }, " relevé "), el("b", {}, BANDS[real.band].label)]
                 : null,
