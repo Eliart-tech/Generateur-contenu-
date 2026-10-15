@@ -33,10 +33,52 @@ colors:
   ink-on-shell: "#C6D6EB"
   ink-on-shell-2: "#8EA8CA"
   shell-hi: "rgba(255, 255, 255, 0.12)"
+  shell-active: "rgba(255, 255, 255, 0.14)"
+  status-ready: "#5BC48F"
+  status-error: "#FF8A80"
+  # Night: the value each token takes under prefers-color-scheme: dark
+  shell-night: "#11294A"
+  act-night: "#4A86E8"
+  act-hover-night: "#6698EC"
+  act-soft-night: "#16325A"
+  act-ink-night: "#06101F"
+  cold-night: "#86AFEA"
+  mild-night: "#F2CD55"
+  tepid-night: "#F5AE42"
+  warm-night: "#F3953A"
+  hot-night: "#E5583F"
+  thermal-ink-night: "#06101F"
+  hot-ink-night: "#06101F"
+  ok-night: "#5BC48F"
+  ok-soft-night: "#10331F"
+  warn-ink-night: "#F7B977"
+  warn-soft-night: "#3A2412"
+  err-night: "#FF8A80"
+  err-soft-night: "#3A1614"
+  sky-night: "#0A1628"
+  surface-night: "#10213A"
+  surface-2-night: "#0D1C33"
+  surface-3-night: "#13284A"
+  line-night: "#22395B"
+  line-2-night: "#1A2F4E"
+  line-strong-night: "#3C5C86"
+  ink-night: "#E7EEF8"
+  ink-2-night: "#AEC1DB"
+  ink-3-night: "#8BA2C2"
+  ink-on-shell-night: "#B9CBE4"
+  ink-on-shell-2-night: "#7F98BA"
+  shell-hi-night: "rgba(255, 255, 255, 0.08)"
 typography:
   display:
     fontFamily: '"Fira Sans Condensed", "Fira Sans", "Arial Narrow", sans-serif'
     fontSize: "68px"
+    fontWeight: 700
+    lineHeight: 0.9
+    letterSpacing: "-0.02em"
+    fontFeature: "'tnum' 1"
+  display-phone:
+    fontFamily: '"Fira Sans Condensed", "Fira Sans", "Arial Narrow", sans-serif'
+    fontSize: "48px"
     fontWeight: 700
     lineHeight: 0.9
     letterSpacing: "-0.02em"
@@ -53,12 +95,24 @@ typography:
     fontWeight: 600
     lineHeight: 1.2
     letterSpacing: "-0.012em"
+  headline-phone:
+    fontFamily: '"Fira Sans Condensed", "Fira Sans", "Arial Narrow", sans-serif'
+    fontSize: "26px"
+    fontWeight: 700
+    lineHeight: 1.08
+    letterSpacing: "-0.005em"
   title-flow:
     fontFamily: '"Fira Sans", "Segoe UI", system-ui, sans-serif'
     fontSize: "25px"
     fontWeight: 600
     lineHeight: 1.25
     letterSpacing: "-0.01em"
+  title-page-phone:
+    fontFamily: '"Fira Sans", "Segoe UI", system-ui, sans-serif'
+    fontSize: "24px"
+    fontWeight: 600
+    lineHeight: 1.2
+    letterSpacing: "-0.012em"
   title-script:
     fontFamily: '"Fira Sans", "Segoe UI", system-ui, sans-serif'
     fontSize: "22px"
@@ -74,6 +128,31 @@ typography:
     fontSize: "18px"
     fontWeight: 400
     lineHeight: 1.62
+  verdict:
+    fontFamily: '"Fira Sans", "Segoe UI", system-ui, sans-serif'
+    fontSize: "17px"
+    fontWeight: 400
+    lineHeight: 1.45
+  tweet:
+    fontFamily: '"Fira Sans", "Segoe UI", system-ui, sans-serif'
+    fontSize: "16.5px"
+    fontWeight: 400
+    lineHeight: 1.55
+  lede:
+    fontFamily: '"Fira Sans", "Segoe UI", system-ui, sans-serif'
+    fontSize: "16px"
+    fontWeight: 400
+    lineHeight: 1.55
+  title-card:
+    fontFamily: '"Fira Sans", "Segoe UI", system-ui, sans-serif'
+    fontSize: "16px"
+    fontWeight: 600
+    lineHeight: 1.3
+  body-large:
+    fontFamily: '"Fira Sans", "Segoe UI", system-ui, sans-serif'
+    fontSize: "15.5px"
+    fontWeight: 400
+    lineHeight: 1.5
   body:
     fontFamily: '"Fira Sans", "Segoe UI", system-ui, sans-serif'
     fontSize: "15px"
@@ -84,6 +163,31 @@ typography:
     fontSize: "15px"
     fontWeight: 400
     lineHeight: 1.45
+  body-small:
+    fontFamily: '"Fira Sans", "Segoe UI", system-ui, sans-serif'
+    fontSize: "14.5px"
+    fontWeight: 400
+    lineHeight: 1.5
+  meta:
+    fontFamily: '"Fira Sans", "Segoe UI", system-ui, sans-serif'
+    fontSize: "14px"
+    fontWeight: 400
+    lineHeight: 1.5
+  meta-small:
+    fontFamily: '"Fira Sans", "Segoe UI", system-ui, sans-serif'
+    fontSize: "13.5px"
+    fontWeight: 400
+    lineHeight: 1.5
+  help:
+    fontFamily: '"Fira Sans", "Segoe UI", system-ui, sans-serif'
+    fontSize: "13px"
+    fontWeight: 400
+    lineHeight: 1.5
+  fine:
+    fontFamily: '"Fira Sans", "Segoe UI", system-ui, sans-serif'
+    fontSize: "12.5px"
+    fontWeight: 400
+    lineHeight: 1.5
   label:
     fontFamily: '"Fira Sans Condensed", "Fira Sans", "Arial Narrow", sans-serif'
     fontSize: "12px"
@@ -97,10 +201,17 @@ typography:
     lineHeight: 1
     fontFeature: "'tnum' 1"
 rounded:
+  hairline: "1px"
+  segment: "2px"
+  bar: "3px"
+  tag: "4px"
+  chip-sm: "5px"
   r-sm: "6px"
+  row: "7px"
   shell-item: "8px"
   control: "9px"
   r: "10px"
+  tab: "11px"
   r-lg: "14px"
   pill: "999px"
 spacing:
@@ -174,7 +285,7 @@ components:
     backgroundColor: "{colors.hot}"
     textColor: "{colors.hot-ink}"
   thermal-chip-small:
-    rounded: "5px"
+    rounded: "{rounded.chip-sm}"
     padding: "0 5px"
     height: "22px"
   verdict-reading:
@@ -193,7 +304,7 @@ components:
     padding: "0 12px"
     height: "42px"
   nav-link-active:
-    backgroundColor: "rgba(255, 255, 255, 0.14)"
+    backgroundColor: "{colors.shell-active}"
     textColor: "#FFFFFF"
   toast:
     backgroundColor: "{colors.ink}"
@@ -203,17 +314,17 @@ components:
   match-ok:
     backgroundColor: "{colors.ok-soft}"
     textColor: "{colors.ok}"
-    rounded: "5px"
+    rounded: "{rounded.chip-sm}"
     padding: "4px 7px"
   match-near:
     backgroundColor: "{colors.warn-soft}"
     textColor: "{colors.warn-ink}"
-    rounded: "5px"
+    rounded: "{rounded.chip-sm}"
     padding: "4px 7px"
   match-miss:
     backgroundColor: "{colors.err-soft}"
     textColor: "{colors.err}"
-    rounded: "5px"
+    rounded: "{rounded.chip-sm}"
     padding: "4px 7px"
 ---
 
@@ -227,7 +338,7 @@ Amorce reads like a weather bulletin for content. A score is a forecast, not a g
 
 The frame is a map-blue shell around a cold sky ground by day and a deep-blue night by night; the theme follows the device. Paper-white surfaces sit on the sky as flat tonal layers carrying a hairline shadow. Density is that of a working tool: 40px controls, 8–16px gaps inside groups, 28px between panel columns. The script being read is the largest running text on every screen, because the content is the product. Readings are set in Fira Sans Condensed, with tabular figures on scores, thermal chips and clocks; prose, headings and meta figures are set in Fira Sans.
 
-Motion is a single authored moment per forecast, « le bulletin tombe »: the reading drops in and counts up, the needle slides to its band, the confidence dots light one by one, the factor bars fill. Everything else is quiet: colour and border changes take 140ms on `ease` (200ms for the confidence fill and the rewrite blur); movement (press, toast, chevrons, view entrances, sticky bar) takes 140–260ms on the exponential ease-out cubic-bezier(0.23, 1, 0.32, 1). View changes cross-fade (out 120ms, in 240ms rising 6px). Reduced motion is honoured as less and softer, never as nothing: all CSS animations collapse to 1ms (the busy spinner stops), view transitions are off, view entrances become a 160ms fade, presses don't scale, the sticky bar fades, smooth scrolling jumps, the verdict strip fades 40%→100% over 200ms, and a rewrite only fades the script from 50% to full over 200ms with no count-up.
+Motion is a single authored moment per forecast, « le bulletin tombe »: the reading drops in and counts up, the needle slides to its band, the confidence dots light one by one, the factor bars fill. Before any forecast, the onboarding route traces itself once as it scrolls into view: its stations' text is already in place, only the line between the stations draws, segment after segment, and the final station then fills Warm. Everything else is quiet: colour and border changes take 140ms on `ease` (200ms for the confidence fill and the rewrite blur); movement (press, toast, chevrons, view entrances, sticky bar) takes 140–260ms on the exponential ease-out cubic-bezier(0.23, 1, 0.32, 1). View changes cross-fade (out 120ms, in 240ms rising 6px). Reduced motion is honoured as less and softer, never as nothing: all CSS animations collapse to 1ms (the busy spinner stops), view transitions are off, view entrances become a 160ms fade, presses don't scale, the sticky bar fades, smooth scrolling jumps, the onboarding route is shown already drawn with its Warm final station, the verdict strip fades 40%→100% over 200ms, and a rewrite only fades the script from 50% to full over 200ms with no count-up.
 
 **Key Characteristics:**
 - A five-step thermal scale (cold, mild, tepid, warm, hot) codes every potential value and every band; Warm doubles as the brand's sun.
@@ -267,11 +378,12 @@ Status pairs, each a strong ink on its own soft wash.
 - **Paper Shade** (#F5F8FC): the bulletin's side panel, the open history detail, secondary-button hover.
 - **Paper Wash** (#EDF3FA): skeletons, empty bar tracks, quiet-button hover, stage-direction tags, the pending reading block.
 - **Chart Rule** (#D2DEEC): default 1px borders. **Faint Rule** (#E2EAF4): dividers inside a panel. **Strong Rule** (#9DB6D6): hover borders, the route line, empty chip outlines, dashed provisional borders, the scrollbar thumb.
-- **Deep Ink** (#0D2240): primary text. **Slate Ink** (#3B5373): secondary text, verdict sentence, meta, and any small text on Cold Sky, Paper Wash or the band-tinted verdict strip. **Mist Ink** (#5C7392): tertiary meta and labels on Bulletin Paper and Paper Shade only.
-- **Shell Inks** (#C6D6EB, #8EA8CA): nav text and the dimmer shell labels and status line; **Shell Highlight** (rgba(255, 255, 255, 0.12)) is the shell hover wash. The active nav item takes white at 14% with pure white text.
+- **Deep Ink** (#0D2240): primary text. **Slate Ink** (#3B5373): secondary text, verdict sentence, meta, and any small text on Cold Sky, Paper Wash or the band-tinted verdict strip. **Mist Ink** (#5C7392): tertiary meta and labels on Bulletin Paper and Paper Shade only; it never sets text on Cold Sky, Paper Wash or the verdict strip.
+- **Shell Inks** (#C6D6EB, #8EA8CA): nav text; the dimmer Shell Ink Dim sets the shell labels, the status line and the hollow chip of a recent forecast with no score yet. **Shell Highlight** (rgba(255, 255, 255, 0.12)) is the shell hover wash; **Shell Active** (rgba(255, 255, 255, 0.14)) backs the current nav item, with pure white text.
+- **Status dots** (Ready Green #5BC48F, Error Coral #FF8A80): the shell status line's fixed dots for a ready and a failing connection; a warning takes Mild and the unknown state Shell Ink Dim. They do not change at night, because the shell is always dark.
 
 ### Night
-Under `prefers-color-scheme: dark` every token takes its night value:
+Under `prefers-color-scheme: dark` every token takes its night value, recorded in the frontmatter as the token's `-night` twin (`sky-night`, `act-night`, `ink-3-night`…):
 
 | Token | Night |
 |---|---|
@@ -295,7 +407,7 @@ Under `prefers-color-scheme: dark` every token takes its night value:
 
 **The One Sun Rule.** The only non-data use of a thermal hue is Warm as the brand's sun: the brand mark, the active nav icon, text selection (Warm at 35%), and the final station of the onboarding route, « Le bulletin avant publication ». Every other thermal colour on screen is a score, a band, a trend front, or a warning marker.
 
-**The Night Bulletin Rule.** Every colour token is redefined under `prefers-color-scheme: dark`; night is deep blue, never black. Components reference `var(--token)`, except deliberate fixed values on the always-dark shell (white text, the rgba(255, 255, 255, 0.14) active wash, status dots #5BC48F ready / #FF8A80 error) and the brand mark's #0D2240 « A ». Ticks drawn on Action Blue or Verified Green use a token (Action Ink), never #FFFFFF.
+**The Night Bulletin Rule.** Every colour token is redefined under `prefers-color-scheme: dark` (its `-night` twin); night is deep blue, never black. Components reference `var(--token)`, except deliberate fixed values on the always-dark shell (white text, the Shell Active wash, the Ready Green and Error Coral status dots) and the brand mark's #0D2240 « A ». Ticks are tokens too, never #FFFFFF: Action Ink on the Action Blue check circle, Bulletin Paper on the Verified Green dot of a done run stage.
 
 ## Typography
 
@@ -306,14 +418,18 @@ Under `prefers-color-scheme: dark` every token takes its night value:
 **Character:** Fira's humanist forms in two cuts: the condensed cut reads as the figures printed on a bulletin, the regular cut as the forecaster's prose. Both load from Google Fonts (Fira Sans 400/500/600/700 plus italic 400; Condensed 500/600/700).
 
 ### Hierarchy
-- **Display** (700, 68px, 0.9, -0.02em, tabular): the reading in the verdict's thermometer block. 48px at 640px and below. One per screen.
-- **Headline** (Condensed 700, 34px, 1.08): the band title, « Top 25 % de ta niche ». 26px on phones.
-- **Title, page** (600, 28px, 1.2, -0.012em, balanced): page `h1`. 24px on phones.
+- **Display** (700, 68px, 0.9, -0.02em, tabular): the reading in the verdict's thermometer block. **Display, phone** sets it at 48px at 640px and below. One per screen.
+- **Headline** (Condensed 700, 34px, 1.08): the band title, « Top 25 % de ta niche ». **Headline, phone**: 26px.
+- **Title, page** (600, 28px, 1.2, -0.012em, balanced): page `h1`. **Title, page, phone**: 24px.
 - **Title, flow** (600, 25px, 1.25, -0.01em, balanced): the idea itself, heading the result screen. 22px on phones.
-- **Title, script** (600, 22px, 1.3): the script's own title. Card titles step down from here: angle titles 18px, station and radar-source titles 16px, all 600 at 1.3.
+- **Title, script** (600, 22px, 1.3): the script's own title, which opens the script above its meta line (always on YouTube, and on any platform whose text does not already begin with it). Angle titles step down to 18px.
+- **Title, card** (600, 16px, 1.3): onboarding station titles and Radar source titles.
 - **Title, section** (600, 19px, 1.3): section heads such as « Comment Amorce prévoit », the running-forecast title and empty-state headings.
-- **Script** (400, 18px, 1.62, max 66ch): the script to publish. 16.5px on phones; X threads set each tweet at 16.5px/1.55 within 64ch. The verdict sentence is 17px/1.45 within 52ch and the page lede 16px/1.55 within 64ch.
-- **Body** (400, 15px, 1.5): interface text. Meta lines run 12.5–14.5px.
+- **Script** (400, 18px, 1.62, max 66ch): the script to publish. 16.5px on phones.
+- **Verdict** (400, 17px, 1.45, max 52ch): the verdict sentence. 15.5px on phones.
+- **Tweet** (400, 16.5px, 1.55, max 64ch): each tweet of an X thread.
+- **Lede** (400, 16px, 1.55, max 64ch): the page lede under an `h1`; the Radar search field also sets its query at 16px.
+- **Body** (400, 15px, 1.5): interface text. Secondary steps carry the meta, each a half step apart: **Body, large** (15.5px: the large button, the Reels caption, the history idea, the verdict sentence on phones), **Body, small** (14.5px: buttons, station text, improvements, alerts, trend-front titles in 600), **Meta** (14px: the flow meta line, factor rows, notices, the toast), **Meta, small** (13.5px: recents, the script meta line, the verdict's meta rows, field errors, suggestion chips), **Help** (13px: help text, the « relevé à venir » link, the tabs hint, history sub-lines) and **Fine** (12.5px: route labels, the status line, side notes, signal counts), with source names and tweet lengths at 12px. These steps keep the body's 1.5 leading; the few that set their own are trend-front reasons (13.5px/1.45), format flags and the empty recents line (13px/1.45), side notes (12.5px/1.45) and the status line (12.5px/1.35), while a signal count inside a Radar row follows the row's 1.4.
 - **Field** (400, 15px, 1.45): text inputs, textareas and selects; the idea field is set at 18px/1.5.
 - **Label** (Condensed 600, 12px, 1.2, 0.08em, uppercase, Mist Ink on paper, Slate Ink on the band-tinted verdict strip): names the thing directly next to it — form field labels, in-panel data labels (« Échelle de potentiel », « Indice de confiance », « Prévu · relevé »), the side panel's group heads (« Facteurs », « 3 améliorations », 12.5px in Slate Ink), the shell's « Récents » (Shell Ink Dim #8EA8CA). Small uppercase tags (10.5–11.5px, 0.06–0.08em) reuse the same voice: « Exemple », match badges, « Priorité », « Réécrit ».
 - **Numeral** (Condensed 700, 15px, 1, tabular): thermal chips (13px in the small chip). Clocks use Condensed 600 at 30px (running forecast) and 18px (judging).
@@ -358,7 +474,7 @@ Flat tonal layering with a hairline shadow. Depth comes from the sky-to-paper ra
 
 ## Shapes
 
-Gently rounded instrument shapes on a 1px line. Large containers (cards, the bulletin, the reading block) take 14px; alerts, the large button and the toast 10px; buttons and inputs 9px; shell items and the brand mark 8px; thermal chips and skeletons 6px; small tags 4–5px. Pills (999px) are for platform chips, suggestion chips and the trend pill in the flow head. Every dot is a true circle: status, stations, confidence, the observed-reading ring, the numbered improvement counters. Borders are always 1px; the band scale's segments are 8px bars at 2px radius with 3px gaps.
+Gently rounded instrument shapes on a 1px line, on a scale that steps down with the size of the thing. Large containers (cards, the bulletin, the reading block) take 14px; the platform tabs' top corners 11px; alerts, the large button and the toast 10px; buttons and inputs 9px; shell items and the brand mark 8px; factor rows and the sticky bar's score buttons 7px; thermal chips, skeletons and the skip link 6px; the small thermal chip, match badges, the « relevé à venir » link and keyboard keys 5px; tags, stage directions and focus outlines 4px; value bars (factor, fit and calibration bars) 3px; the band scale's segments, 8px bars with 3px gaps, 2px; the needle's tick 1px. Pills (999px) are for platform chips, suggestion chips and the trend pill in the flow head. Every dot is a true circle: status, stations, confidence, the observed-reading ring, the numbered improvement counters. Borders are always 1px.
 
 ### Named Rules
 **The Attached Tab Rule.** The bulletin's top-left corner is square (0 14px 14px 14px) so the selected platform tab, with 11px top corners, no bottom border and a 1px overlap, reads as one sheet with it.
@@ -377,13 +493,13 @@ Compact and plain-spoken: the label names the action.
 - **Réécrire:** the side panel's rewrite button runs full width at 46px.
 
 ### Chips
-- **Platform toggle:** 42px pill, paper fill, 1px Chart Rule border, Slate Ink 500, platform icon and a 16px check circle (inset Strong Rule ring). Checked: Action Blue border, Action Wash fill, Deep Ink text, the circle filled Action Blue with an Action Ink tick. Keyboard focus outlines the pill.
+- **Platform toggle:** 42px pill, paper fill, 1px Chart Rule border, Slate Ink 500, platform icon and a 16px check circle (inset Strong Rule ring). Hover takes a Strong Rule border. Checked: Action Blue border, Action Wash fill, Deep Ink text, the circle filled Action Blue with an Action Ink tick. Keyboard focus outlines the pill.
 - **Suggestion chip:** 32px pill, paper, Chart Rule border, 13.5px; hover turns border and text Action Blue.
 - **Tags:** the angle tag (« Angle actuel », « Le plus porté ») is condensed 11px uppercase Action Blue on Action Wash (4px); match badges pair each status ink with its wash (5px).
 
 ### Cards / Containers
 - **Corner Style:** 14px.
-- **Background:** Bulletin Paper on the sky. Nothing inside a card is a card: trend fronts and tweets sit on the parent surface as rows divided by a 1px Faint Rule, with no fill, border, radius or shadow of their own.
+- **Background:** Bulletin Paper on the sky. Lists inside a card are not cards: trend fronts, tweets and Radar items sit on the parent surface as ruled rows, with no fill, border, radius or shadow of their own. Inside the bulletin only the weakest factor's row is raised on paper (7px radius, inset Chart Rule ring, no shadow): an emphasised list row, not a card. Each trend front opens with a 1px Faint Rule (12px above and below its text), which also rules the list off from the panel head in every column; tweets and Radar items are divided by the same rule, the first one without it.
 - **Shadow Strategy:** hairline rest; lift on hover only for interactive angle cards (see Elevation & Depth).
 - **Border:** 1px Chart Rule.
 - **Internal Padding:** 18–28px (brief and settings 24px, trend panel 20px × 24px, running forecast 26px × 28px, Radar source cards 18px × 20px, system card 22px × 24px); the empty state uses 40px × 28px and the search card a tight 8px 8px 8px 16px.
@@ -394,33 +510,35 @@ Compact and plain-spoken: the label names the action.
 - **Error / Disabled:** an invalid field takes an Alert Red border and a 13.5px Alert Red message below, naming the fix (« Écris ton idée pour lancer la prévision. »). Help text is 13px Mist Ink. Selects draw their own chevron from two 1.75px Slate Ink strokes.
 
 ### Navigation
-- **Shell:** the map-blue sidebar (22px top, 14px sides, 18px bottom padding; 28px between groups). The brand mark is a 30px Warm square at 8px radius holding a condensed 700 17px « A » in a fixed #0D2240 (it does not follow the night Thermal Ink #06101F), beside the 19px/600 name. Nav links are 42px, 8px radius, Shell Ink 500 with 18px stroke icons; hover takes the Shell Highlight and white text; the current page takes white at 14%, white text and a Warm icon. Recent forecasts list at 13.5px; a status line closes the column with an 8px dot (green ready, Mild warning, red error).
+- **Shell:** the map-blue sidebar (22px top, 14px sides, 18px bottom padding; 28px between groups). The brand mark is a 30px Warm square at 8px radius holding a condensed 700 17px « A » in a fixed #0D2240 (it does not follow the night Thermal Ink #06101F), beside the 19px/600 name. Nav links are 42px, 8px radius, Shell Ink 500 with 18px stroke icons; hover takes the Shell Highlight and white text; the current page takes the Shell Active wash, white text and a Warm icon. Recent forecasts list at 13.5px, each with its small thermal chip; a forecast with no score yet shows the hollow chip with its ring and « — » in Shell Ink Dim. A status line closes the column in Shell Ink Dim 12.5px with an 8px dot (Ready Green, Mild warning, Error Coral; Shell Ink Dim while unknown).
 - **Mobile:** at 960px the shell becomes a sticky top bar and recents hide; at 640px nav links drop their text.
 - **Platform tabs:** 48px tabs (platform icon, name, small thermal chip), Slate Ink 500 at rest, half-paper hover. The selected tab is paper, Deep Ink 600, 49px tall and joins the bulletin (The Attached Tab Rule). Arrow keys, Home and End move between tabs.
 - **Sticky action bar:** slides down from the top (260ms) once the bulletin's head scrolls away, carrying the idea title, a per-platform score switch (small thermal chips) and « Copier » and « Réécrire »; under reduced motion it fades instead.
 
 ### Thermal Chip
-The smallest reading. 26px tall, at least 34px wide, 6px radius, condensed 700 15px tabular figure on a fill equal to the value's own heat, in Thermal Ink (Hot Ink on hot). The small chip is 22px tall, 13px, 5px radius. With no score yet it is hollow: transparent, an inset Strong Rule ring and « — » in Mist Ink. Bars that show a value (factor bars, angle fit bars) are filled with the same heat.
+The smallest reading. 26px tall, at least 34px wide, 6px radius, condensed 700 15px tabular figure on a fill equal to the value's own heat, in Thermal Ink (Hot Ink on hot). The small chip is 22px tall, 13px, 5px radius. With no score yet it is hollow: transparent, an inset Strong Rule ring and « — » in Mist Ink; on the shell (recents) the ring and the dash take Shell Ink Dim. In a platform tab and in the sticky-bar scores the dash takes Slate Ink over a Mist Ink ring, since those sit on Cold Sky or Paper Wash. Bars that show a value (factor bars, angle fit bars) are filled with the same heat.
 
 ### Bulletin Verdict Band
 The signature. A full-width strip tinted with its band (The Thermal Scale Rule), in three parts:
-- **Reading block:** 124px × 116px at 14px radius, filled with the score's heat; the Display numeral over « / 100 » in condensed 600 12px in the block's own ink (Thermal Ink, Hot Ink on hot). Pending, it turns to Paper Wash with an inset Chart Rule ring, a « — » and « à évaluer » or « en cours » in Slate Ink.
-- **Verdict:** the band title (Headline) over the verdict sentence (17px Slate Ink; its lead clause, up to the first « : », « ; » or dash, in Deep Ink 500 when that clause runs 8 to 90 characters).
-- **Meta column** (left rule in the band at 26%, 28px padding, 16px gaps): the « Échelle de potentiel » — four 8px segments in the band colours at 50% opacity, the current one at full, a Deep Ink needle (triangle plus 2px stem) above it, the observed reading as a hollow ring on the track, condensed 12px labels in Slate Ink with the current band in Deep Ink 700; the « Indice de confiance »; and the « Prévu · relevé » row — predicted band, a 14px arrow stroke icon in Mist Ink, then the observed band with its match badge, or a dashed « relevé à venir » link in Slate Ink to the history.
+- **Reading block:** 124px × 116px at 14px radius, filled with the score's heat; the Display numeral over « / 100 » in condensed 600 12px, both at full strength in the block's own ink (Thermal Ink, Hot Ink on hot). Pending, it turns to Paper Wash with an inset Chart Rule ring, and its « — » and « à évaluer » or « en cours » are Slate Ink.
+- **Verdict:** the band title (Headline) over the verdict sentence (Verdict, Slate Ink; its lead clause, up to the first « : », « ; » or dash, in Deep Ink 500 when that clause runs 8 to 90 characters). While the forecast is judged, a clock line follows the sentence: « Temps écoulé » at 13.5px in Slate Ink, beside the elapsed time in condensed 600 18px Deep Ink.
+- **Evaluation prompt:** when a platform is neither judged nor being judged, the strip closes with a prompt spanning the verdict and meta columns: a ruled row, 14px above it, under a 1px rule in the band mix (no fill, border box or radius), holding a 14px Slate Ink sentence and the primary « Lancer l'évaluation » (« Relancer l'évaluation » after a failure, announced as an alert).
+- **Meta column** (left rule in the band at 26%, 28px padding, 16px gaps): the « Échelle de potentiel » — four 8px segments in the band colours at 50% opacity, the current one at full; above the current segment the Deep Ink needle, an 8px-tall, 12px-wide triangle cut with clip-path over a 2px × 14px tick; the observed reading as a hollow 10px ring (paper fill, 2px Deep Ink) centred on its own segment; condensed 12px scale labels with the current band in Deep Ink 700. Then the « Indice de confiance », and the « Prévu · relevé » row: the predicted band, the 14px arrow icon in Slate Ink, then the observed band led by the same hollow ring as its legend key and followed by its match badge, or a dashed « relevé à venir » link to the history. Every text inside the strip (labels, scale labels, the link, the judging clock) is Slate Ink, never Mist Ink.
+- **Script head:** the script opens with its own title when it has one (Title, script); below it, a sentence-case meta line (Meta, small, Slate Ink, tabular figures) — « Prêt à publier » in Deep Ink 600, the measure (characters, seconds of voice-over, tweets or minutes of video), and after a rewrite the « Réécrit » stamp (condensed 600 11.5px uppercase, Verified Green, with a tick) — sits beside the secondary « Copier » button. No uppercase label heads the script.
 - **Below the strip:** the script on the left (22px × 32px × 28px × 28px padding) and the diagnostic side panel on the right (Paper Shade, Faint Rule left border): factor rows 32px tall (name, 5px heat bar, small thermal chip) with the lowest-scoring factor (first on ties) raised on paper with a « Priorité » tag, only when that score is below 80; its note stays visible as one clamped line; then three numbered improvements, then « Réécrire ».
-- **Motion, « le bulletin tombe »:** once per forecast the reading drops from 12px above at 96% scale (460ms) and counts up from 0 (900ms); band title and verdict rise in at 180ms and 260ms; the needle slides to its band (720ms, ease-in-out, from 240ms); confidence dots pop in from 480ms, 90ms apart; factor bars grow from the left (560ms, from 320ms, 60ms apart); improvements rise from 640ms; the tab chips pop from 200ms. Under reduced motion the whole strip simply fades from 40% to full over 200ms. A rewrite blurs the script (2px, 50% opacity) while it works, then clears over 260ms while the numeral counts from the old score to the new one; under reduced motion the script only fades from 50% to full over 200ms, with no count-up.
+- **Motion, « le bulletin tombe »:** once per forecast the reading drops from 12px above at 96% scale (460ms) and counts up from 0 (900ms); band title and verdict rise in at 180ms and 260ms; the needle slides to its band (720ms, ease-in-out, from 240ms); confidence dots pop in from 480ms, 90ms apart; factor bars grow from the left (560ms, from 320ms, 60ms apart); improvements rise from 640ms; the tab chips pop from 200ms. Under reduced motion the whole strip simply fades from 40% to full over 200ms. A rewrite blurs the script (2px, 50% opacity) while it works, then clears over 260ms while the numeral counts from the old score to the new one (700ms), the factor bars regrow from 60% and the « Réécrit » stamp rises 4px into the meta line; under reduced motion the script only fades from 50% to full over 200ms, with no count-up.
 
 ### Confidence Index
 Five 10px dots, 4px apart, each an inset 1.5px Action Blue ring, filled Action Blue up to the level, followed by « n/5 » and the level word. « faible » fills 2, « moyenne » 3, « haute » 4; the fifth dot is never filled.
 
 ### Calibration Meter
-The history's measure of how often forecasts held: ten 10px × 26px bars at 3px radius with 3px gaps, Paper Wash when empty and Action Blue when filled. It fills round(adjacent % / 10) bars, the share of readings within one band of the forecast, and none until a first reading exists.
+The history's measure of how often forecasts held: ten 10px × 26px bars at 3px radius with 3px gaps, Paper Wash when empty and Action Blue when filled. It fills round(adjacent % / 10) bars, the share of readings within one band of the forecast, and none until a first reading exists. Below it, each history row lists its platforms as name and small thermal chip and, once a reading exists, the same 14px Slate Ink arrow icon leading to the observed band.
 
 ### Warm-Front Glyph
 The cartographic symbol for a warm front: a 34px × 14px line in Hot (1.7px, round caps) carrying three filled Hot semicircles; 24px × 10px inside live signals. It marks retained trends and live signals: the trend fronts, the live signals while a forecast runs, and the trend pill in the result header. Raw signal lists and Radar results are plain rows without it.
 
 ### Route Stepper
-The forecast's itinerary (The Route Rule) at the right of the flow head, on the Cold Sky ground: five stations, Idée · Tendances · Angle · Scripts · Prévision, 76px per station, 12px dots, 12.5px labels in Slate Ink (6.84:1 on Cold Sky) and Deep Ink 600 for the current step. The current station is the first not done (Prévision once all are done). Pending dots are Cold Sky with a 2px Strong Rule ring; the current pending dot is paper with a 2px Action Blue ring plus the 4px 18% halo; done dots fill Action Blue, and a current done dot keeps the halo. On phones the stations shrink to 26px, their labels move off-screen for assistive tech only, and the current step is named beside the line as « n/5 · Station » (13px Deep Ink 600). On the onboarding route the dots are 14px Cold Sky with a 2.5px Action Blue ring, the last filled Warm; its first segment is a 2px Hot line carrying 4px Hot semicircles every 14px, a plain 2px Hot line at 640px and below. Running stages use the same grammar vertically: 18px dots, Verified Green with a tick when done, an Action Blue ring with a centre dot while active.
+The forecast's itinerary (The Route Rule) at the right of the flow head, on the Cold Sky ground: five stations, Idée · Tendances · Angle · Scripts · Prévision, 76px per station, 12px dots, 12.5px labels in Slate Ink (6.84:1 on Cold Sky) and Deep Ink 600 for the current step. The current station is the first not done (Prévision once all are done). Pending dots are Cold Sky with a 2px Strong Rule ring; the current pending dot is paper with a 2px Action Blue ring plus the 4px 18% halo; done dots fill Action Blue, and a current done dot keeps the halo. On phones the stations shrink to 26px, their labels move off-screen for assistive tech only, and the current step is named beside the line as « n/5 · Station » (13px Deep Ink 600). On the onboarding route the dots are 14px Cold Sky with a 2.5px Action Blue ring, the last ringed and filled Warm; its first segment is a 2px Hot line carrying 4px Hot semicircles every 14px, a plain 2px Hot line at 640px and below. The onboarding text is always visible: when the route scrolls into view (once), only its segments draw, each scaling out from its left end over 640ms on the ease-out, 160ms after the one before (down from the top on phones, where the line is vertical), and the final station, held at Cold Sky inside its Warm ring until then, fills Warm over 200ms, 360ms after its turn in the stagger. Under reduced motion the route is shown fully drawn with its Warm final station. Running stages use the same grammar vertically: 18px dots, Verified Green with a Bulletin Paper tick when done, an Action Blue ring with a centre dot while active.
 
 ### Feedback
 - **Alert:** Alert Red on its wash, a 1px Alert Red border at 30%, 10px radius, icon at left, title in 600 and a recovery action below.
@@ -437,17 +555,18 @@ The forecast's itinerary (The Route Rule) at the right of the flow head, on the 
 - **Do** pair every forecast with its observed reading: a hollow ring on the band scale once entered, a dashed « relevé à venir » until then.
 - **Do** mark retained trends and live signals with the warm-front glyph in Hot.
 - **Do** draw step progress as a route line with stations (2px line, 12–14px dots, Action Blue when done).
-- **Do** use `var(--token)` for every colour so the night bulletin follows the device; the shell's fixed whites and status dots and the brand mark's « A » are the only literals, and a tick on Action Blue or Verified Green takes Action Ink, never #FFFFFF.
+- **Do** use `var(--token)` for every colour so the night bulletin follows the device; the shell's fixed whites, Shell Active wash and status dots and the brand mark's « A » are the only literals, and ticks take a token, never #FFFFFF (Action Ink on Action Blue, Bulletin Paper on Verified Green).
 - **Do** set every reading in Fira Sans Condensed with tabular figures on scores, chips and clocks, and give meta figures that change or line up (calibration %, tweet length, script measure, signal counts) tabular-nums.
-- **Do** keep Mist Ink (#5C7392) for text on Bulletin Paper and Paper Shade only (4.86:1, 4.56:1); on Cold Sky (4.23:1), Paper Wash (4.35:1) and the band-tinted verdict strip (4.13:1 on Top 10 %) use Slate Ink.
-- **Do** keep « le bulletin tombe » as the one authored motion moment, and give reduced motion a short fade rather than nothing.
+- **Do** keep Mist Ink (#5C7392) for text on Bulletin Paper and Paper Shade (4.86:1, 4.56:1); on Cold Sky (4.23:1), Paper Wash (4.35:1) and the band-tinted verdict strip (4.13:1 on Top 10 %) use Slate Ink, and on the shell use Shell Ink Dim.
+- **Do** keep « le bulletin tombe » as the one authored moment of a forecast; on the onboarding route only the line draws on scroll, over text that is already there; give reduced motion a short fade or the finished drawing rather than nothing.
 
 ### Don't:
 - **Don't** paint a score, band or bar with a colour its value did not earn, and don't use a thermal hue on chrome beyond Warm's brand uses and the warning markers (the Mild status dot, Tepid flag bullets and the Tepid notice border).
 - **Don't** fill the fifth confidence dot or present a score as a promise of views.
 - **Don't** reach for violet gradients, sparkles or a grey gauge dial: the instruments are the thermometer, the band scale and the front.
-- **Don't** put an uppercase label above a heading as a kicker or eyebrow; a heading stands on its own.
+- **Don't** put an uppercase label above a heading or a script as a kicker or eyebrow; a heading stands on its own, and a script's state is a sentence-case meta line below its title.
+- **Don't** nest a card in a card: trend fronts, tweets and Radar items are rows ruled by a 1px Faint Rule. Inside the bulletin only the weakest factor's row is raised on paper, as an emphasised row without shadow; the evaluation prompt is a ruled row.
 - **Don't** render step progress as a progress bar or a ring.
-- **Don't** use Unicode characters or emoji as icons; interface icons are 24px-grid SVG strokes at 1.75px with round caps and joins (ticks inside 16–18px check circles at 3), and the cartographic warm-front glyph is the one authored symbol on its own 34 × 14 grid.
+- **Don't** use Unicode characters or emoji as icons, « → » included: the « Prévu · relevé » connector is the arrow icon. Interface icons are 24px-grid SVG strokes at 1.75px with round caps and joins (ticks inside 16–18px check circles at 3), and the cartographic warm-front glyph is the one authored symbol on its own 34 × 14 grid.
 - **Don't** make night black; it is deep blue.
 - **Don't** give a surface a resting lift or a hard offset shadow; depth is tonal, shadows are offset and soft.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-15T22:22:56+00:00",
+  "generatedAt": "2026-10-15T23:06:45+00:00",
   "title": "Design System: Amorce",
   "extensions": {
     "colorMeta": {
@@ -8,7 +8,7 @@
         "role": "primary",
         "displayName": "Map Blue",
         "canonical": "#0C315C",
-        "night": "#11294A",
+        "nightToken": "shell-night",
         "purpose": "Sidebar shell and mobile top bar; browser theme-color.",
         "oklch": "oklch(31.4% 0.087 254.9)",
         "tonalRamp": [
@@ -26,7 +26,7 @@
         "role": "primary",
         "displayName": "Action Blue",
         "canonical": "#1C57B0",
-        "night": "#4A86E8",
+        "nightToken": "act-night",
         "purpose": "Actions and the forecast's instruments: buttons, links, caret, focus, confidence dots, route progress, calibration.",
         "oklch": "oklch(47.2% 0.154 259.0)",
         "tonalRamp": [
@@ -44,7 +44,7 @@
         "role": "primary",
         "displayName": "Action Blue Deep",
         "canonical": "#174A97",
-        "night": "#6698EC",
+        "nightToken": "act-hover-night",
         "purpose": "Hover state of Action Blue fills.",
         "oklch": "oklch(42.2% 0.137 259.0)",
         "tonalRamp": [
@@ -62,7 +62,7 @@
         "role": "primary",
         "displayName": "Action Wash",
         "canonical": "#E3ECF9",
-        "night": "#16325A",
+        "nightToken": "act-soft-night",
         "purpose": "Selected platform chip fill, angle tags.",
         "oklch": "oklch(94.0% 0.020 257.5)",
         "tonalRamp": [
@@ -80,8 +80,8 @@
         "role": "primary",
         "displayName": "Action Ink",
         "canonical": "#FFFFFF",
-        "night": "#06101F",
-        "purpose": "Text on Action Blue (primary buttons, skip link); by rule also ticks on Action Blue or Verified Green, though the shipped platform-chip and run-stage ticks are still a literal #fff that stays white at night.",
+        "nightToken": "act-ink-night",
+        "purpose": "Text on Action Blue (primary buttons, skip link) and the tick in the checked platform chip's Action Blue circle.",
         "oklch": "oklch(100.0% 0.000 89.9)",
         "tonalRamp": [
           "#0B0B0B",
@@ -98,7 +98,7 @@
         "role": "secondary",
         "displayName": "Cold",
         "canonical": "#7FAAE6",
-        "night": "#86AFEA",
+        "nightToken": "cold-night",
         "purpose": "Thermal scale: scores below 40; band Bas 50 %.",
         "oklch": "oklch(73.0% 0.099 256.8)",
         "tonalRamp": [
@@ -116,7 +116,7 @@
         "role": "secondary",
         "displayName": "Mild",
         "canonical": "#F2C845",
-        "night": "#F2CD55",
+        "nightToken": "mild-night",
         "purpose": "Thermal scale: scores 40-59; band Top 50 %; shell warning dot.",
         "oklch": "oklch(84.7% 0.150 90.6)",
         "tonalRamp": [
@@ -134,7 +134,7 @@
         "role": "secondary",
         "displayName": "Tepid",
         "canonical": "#F5A630",
-        "night": "#F5AE42",
+        "nightToken": "tepid-night",
         "purpose": "Thermal scale: scores 60-74; format-flag bullets, notice border tint.",
         "oklch": "oklch(78.4% 0.154 71.6)",
         "tonalRamp": [
@@ -152,7 +152,7 @@
         "role": "secondary",
         "displayName": "Warm",
         "canonical": "#F08A24",
-        "night": "#F3953A",
+        "nightToken": "warm-night",
         "purpose": "Thermal scale: scores 75-84; band Top 25 %; the brand's sun (brand mark, active nav icon, selection, onboarding final station).",
         "oklch": "oklch(72.9% 0.162 58.8)",
         "tonalRamp": [
@@ -170,7 +170,7 @@
         "role": "secondary",
         "displayName": "Hot",
         "canonical": "#CC3A22",
-        "night": "#E5583F",
+        "nightToken": "hot-night",
         "purpose": "Thermal scale: scores 85+; band Top 10 %; warm-front glyph.",
         "oklch": "oklch(56.4% 0.187 32.0)",
         "tonalRamp": [
@@ -188,7 +188,7 @@
         "role": "secondary",
         "displayName": "Thermal Ink",
         "canonical": "#0D2240",
-        "night": "#06101F",
+        "nightToken": "thermal-ink-night",
         "purpose": "Text on cold, mild, tepid and warm fills.",
         "oklch": "oklch(25.3% 0.063 257.6)",
         "tonalRamp": [
@@ -206,7 +206,7 @@
         "role": "secondary",
         "displayName": "Hot Ink",
         "canonical": "#FFFFFF",
-        "night": "#06101F",
+        "nightToken": "hot-ink-night",
         "purpose": "Text on hot fills (white by day, dark ink at night).",
         "oklch": "oklch(100.0% 0.000 89.9)",
         "tonalRamp": [
@@ -224,8 +224,8 @@
         "role": "tertiary",
         "displayName": "Verified Green",
         "canonical": "#1F7A4D",
-        "night": "#5BC48F",
-        "purpose": "Matched forecast, saved, format OK, done run stages, Réécrit stamp.",
+        "nightToken": "ok-night",
+        "purpose": "Matched forecast, saved, format OK, done run stages (with a Bulletin Paper tick), Réécrit stamp.",
         "oklch": "oklch(51.5% 0.110 156.8)",
         "tonalRamp": [
           "#000F05",
@@ -242,7 +242,7 @@
         "role": "tertiary",
         "displayName": "Verified Wash",
         "canonical": "#E2F3EA",
-        "night": "#10331F",
+        "nightToken": "ok-soft-night",
         "purpose": "Background of the Juste match badge.",
         "oklch": "oklch(94.9% 0.022 163.1)",
         "tonalRamp": [
@@ -260,7 +260,7 @@
         "role": "tertiary",
         "displayName": "Rust Ink",
         "canonical": "#8A4210",
-        "night": "#F7B977",
+        "nightToken": "warn-ink-night",
         "purpose": "One band off, notices, format flags, Priorité tag.",
         "oklch": "oklch(46.4% 0.114 49.7)",
         "tonalRamp": [
@@ -278,7 +278,7 @@
         "role": "tertiary",
         "displayName": "Rust Wash",
         "canonical": "#FDF0E1",
-        "night": "#3A2412",
+        "nightToken": "warn-soft-night",
         "purpose": "Notice and near-match backgrounds.",
         "oklch": "oklch(96.1% 0.024 71.5)",
         "tonalRamp": [
@@ -296,7 +296,7 @@
         "role": "tertiary",
         "displayName": "Alert Red",
         "canonical": "#B42318",
-        "night": "#FF8A80",
+        "nightToken": "err-night",
         "purpose": "Field errors, alerts, band misses, over-length tweets.",
         "oklch": "oklch(50.0% 0.182 29.5)",
         "tonalRamp": [
@@ -314,7 +314,7 @@
         "role": "tertiary",
         "displayName": "Alert Wash",
         "canonical": "#FDECEA",
-        "night": "#3A1614",
+        "nightToken": "err-soft-night",
         "purpose": "Alert and miss backgrounds.",
         "oklch": "oklch(95.6% 0.019 25.6)",
         "tonalRamp": [
@@ -332,7 +332,7 @@
         "role": "neutral",
         "displayName": "Cold Sky",
         "canonical": "#E8F0FA",
-        "night": "#0A1628",
+        "nightToken": "sky-night",
         "purpose": "Page ground; deep navy at night.",
         "oklch": "oklch(95.2% 0.016 253.9)",
         "tonalRamp": [
@@ -350,8 +350,8 @@
         "role": "neutral",
         "displayName": "Bulletin Paper",
         "canonical": "#FFFFFF",
-        "night": "#10213A",
-        "purpose": "Cards, bulletin, inputs, secondary buttons.",
+        "nightToken": "surface-night",
+        "purpose": "Cards, bulletin, inputs, secondary buttons; the tick on a done run stage's Verified Green dot.",
         "oklch": "oklch(100.0% 0.000 89.9)",
         "tonalRamp": [
           "#0B0B0B",
@@ -368,7 +368,7 @@
         "role": "neutral",
         "displayName": "Paper Shade",
         "canonical": "#F5F8FC",
-        "night": "#0D1C33",
+        "nightToken": "surface-2-night",
         "purpose": "Side panel, open history detail, secondary-button hover.",
         "oklch": "oklch(97.8% 0.006 255.5)",
         "tonalRamp": [
@@ -386,7 +386,7 @@
         "role": "neutral",
         "displayName": "Paper Wash",
         "canonical": "#EDF3FA",
-        "night": "#13284A",
+        "nightToken": "surface-3-night",
         "purpose": "Skeletons, empty tracks, quiet hover, pending reading.",
         "oklch": "oklch(96.2% 0.011 252.1)",
         "tonalRamp": [
@@ -404,7 +404,7 @@
         "role": "neutral",
         "displayName": "Chart Rule",
         "canonical": "#D2DEEC",
-        "night": "#22395B",
+        "nightToken": "line-night",
         "purpose": "Default 1px borders.",
         "oklch": "oklch(89.6% 0.023 252.2)",
         "tonalRamp": [
@@ -422,7 +422,7 @@
         "role": "neutral",
         "displayName": "Faint Rule",
         "canonical": "#E2EAF4",
-        "night": "#1A2F4E",
+        "nightToken": "line-2-night",
         "purpose": "Dividers inside a panel.",
         "oklch": "oklch(93.4% 0.016 253.9)",
         "tonalRamp": [
@@ -440,7 +440,7 @@
         "role": "neutral",
         "displayName": "Strong Rule",
         "canonical": "#9DB6D6",
-        "night": "#3C5C86",
+        "nightToken": "line-strong-night",
         "purpose": "Hover borders, route line, empty chip outlines, dashed provisional borders, scrollbar thumb.",
         "oklch": "oklch(76.8% 0.054 254.7)",
         "tonalRamp": [
@@ -458,7 +458,7 @@
         "role": "neutral",
         "displayName": "Deep Ink",
         "canonical": "#0D2240",
-        "night": "#E7EEF8",
+        "nightToken": "ink-night",
         "purpose": "Primary text.",
         "oklch": "oklch(25.3% 0.063 257.6)",
         "tonalRamp": [
@@ -476,7 +476,7 @@
         "role": "neutral",
         "displayName": "Slate Ink",
         "canonical": "#3B5373",
-        "night": "#AEC1DB",
+        "nightToken": "ink-2-night",
         "purpose": "Secondary text, verdict sentence, meta; small text on Cold Sky, Paper Wash and the band-tinted verdict strip.",
         "oklch": "oklch(43.7% 0.061 255.9)",
         "tonalRamp": [
@@ -494,8 +494,8 @@
         "role": "neutral",
         "displayName": "Mist Ink",
         "canonical": "#5C7392",
-        "night": "#8BA2C2",
-        "purpose": "Tertiary meta and labels on Bulletin Paper and Paper Shade only (not on Cold Sky, Paper Wash or the band-tinted verdict strip).",
+        "nightToken": "ink-3-night",
+        "purpose": "Tertiary meta and labels on Bulletin Paper and Paper Shade. Never on Cold Sky, Paper Wash or the verdict strip. Elsewhere on Cold Sky, Paper Wash and the band-tinted strip Slate Ink takes its place, and Shell Ink Dim on the shell.",
         "oklch": "oklch(54.9% 0.056 256.0)",
         "tonalRamp": [
           "#000A20",
@@ -512,7 +512,7 @@
         "role": "neutral",
         "displayName": "Shell Ink",
         "canonical": "#C6D6EB",
-        "night": "#B9CBE4",
+        "nightToken": "ink-on-shell-night",
         "purpose": "Nav text on Map Blue.",
         "oklch": "oklch(87.1% 0.034 255.2)",
         "tonalRamp": [
@@ -530,8 +530,8 @@
         "role": "neutral",
         "displayName": "Shell Ink Dim",
         "canonical": "#8EA8CA",
-        "night": "#7F98BA",
-        "purpose": "Shell labels and status line.",
+        "nightToken": "ink-on-shell-2-night",
+        "purpose": "Shell labels, the status line and the hollow chip of a recent forecast with no score.",
         "oklch": "oklch(72.4% 0.058 255.3)",
         "tonalRamp": [
           "#000B1F",
@@ -548,8 +548,615 @@
         "role": "neutral",
         "displayName": "Shell Highlight",
         "canonical": "rgba(255, 255, 255, 0.12)",
-        "night": "rgba(255, 255, 255, 0.08)",
+        "nightToken": "shell-hi-night",
         "purpose": "Hover wash on shell items.",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "shell-active": {
+        "role": "neutral",
+        "displayName": "Shell Active",
+        "canonical": "rgba(255, 255, 255, 0.14)",
+        "purpose": "Wash behind the current nav item on the shell; fixed by day and night.",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "status-ready": {
+        "role": "tertiary",
+        "displayName": "Ready Green",
+        "canonical": "#5BC48F",
+        "purpose": "Shell status dot when the connection is ready; fixed, the shell is always dark.",
+        "oklch": "oklch(74.4% 0.125 159.1)",
+        "tonalRamp": [
+          "#000F06",
+          "#002E1A",
+          "#004F31",
+          "#007449",
+          "#289966",
+          "#53BD88",
+          "#7AE2AC",
+          "#C3FFDC"
+        ]
+      },
+      "status-error": {
+        "role": "tertiary",
+        "displayName": "Error Coral",
+        "canonical": "#FF8A80",
+        "purpose": "Shell status dot when the connection fails; fixed, the shell is always dark.",
+        "oklch": "oklch(75.9% 0.144 26.1)",
+        "tonalRamp": [
+          "#1F0001",
+          "#4D0004",
+          "#7D0E13",
+          "#A33733",
+          "#CA5B53",
+          "#F27E75",
+          "#FFB3AA",
+          "#FFE9E6"
+        ]
+      },
+      "shell-night": {
+        "role": "primary",
+        "displayName": "Map Blue, night",
+        "canonical": "#11294A",
+        "dayToken": "shell",
+        "purpose": "Night value of Map Blue under prefers-color-scheme: dark.",
+        "oklch": "oklch(28.1% 0.068 257.0)",
+        "tonalRamp": [
+          "#000A21",
+          "#0D2545",
+          "#2A4366",
+          "#486288",
+          "#6884AB",
+          "#8AA7D0",
+          "#ADCBF6",
+          "#E5EFFF"
+        ]
+      },
+      "act-night": {
+        "role": "primary",
+        "displayName": "Action Blue, night",
+        "canonical": "#4A86E8",
+        "dayToken": "act",
+        "purpose": "Night value of Action Blue under prefers-color-scheme: dark.",
+        "oklch": "oklch(62.8% 0.161 259.7)",
+        "tonalRamp": [
+          "#000924",
+          "#002057",
+          "#003B91",
+          "#225CBA",
+          "#447FE1",
+          "#6DA5FF",
+          "#AACBFF",
+          "#E5EFFF"
+        ]
+      },
+      "act-hover-night": {
+        "role": "primary",
+        "displayName": "Action Blue Deep, night",
+        "canonical": "#6698EC",
+        "dayToken": "act-hover",
+        "purpose": "Night value of Action Blue Deep under prefers-color-scheme: dark.",
+        "oklch": "oklch(68.1% 0.136 260.3)",
+        "tonalRamp": [
+          "#000925",
+          "#002059",
+          "#0F3D89",
+          "#305EAD",
+          "#5081D3",
+          "#72A5FA",
+          "#ABCBFF",
+          "#E5EFFF"
+        ]
+      },
+      "act-soft-night": {
+        "role": "primary",
+        "displayName": "Action Wash, night",
+        "canonical": "#16325A",
+        "dayToken": "act-soft",
+        "purpose": "Night value of Action Wash under prefers-color-scheme: dark.",
+        "oklch": "oklch(31.8% 0.079 257.6)",
+        "tonalRamp": [
+          "#000A21",
+          "#08244B",
+          "#25426C",
+          "#44628E",
+          "#6484B2",
+          "#86A7D7",
+          "#A9CBFD",
+          "#E5EFFF"
+        ]
+      },
+      "act-ink-night": {
+        "role": "primary",
+        "displayName": "Action Ink, night",
+        "canonical": "#06101F",
+        "dayToken": "act-ink",
+        "purpose": "Night value of Action Ink under prefers-color-scheme: dark.",
+        "oklch": "oklch(17.2% 0.035 257.2)",
+        "tonalRamp": [
+          "#030B1A",
+          "#1A2636",
+          "#364355",
+          "#556275",
+          "#758398",
+          "#97A6BB",
+          "#BBCAE0",
+          "#E5EFFF"
+        ]
+      },
+      "cold-night": {
+        "role": "secondary",
+        "displayName": "Cold, night",
+        "canonical": "#86AFEA",
+        "dayToken": "cold",
+        "purpose": "Night value of Cold under prefers-color-scheme: dark.",
+        "oklch": "oklch(74.7% 0.097 257.4)",
+        "tonalRamp": [
+          "#000A21",
+          "#002252",
+          "#1D4174",
+          "#3C6297",
+          "#5D84BC",
+          "#7EA7E1",
+          "#A8CBFF",
+          "#E5EFFF"
+        ]
+      },
+      "mild-night": {
+        "role": "secondary",
+        "displayName": "Mild, night",
+        "canonical": "#F2CD55",
+        "dayToken": "mild",
+        "purpose": "Night value of Mild under prefers-color-scheme: dark.",
+        "oklch": "oklch(85.8% 0.142 91.9)",
+        "tonalRamp": [
+          "#100B00",
+          "#2F2400",
+          "#514000",
+          "#765E00",
+          "#9D7F00",
+          "#C5A119",
+          "#EAC64D",
+          "#FFEEBA"
+        ]
+      },
+      "tepid-night": {
+        "role": "secondary",
+        "displayName": "Tepid, night",
+        "canonical": "#F5AE42",
+        "dayToken": "tepid",
+        "purpose": "Night value of Tepid under prefers-color-scheme: dark.",
+        "oklch": "oklch(80.0% 0.145 73.8)",
+        "tonalRamp": [
+          "#130900",
+          "#352000",
+          "#5B3A00",
+          "#845600",
+          "#B07400",
+          "#DA951F",
+          "#FFBA57",
+          "#FFEBD2"
+        ]
+      },
+      "warm-night": {
+        "role": "secondary",
+        "displayName": "Warm, night",
+        "canonical": "#F3953A",
+        "dayToken": "warm",
+        "purpose": "Night value of Warm under prefers-color-scheme: dark.",
+        "oklch": "oklch(75.3% 0.152 60.4)",
+        "tonalRamp": [
+          "#150700",
+          "#3A1C00",
+          "#633500",
+          "#8F4F00",
+          "#BE6A00",
+          "#E88B2D",
+          "#FFB87C",
+          "#FFEADA"
+        ]
+      },
+      "hot-night": {
+        "role": "secondary",
+        "displayName": "Hot, night",
+        "canonical": "#E5583F",
+        "dayToken": "hot",
+        "purpose": "Night value of Hot under prefers-color-scheme: dark.",
+        "oklch": "oklch(64.2% 0.180 32.2)",
+        "tonalRamp": [
+          "#1D0100",
+          "#4A0700",
+          "#7C1200",
+          "#B02308",
+          "#D94D34",
+          "#FF745B",
+          "#FFB3A4",
+          "#FFE9E4"
+        ]
+      },
+      "thermal-ink-night": {
+        "role": "secondary",
+        "displayName": "Thermal Ink, night",
+        "canonical": "#06101F",
+        "dayToken": "thermal-ink",
+        "purpose": "Night value of Thermal Ink under prefers-color-scheme: dark.",
+        "oklch": "oklch(17.2% 0.035 257.2)",
+        "tonalRamp": [
+          "#030B1A",
+          "#1A2636",
+          "#364355",
+          "#556275",
+          "#758398",
+          "#97A6BB",
+          "#BBCAE0",
+          "#E5EFFF"
+        ]
+      },
+      "hot-ink-night": {
+        "role": "secondary",
+        "displayName": "Hot Ink, night",
+        "canonical": "#06101F",
+        "dayToken": "hot-ink",
+        "purpose": "Night value of Hot Ink under prefers-color-scheme: dark.",
+        "oklch": "oklch(17.2% 0.035 257.2)",
+        "tonalRamp": [
+          "#030B1A",
+          "#1A2636",
+          "#364355",
+          "#556275",
+          "#758398",
+          "#97A6BB",
+          "#BBCAE0",
+          "#E5EFFF"
+        ]
+      },
+      "ok-night": {
+        "role": "tertiary",
+        "displayName": "Verified Green, night",
+        "canonical": "#5BC48F",
+        "dayToken": "ok",
+        "purpose": "Night value of Verified Green under prefers-color-scheme: dark.",
+        "oklch": "oklch(74.4% 0.125 159.1)",
+        "tonalRamp": [
+          "#000F06",
+          "#002E1A",
+          "#004F31",
+          "#007449",
+          "#289966",
+          "#53BD88",
+          "#7AE2AC",
+          "#C3FFDC"
+        ]
+      },
+      "ok-soft-night": {
+        "role": "tertiary",
+        "displayName": "Verified Wash, night",
+        "canonical": "#10331F",
+        "dayToken": "ok-soft",
+        "purpose": "Night value of Verified Wash under prefers-color-scheme: dark.",
+        "oklch": "oklch(28.9% 0.055 155.5)",
+        "tonalRamp": [
+          "#000F05",
+          "#092D19",
+          "#284B35",
+          "#476B54",
+          "#688C74",
+          "#8AB096",
+          "#ADD4BA",
+          "#D2FADF"
+        ]
+      },
+      "warn-ink-night": {
+        "role": "tertiary",
+        "displayName": "Rust Ink, night",
+        "canonical": "#F7B977",
+        "dayToken": "warn-ink",
+        "purpose": "Night value of Rust Ink under prefers-color-scheme: dark.",
+        "oklch": "oklch(82.9% 0.110 67.1)",
+        "tonalRamp": [
+          "#140800",
+          "#371E00",
+          "#5F3800",
+          "#895300",
+          "#AE7431",
+          "#D39755",
+          "#F9BB79",
+          "#FFEBD6"
+        ]
+      },
+      "warn-soft-night": {
+        "role": "tertiary",
+        "displayName": "Rust Wash, night",
+        "canonical": "#3A2412",
+        "dayToken": "warn-soft",
+        "purpose": "Night value of Rust Wash under prefers-color-scheme: dark.",
+        "oklch": "oklch(28.3% 0.045 58.9)",
+        "tonalRamp": [
+          "#160700",
+          "#351F0D",
+          "#543C2A",
+          "#755B48",
+          "#977C68",
+          "#BB9F8A",
+          "#E0C3AD",
+          "#FFEADB"
+        ]
+      },
+      "err-night": {
+        "role": "tertiary",
+        "displayName": "Alert Red, night",
+        "canonical": "#FF8A80",
+        "dayToken": "err",
+        "purpose": "Night value of Alert Red under prefers-color-scheme: dark.",
+        "oklch": "oklch(75.9% 0.144 26.1)",
+        "tonalRamp": [
+          "#1F0001",
+          "#4D0004",
+          "#7D0E13",
+          "#A33733",
+          "#CA5B53",
+          "#F27E75",
+          "#FFB3AA",
+          "#FFE9E6"
+        ]
+      },
+      "err-soft-night": {
+        "role": "tertiary",
+        "displayName": "Alert Wash, night",
+        "canonical": "#3A1614",
+        "dayToken": "err-soft",
+        "purpose": "Night value of Alert Wash under prefers-color-scheme: dark.",
+        "oklch": "oklch(25.5% 0.058 25.2)",
+        "tonalRamp": [
+          "#1E0101",
+          "#3D1816",
+          "#5D3532",
+          "#7F5450",
+          "#A27571",
+          "#C79893",
+          "#EDBBB6",
+          "#FFE9E6"
+        ]
+      },
+      "sky-night": {
+        "role": "neutral",
+        "displayName": "Cold Sky, night",
+        "canonical": "#0A1628",
+        "dayToken": "sky",
+        "purpose": "Night value of Cold Sky under prefers-color-scheme: dark.",
+        "oklch": "oklch(20.0% 0.040 258.3)",
+        "tonalRamp": [
+          "#020B1C",
+          "#192539",
+          "#354358",
+          "#536278",
+          "#74839B",
+          "#96A6BF",
+          "#B9CAE4",
+          "#E5EFFF"
+        ]
+      },
+      "surface-night": {
+        "role": "neutral",
+        "displayName": "Bulletin Paper, night",
+        "canonical": "#10213A",
+        "dayToken": "surface",
+        "purpose": "Night value of Bulletin Paper under prefers-color-scheme: dark.",
+        "oklch": "oklch(24.7% 0.053 258.0)",
+        "tonalRamp": [
+          "#000A21",
+          "#14253E",
+          "#30435E",
+          "#4E6280",
+          "#6F84A2",
+          "#91A7C7",
+          "#B4CBEC",
+          "#E5EFFF"
+        ]
+      },
+      "surface-2-night": {
+        "role": "neutral",
+        "displayName": "Paper Shade, night",
+        "canonical": "#0D1C33",
+        "dayToken": "surface-2",
+        "purpose": "Night value of Paper Shade under prefers-color-scheme: dark.",
+        "oklch": "oklch(22.7% 0.050 258.7)",
+        "tonalRamp": [
+          "#010A1F",
+          "#16253D",
+          "#32435C",
+          "#50627E",
+          "#7083A0",
+          "#93A6C5",
+          "#B6CBEA",
+          "#E5EFFF"
+        ]
+      },
+      "surface-3-night": {
+        "role": "neutral",
+        "displayName": "Paper Wash, night",
+        "canonical": "#13284A",
+        "dayToken": "surface-3",
+        "purpose": "Night value of Paper Wash under prefers-color-scheme: dark.",
+        "oklch": "oklch(28.0% 0.069 259.6)",
+        "tonalRamp": [
+          "#000924",
+          "#0F2446",
+          "#2C4266",
+          "#4A6288",
+          "#6A83AC",
+          "#8CA6D1",
+          "#AFCBF6",
+          "#E5EFFF"
+        ]
+      },
+      "line-night": {
+        "role": "neutral",
+        "displayName": "Chart Rule, night",
+        "canonical": "#22395B",
+        "dayToken": "line",
+        "purpose": "Night value of Chart Rule under prefers-color-scheme: dark.",
+        "oklch": "oklch(34.3% 0.067 258.0)",
+        "tonalRamp": [
+          "#000A22",
+          "#0F2545",
+          "#2B4265",
+          "#496287",
+          "#6984AB",
+          "#8BA7CF",
+          "#AFCBF5",
+          "#E5EFFF"
+        ]
+      },
+      "line-2-night": {
+        "role": "neutral",
+        "displayName": "Faint Rule, night",
+        "canonical": "#1A2F4E",
+        "dayToken": "line-2",
+        "purpose": "Night value of Faint Rule under prefers-color-scheme: dark.",
+        "oklch": "oklch(30.4% 0.063 258.0)",
+        "tonalRamp": [
+          "#000A22",
+          "#102543",
+          "#2D4363",
+          "#4B6285",
+          "#6B84A8",
+          "#8DA7CD",
+          "#B0CBF2",
+          "#E5EFFF"
+        ]
+      },
+      "line-strong-night": {
+        "role": "neutral",
+        "displayName": "Strong Rule, night",
+        "canonical": "#3C5C86",
+        "dayToken": "line-strong",
+        "purpose": "Night value of Strong Rule under prefers-color-scheme: dark.",
+        "oklch": "oklch(46.9% 0.078 255.6)",
+        "tonalRamp": [
+          "#000A20",
+          "#06244A",
+          "#24436B",
+          "#42638D",
+          "#6384B1",
+          "#84A8D6",
+          "#A8CCFC",
+          "#E4F0FF"
+        ]
+      },
+      "ink-night": {
+        "role": "neutral",
+        "displayName": "Deep Ink, night",
+        "canonical": "#E7EEF8",
+        "dayToken": "ink",
+        "purpose": "Night value of Deep Ink under prefers-color-scheme: dark.",
+        "oklch": "oklch(94.7% 0.015 257.2)",
+        "tonalRamp": [
+          "#070B12",
+          "#20252D",
+          "#3D424A",
+          "#5C626A",
+          "#7D838C",
+          "#9FA6AF",
+          "#C3CAD3",
+          "#E8EFF9"
+        ]
+      },
+      "ink-2-night": {
+        "role": "neutral",
+        "displayName": "Slate Ink, night",
+        "canonical": "#AEC1DB",
+        "dayToken": "ink-2",
+        "purpose": "Night value of Slate Ink under prefers-color-scheme: dark.",
+        "oklch": "oklch(80.5% 0.042 256.3)",
+        "tonalRamp": [
+          "#020B1C",
+          "#172639",
+          "#334359",
+          "#526279",
+          "#72849C",
+          "#94A7C0",
+          "#B8CBE5",
+          "#E4F0FF"
+        ]
+      },
+      "ink-3-night": {
+        "role": "neutral",
+        "displayName": "Mist Ink, night",
+        "canonical": "#8BA2C2",
+        "dayToken": "ink-3",
+        "purpose": "Night value of Mist Ink under prefers-color-scheme: dark.",
+        "oklch": "oklch(70.6% 0.054 256.7)",
+        "tonalRamp": [
+          "#000A21",
+          "#13253F",
+          "#2F435E",
+          "#4D6380",
+          "#6E84A3",
+          "#90A7C7",
+          "#B3CBED",
+          "#E4F0FF"
+        ]
+      },
+      "ink-on-shell-night": {
+        "role": "neutral",
+        "displayName": "Shell Ink, night",
+        "canonical": "#B9CBE4",
+        "dayToken": "ink-on-shell",
+        "purpose": "Night value of Shell Ink under prefers-color-scheme: dark.",
+        "oklch": "oklch(83.6% 0.040 256.6)",
+        "tonalRamp": [
+          "#020B1C",
+          "#182638",
+          "#344357",
+          "#536278",
+          "#73849B",
+          "#95A7BF",
+          "#B9CBE4",
+          "#E4F0FF"
+        ]
+      },
+      "ink-on-shell-2-night": {
+        "role": "neutral",
+        "displayName": "Shell Ink Dim, night",
+        "canonical": "#7F98BA",
+        "dayToken": "ink-on-shell-2",
+        "purpose": "Night value of Shell Ink Dim under prefers-color-scheme: dark.",
+        "oklch": "oklch(67.3% 0.058 256.2)",
+        "tonalRamp": [
+          "#000A20",
+          "#112541",
+          "#2D4361",
+          "#4B6382",
+          "#6C84A5",
+          "#8EA7CA",
+          "#B1CBEF",
+          "#E4F0FF"
+        ]
+      },
+      "shell-hi-night": {
+        "role": "neutral",
+        "displayName": "Shell Highlight, night",
+        "canonical": "rgba(255, 255, 255, 0.08)",
+        "dayToken": "shell-hi",
+        "purpose": "Night value of Shell Highlight under prefers-color-scheme: dark.",
         "tonalRamp": [
           "#0B0B0B",
           "#252525",
@@ -565,23 +1172,35 @@
     "typographyMeta": {
       "display": {
         "displayName": "Display reading",
-        "purpose": "The score in the verdict's reading block; 48px at 640px and below. One per screen."
+        "purpose": "The score in the verdict's reading block; display-phone at 640px and below. One per screen."
+      },
+      "display-phone": {
+        "displayName": "Display reading, phone",
+        "purpose": "The reading at 640px and below, in an 88px block."
       },
       "headline": {
         "displayName": "Band title",
-        "purpose": "« Top 25 % de ta niche »; 26px on phones."
+        "purpose": "« Top 25 % de ta niche »; headline-phone on phones."
       },
       "title-page": {
         "displayName": "Page title",
-        "purpose": "Page h1, balanced; 24px on phones."
+        "purpose": "Page h1, balanced; title-page-phone on phones."
+      },
+      "headline-phone": {
+        "displayName": "Band title, phone",
+        "purpose": "The band title at 640px and below."
       },
       "title-flow": {
         "displayName": "Idea title",
         "purpose": "The idea heading the result screen; 22px on phones."
       },
+      "title-page-phone": {
+        "displayName": "Page title, phone",
+        "purpose": "Page h1 at 640px and below."
+      },
       "title-script": {
         "displayName": "Script title",
-        "purpose": "The script's own title; card titles step down to 18px and 16px."
+        "purpose": "The script's own title, opening the script above its meta line (always on YouTube); angle titles step down to 18px."
       },
       "title-section": {
         "displayName": "Section title",
@@ -591,13 +1210,53 @@
         "displayName": "Script",
         "purpose": "The script to publish, max 66ch; 16.5px on phones. Largest running text on screen."
       },
+      "verdict": {
+        "displayName": "Verdict sentence",
+        "purpose": "Slate Ink within 52ch, its lead clause in Deep Ink 500; 15.5px on phones."
+      },
+      "tweet": {
+        "displayName": "Tweet",
+        "purpose": "Each tweet of an X thread, within 64ch."
+      },
+      "lede": {
+        "displayName": "Lede",
+        "purpose": "Page lede under an h1, within 64ch; the Radar search query also sets at 16px."
+      },
+      "title-card": {
+        "displayName": "Card title",
+        "purpose": "Onboarding station titles and Radar source titles."
+      },
+      "body-large": {
+        "displayName": "Body, large",
+        "purpose": "Large button, Reels caption, history idea, the verdict sentence on phones."
+      },
       "body": {
         "displayName": "Body",
-        "purpose": "Interface text; meta runs 12.5-14.5px."
+        "purpose": "Interface text; the secondary steps body-large to fine carry the meta."
       },
       "field": {
         "displayName": "Field",
         "purpose": "Text inputs, textareas and selects at 15px/1.45; the idea field 18px/1.5."
+      },
+      "body-small": {
+        "displayName": "Body, small",
+        "purpose": "Buttons (500), station text, improvements, alerts, trend-front titles (600)."
+      },
+      "meta": {
+        "displayName": "Meta",
+        "purpose": "Flow meta line, factor rows, notices, the toast."
+      },
+      "meta-small": {
+        "displayName": "Meta, small",
+        "purpose": "Recents, the script meta line, the verdict's meta rows, field errors, suggestion chips, on the body's 1.5 leading; trend-front reasons set 13.5px/1.45."
+      },
+      "help": {
+        "displayName": "Help",
+        "purpose": "Help text, the « relevé à venir » link, the tabs hint, history sub-lines, on the body's 1.5 leading; format flags and the empty recents line set 13px/1.45."
+      },
+      "fine": {
+        "displayName": "Fine",
+        "purpose": "Route labels, the status line, side notes, signal counts; source names and tweet lengths at 12px. On the body's 1.5 leading, except side notes (1.45), the status line (1.35) and a signal count inside a Radar row (the row's 1.4)."
       },
       "label": {
         "displayName": "Label",
@@ -610,7 +1269,7 @@
     },
     "themes": {
       "light": "default :root",
-      "dark": "@media (prefers-color-scheme: dark) redefines every colour and shadow token; values in colorMeta.<token>.night and shadows[].night",
+      "dark": "@media (prefers-color-scheme: dark) redefines every colour and shadow token; each colour's night value is its frontmatter `<token>-night` twin (colorMeta.<token>.nightToken), each shadow's in shadows[].night",
       "bandMix": {
         "light": "11%",
         "dark": "24%"
@@ -729,7 +1388,7 @@
       {
         "name": "t-ui",
         "value": "200ms",
-        "purpose": "Disclosure chevrons, toast, confidence dot fill, rewrite blur."
+        "purpose": "Disclosure chevrons, toast, confidence dot fill, rewrite blur, the onboarding route's final-station fill."
       },
       {
         "name": "t-move",
@@ -748,12 +1407,17 @@
       },
       {
         "name": "rewrite",
-        "value": "script blur(2px) opacity .5 while working; clear 260ms; numeral counts old to new 700ms",
+        "value": "script blur(2px) opacity .5 while working; clear 260ms; numeral counts old to new 700ms; factor bars regrow scaleX .6→1 420ms (+50ms); « Réécrit » stamp rises 4px 240ms from 120ms",
         "purpose": "Rewrite feedback."
       },
       {
+        "name": "route-draw",
+        "value": "segments scaleX 0→1 from the left, 640ms ease-out, +160ms per station (scaleY from the top at 640px and below); final station fills Warm over 200ms ease, 360ms after its stagger slot",
+        "purpose": "« Comment Amorce prévoit »: once, as the onboarding route scrolls into view; the stations' text is visible throughout and never animates."
+      },
+      {
         "name": "reduced-motion",
-        "value": "animations 1ms (spinner stops); view transitions off; view entrances 160ms fade; press scale off; sticky bar fades (200ms); verdict strip opacity 0.4→1 200ms; rewrite: script opacity 0.5→1 200ms, no count-up; smooth scroll → auto",
+        "value": "animations 1ms (spinner stops); view transitions off; view entrances 160ms fade; press scale off; sticky bar fades (200ms); onboarding route shown drawn with its Warm final station, no transition; verdict strip opacity 0.4→1 200ms; rewrite: script opacity 0.5→1 200ms, no count-up; smooth scroll → auto",
         "purpose": "Less and softer, not zero."
       }
     ],
@@ -771,7 +1435,7 @@
       {
         "name": "phone-max",
         "value": "640px",
-        "purpose": "Icon-only nav; 88px reading, 15.5px verdict sentence, verdict padding 18px with 16px gaps; script and side panel padding 18px; tabs 14px without hint; sticky bar drops its score switch and button labels; route collapses to bare stations."
+        "purpose": "Icon-only nav; 88px reading, 15.5px verdict sentence, verdict padding 18px with 16px gaps; script and side panel padding 18px; tabs 14px without hint; sticky bar drops its score switch and button labels; route collapses to bare stations; onboarding route turns vertical and draws top-down."
       }
     ]
   },
@@ -820,45 +1484,45 @@
       "name": "Platform Toggle Chip",
       "kind": "chip",
       "refersTo": "chip-platform",
-      "description": "Pill toggle for choosing platforms on the brief; checked fills the circle Action Blue.",
+      "description": "Pill toggle for choosing platforms on the brief; hover takes a Strong Rule border; checked fills the circle Action Blue with an Action Ink tick.",
       "html": "<div class=\"ds-pf-row\"><label class=\"ds-pf\"><input type=\"checkbox\" checked><span><i class=\"ds-check\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12l4.5 4.5L19 7\"/></svg></i>LinkedIn</span></label><label class=\"ds-pf\"><input type=\"checkbox\"><span><i class=\"ds-check\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12l4.5 4.5L19 7\"/></svg></i>X</span></label></div>",
-      "css": ".ds-pf-row{display:flex;gap:8px;flex-wrap:wrap;}.ds-pf{position:relative;}.ds-pf input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer;}.ds-pf>span{display:inline-flex;align-items:center;gap:9px;height:42px;padding:0 14px 0 12px;border:1px solid var(--line, #D2DEEC);border-radius:999px;background:var(--surface, #FFFFFF);color:var(--ink-2, #3B5373);font:500 15px/1 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;cursor:pointer;transition:background-color 140ms ease,border-color 140ms ease,color 140ms ease;}.ds-check{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--line-strong, #9DB6D6);display:grid;place-items:center;}.ds-check svg{width:10px;height:10px;stroke:var(--act-ink, #FFFFFF);stroke-width:3;fill:none;opacity:0;}.ds-pf input:checked+span{border-color:var(--act, #1C57B0);background:var(--act-soft, #E3ECF9);color:var(--ink, #0D2240);}.ds-pf input:checked+span .ds-check{background:var(--act, #1C57B0);box-shadow:none;}.ds-pf input:checked+span .ds-check svg{opacity:1;}.ds-pf input:focus-visible+span{outline:2px solid var(--act, #1C57B0);outline-offset:2px;}"
+      "css": ".ds-pf-row{display:flex;gap:8px;flex-wrap:wrap;}.ds-pf{position:relative;}.ds-pf input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer;}.ds-pf>span{display:inline-flex;align-items:center;gap:9px;height:42px;padding:0 14px 0 12px;border:1px solid var(--line, #D2DEEC);border-radius:999px;background:var(--surface, #FFFFFF);color:var(--ink-2, #3B5373);font:500 15px/1 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;cursor:pointer;transition:background-color 140ms ease,border-color 140ms ease,color 140ms ease;}.ds-check{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--line-strong, #9DB6D6);display:grid;place-items:center;}.ds-check svg{width:10px;height:10px;stroke:var(--act-ink, #FFFFFF);stroke-width:3;fill:none;opacity:0;}.ds-pf:hover>span{border-color:var(--line-strong, #9DB6D6);}.ds-pf input:checked+span{border-color:var(--act, #1C57B0);background:var(--act-soft, #E3ECF9);color:var(--ink, #0D2240);}.ds-pf input:checked+span .ds-check{background:var(--act, #1C57B0);box-shadow:none;}.ds-pf input:checked+span .ds-check svg{opacity:1;}.ds-pf input:focus-visible+span{outline:2px solid var(--act, #1C57B0);outline-offset:2px;}"
     },
     {
       "name": "Platform Tabs with Thermal Chips",
       "kind": "custom",
       "refersTo": "tab-platform",
-      "description": "Result tabs; each carries its score as a small thermal chip coloured by its own value. The selected tab joins the bulletin sheet.",
+      "description": "Result tabs; each carries its score as a small thermal chip coloured by its own value. The selected tab joins the bulletin sheet. An unjudged tab shows the hollow chip, its « — » in Slate Ink over a Mist Ink ring.",
       "html": "<div class=\"ds-tabs\" role=\"tablist\"><button class=\"ds-tab\" role=\"tab\" aria-selected=\"true\">LinkedIn <span class=\"ds-t\" style=\"--t:var(--warm,#F08A24)\">78</span></button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">Reels <span class=\"ds-t ds-t-hot\" style=\"--t:var(--hot,#CC3A22)\">86</span></button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">X <span class=\"ds-t\" style=\"--t:var(--mild,#F2C845)\">52</span></button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">YouTube <span class=\"ds-t ds-t-empty\">—</span></button></div><div class=\"ds-sheet\"></div>",
-      "css": ".ds-tabs{display:flex;align-items:flex-end;gap:4px;position:relative;z-index:1;}.ds-tab{display:flex;align-items:center;gap:10px;height:48px;padding:0 14px 0 16px;border:1px solid transparent;border-bottom:0;border-radius:11px 11px 0 0;background:transparent;color:var(--ink-2, #3B5373);font:500 15px/1 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;cursor:pointer;transition:background-color 140ms ease,color 140ms ease;}.ds-tab:hover{color:var(--ink, #0D2240);background:color-mix(in srgb,var(--surface, #FFFFFF) 55%,transparent);}.ds-tab[aria-selected=true]{background:var(--surface, #FFFFFF);border-color:var(--line, #D2DEEC);color:var(--ink, #0D2240);font-weight:600;margin-bottom:-1px;height:49px;}.ds-tab:focus-visible{outline:2px solid var(--act, #1C57B0);outline-offset:2px;}.ds-t{display:inline-grid;place-items:center;min-width:28px;height:22px;padding:0 5px;border-radius:5px;background:var(--t,var(--mild, #F2C845));color:var(--thermal-ink, #0D2240);font:700 13px/1 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;font-variant-numeric:tabular-nums;}.ds-t-hot{color:var(--hot-ink, #FFFFFF);}.ds-t-empty{background:transparent;box-shadow:inset 0 0 0 1px var(--line-strong, #9DB6D6);color:var(--ink-3, #5C7392);}.ds-sheet{height:24px;background:var(--surface, #FFFFFF);border:1px solid var(--line, #D2DEEC);border-radius:0 14px 14px 14px;}"
+      "css": ".ds-tabs{display:flex;align-items:flex-end;gap:4px;position:relative;z-index:1;}.ds-tab{display:flex;align-items:center;gap:10px;height:48px;padding:0 14px 0 16px;border:1px solid transparent;border-bottom:0;border-radius:11px 11px 0 0;background:transparent;color:var(--ink-2, #3B5373);font:500 15px/1 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;cursor:pointer;transition:background-color 140ms ease,color 140ms ease;}.ds-tab:hover{color:var(--ink, #0D2240);background:color-mix(in srgb,var(--surface, #FFFFFF) 55%,transparent);}.ds-tab[aria-selected=true]{background:var(--surface, #FFFFFF);border-color:var(--line, #D2DEEC);color:var(--ink, #0D2240);font-weight:600;margin-bottom:-1px;height:49px;}.ds-tab:focus-visible{outline:2px solid var(--act, #1C57B0);outline-offset:2px;}.ds-t{display:inline-grid;place-items:center;min-width:28px;height:22px;padding:0 5px;border-radius:5px;background:var(--t,var(--mild, #F2C845));color:var(--thermal-ink, #0D2240);font:700 13px/1 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;font-variant-numeric:tabular-nums;}.ds-t-hot{color:var(--hot-ink, #FFFFFF);}.ds-t-empty{background:transparent;box-shadow:inset 0 0 0 1px var(--line-strong, #9DB6D6);color:var(--ink-3, #5C7392);}.ds-tab .ds-t-empty{color:var(--ink-2, #3B5373);box-shadow:inset 0 0 0 1px var(--ink-3, #5C7392);}.ds-sheet{height:24px;background:var(--surface, #FFFFFF);border:1px solid var(--line, #D2DEEC);border-radius:0 14px 14px 14px;}"
     },
     {
       "name": "Bulletin Verdict Band",
       "kind": "custom",
       "refersTo": "verdict-reading",
-      "description": "Signature strip: reading block in the score's heat, band title and verdict, then the four-segment scale with needle, five confidence dots capped at four, and Prévu · relevé.",
-      "html": "<div class=\"ds-verdict\" style=\"--band:var(--warm,#F08A24)\"><div class=\"ds-temp\" style=\"--t:var(--warm,#F08A24)\"><b>78</b><span>/ 100</span></div><div class=\"ds-v-main\"><h2 class=\"ds-band-title\">Top 25 % de ta niche</h2><p class=\"ds-say\"><strong>Accroche nette et tendance portée</strong> : le format est bon, l'appel à l'action reste faible.</p></div><div class=\"ds-v-meta\"><div><span class=\"ds-label\">Échelle de potentiel</span><div class=\"ds-scale\"><div class=\"ds-track\"><i style=\"--t:var(--cold,#7FAAE6)\"></i><i style=\"--t:var(--mild,#F2C845)\"></i><i class=\"ds-cur\" style=\"--t:var(--warm,#F08A24)\"></i><i style=\"--t:var(--hot,#CC3A22)\"></i></div><div class=\"ds-needle\" style=\"transform:translateX(200%)\"></div></div><div class=\"ds-scale-labels\"><span>Bas 50 %</span><span>Top 50 %</span><span class=\"ds-cur\">Top 25 %</span><span>Top 10 %</span></div></div><div class=\"ds-row\"><span class=\"ds-label\">Indice de confiance</span><span class=\"ds-dots\"><i class=\"ds-on\"></i><i class=\"ds-on\"></i><i class=\"ds-on\"></i><i></i><i></i></span><b>3/5</b> moyenne</div><div class=\"ds-row\"><span class=\"ds-label\">Prévu · relevé</span><b>Top 25 %</b><svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg><a class=\"ds-pending\" href=\"#\">relevé à venir</a></div></div></div>",
-      "css": ".ds-verdict{display:grid;grid-template-columns:124px minmax(0,1fr) 384px;gap:28px;align-items:center;padding:22px 28px;font:400 15px/1.5 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;color:var(--ink, #0D2240);background:color-mix(in srgb,var(--band) 11%,var(--surface, #FFFFFF));border:1px solid var(--line, #D2DEEC);border-bottom-color:color-mix(in srgb,var(--band) 26%,var(--line, #D2DEEC));border-radius:0 14px 0 0;}.ds-temp{height:116px;border-radius:14px;background:var(--t);color:var(--thermal-ink, #0D2240);display:flex;flex-direction:column;align-items:center;justify-content:center;}.ds-temp b{font:700 68px/.9 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}.ds-temp span{margin-top:8px;font:600 12px/1 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:.08em;}.ds-band-title{margin:0;font:700 34px/1.08 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:-.005em;text-wrap:balance;}.ds-say{margin:10px 0 0;font-size:17px;line-height:1.45;color:var(--ink-2, #3B5373);max-width:52ch;}.ds-say strong{color:var(--ink, #0D2240);font-weight:500;}.ds-v-meta{border-left:1px solid color-mix(in srgb,var(--band) 26%,var(--line, #D2DEEC));padding-left:28px;display:grid;gap:16px;}.ds-label{font:600 12px/1.2 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2, #3B5373);}.ds-scale{position:relative;margin-top:18px;}.ds-track{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;}.ds-track i{height:8px;border-radius:2px;background:var(--t);opacity:.5;}.ds-track i.ds-cur{opacity:1;}.ds-needle{position:absolute;top:-11px;left:0;width:25%;height:28px;}.ds-needle::before{content:'';position:absolute;left:50%;top:0;transform:translateX(-50%);border:6px solid transparent;border-top:8px solid var(--ink, #0D2240);border-bottom:0;}.ds-needle::after{content:'';position:absolute;left:50%;top:7px;width:2px;height:14px;margin-left:-1px;border-radius:1px;background:var(--ink, #0D2240);}.ds-scale-labels{margin-top:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:3px;font:500 12px/1 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;color:var(--ink-2, #3B5373);}.ds-scale-labels .ds-cur{color:var(--ink, #0D2240);font-weight:700;}.ds-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13.5px;color:var(--ink-2, #3B5373);}.ds-row .ds-label{width:132px;flex:none;}.ds-row b{color:var(--ink, #0D2240);font-weight:600;}.ds-dots{display:flex;gap:4px;}.ds-dots i{width:10px;height:10px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--act, #1C57B0);}.ds-dots i.ds-on{background:var(--act, #1C57B0);}.ds-arrow{width:14px;height:14px;flex:none;fill:none;stroke:var(--ink-3, #5C7392);stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;}.ds-pending{border:1px dashed var(--line-strong, #9DB6D6);border-radius:5px;padding:2px 7px;color:var(--ink-2, #3B5373);text-decoration:none;font-size:13px;}.ds-pending:hover{color:var(--act, #1C57B0);border-color:var(--act, #1C57B0);}.ds-pending:focus-visible{outline:2px solid var(--act, #1C57B0);outline-offset:2px;}"
+      "description": "Signature strip: reading block in the score's heat, band title and verdict, then the four-segment scale with its clip-path needle and the observed reading's hollow ring, five confidence dots capped at four, and Prévu · relevé (arrow icon, the ring as legend key, match badge). Every label inside the strip is Slate Ink, the judging clock included. An unjudged platform closes the strip with an evaluation prompt as a ruled row (1px rule in the band mix, no fill or radius) holding « Lancer l'évaluation ».",
+      "html": "<div class=\"ds-verdict\" style=\"--band:var(--warm,#F08A24)\"><div class=\"ds-temp\" style=\"--t:var(--warm,#F08A24)\"><b>78</b><span>/ 100</span></div><div class=\"ds-v-main\"><h2 class=\"ds-band-title\">Top 25 % de ta niche</h2><p class=\"ds-say\"><strong>Accroche nette et tendance portée</strong> : le format est bon, l'appel à l'action reste faible.</p></div><div class=\"ds-v-meta\"><div><span class=\"ds-label\">Échelle de potentiel</span><div class=\"ds-scale\"><div class=\"ds-track\"><i style=\"--t:var(--cold,#7FAAE6)\"></i><i style=\"--t:var(--mild,#F2C845)\"></i><i class=\"ds-cur\" style=\"--t:var(--warm,#F08A24)\"></i><i style=\"--t:var(--hot,#CC3A22)\"></i></div><div class=\"ds-needle\" style=\"transform:translateX(200%)\"></div><div class=\"ds-obs\" style=\"transform:translateX(100%)\"></div></div><div class=\"ds-scale-labels\"><span>Bas 50 %</span><span>Top 50 %</span><span class=\"ds-cur\">Top 25 %</span><span>Top 10 %</span></div></div><div class=\"ds-row\"><span class=\"ds-label\">Indice de confiance</span><span class=\"ds-dots\"><i class=\"ds-on\"></i><i class=\"ds-on\"></i><i class=\"ds-on\"></i><i></i><i></i></span><b>3/5</b> moyenne</div><div class=\"ds-row\"><span class=\"ds-label\">Prévu · relevé</span><b>Top 25 %</b><svg class=\"ds-arrow\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg><span class=\"ds-observed\"><span class=\"ds-obs-key\" aria-hidden=\"true\"></span><b>Top 50 %</b></span><span class=\"ds-match ds-near\">À une bande</span></div></div></div>",
+      "css": ".ds-verdict{display:grid;grid-template-columns:124px minmax(0,1fr) 384px;gap:28px;align-items:center;padding:22px 28px;font:400 15px/1.5 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;color:var(--ink, #0D2240);background:color-mix(in srgb,var(--band) 11%,var(--surface, #FFFFFF));border:1px solid var(--line, #D2DEEC);border-bottom-color:color-mix(in srgb,var(--band) 26%,var(--line, #D2DEEC));border-radius:0 14px 0 0;}.ds-temp{height:116px;border-radius:14px;background:var(--t);color:var(--thermal-ink, #0D2240);display:flex;flex-direction:column;align-items:center;justify-content:center;}.ds-temp b{font:700 68px/.9 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}.ds-temp span{margin-top:8px;font:600 12px/1 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:.08em;}.ds-band-title{margin:0;font:700 34px/1.08 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:-.005em;text-wrap:balance;}.ds-say{margin:10px 0 0;font-size:17px;line-height:1.45;color:var(--ink-2, #3B5373);max-width:52ch;}.ds-say strong{color:var(--ink, #0D2240);font-weight:500;}.ds-v-meta{border-left:1px solid color-mix(in srgb,var(--band) 26%,var(--line, #D2DEEC));padding-left:28px;display:grid;gap:16px;}.ds-label{font:600 12px/1.2 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2, #3B5373);}.ds-scale{position:relative;margin-top:18px;}.ds-track{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;}.ds-track i{height:8px;border-radius:2px;background:var(--t);opacity:.5;}.ds-track i.ds-cur{opacity:1;}.ds-needle{position:absolute;top:-11px;left:0;width:25%;height:28px;}.ds-needle::before{content:'';position:absolute;left:50%;top:0;width:12px;height:8px;transform:translateX(-50%);background:var(--ink, #0D2240);clip-path:polygon(0 0,100% 0,50% 100%);}.ds-needle::after{content:'';position:absolute;left:50%;top:7px;width:2px;height:14px;margin-left:-1px;border-radius:1px;background:var(--ink, #0D2240);}.ds-obs{position:absolute;top:0;left:0;width:25%;height:8px;pointer-events:none;}.ds-obs::after,.ds-obs-key{content:'';width:10px;height:10px;border-radius:50%;background:var(--surface, #FFFFFF);box-shadow:0 0 0 2px var(--ink, #0D2240);}.ds-obs::after{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);}.ds-obs-key{display:inline-block;margin-right:6px;vertical-align:-1px;}.ds-observed{display:inline-flex;align-items:center;gap:6px;}.ds-scale-labels{margin-top:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:3px;font:500 12px/1 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;color:var(--ink-2, #3B5373);}.ds-scale-labels .ds-cur{color:var(--ink, #0D2240);font-weight:700;}.ds-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13.5px;color:var(--ink-2, #3B5373);}.ds-row .ds-label{width:132px;flex:none;}.ds-row b{color:var(--ink, #0D2240);font-weight:600;}.ds-dots{display:flex;gap:4px;}.ds-dots i{width:10px;height:10px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--act, #1C57B0);}.ds-dots i.ds-on{background:var(--act, #1C57B0);}.ds-arrow{width:14px;height:14px;flex:none;fill:none;stroke:var(--ink-2, #3B5373);stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;}.ds-match{font:600 11.5px/1 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:4px 7px;border-radius:5px;}.ds-near{background:var(--warn-soft, #FDF0E1);color:var(--warn-ink, #8A4210);}"
     },
     {
       "name": "Route Stepper",
       "kind": "custom",
-      "description": "Step progress as a route: five stations (Idée to Prévision), a 2px line, 12px stations, Action Blue when done, a 4px halo on the current station; labels in Slate Ink on Cold Sky.",
+      "description": "Step progress as a route: five stations (Idée to Prévision), a 2px line, 12px stations, Action Blue when done, a 4px halo on the current station; labels in Slate Ink on Cold Sky. The onboarding route uses the same grammar with 14px stations and draws its line once on scroll.",
       "html": "<ol class=\"ds-route\"><li class=\"ds-done\"><span class=\"ds-st\"></span>Idée</li><li class=\"ds-done\"><span class=\"ds-st\"></span>Tendances</li><li class=\"ds-done\"><span class=\"ds-st\"></span>Angle</li><li class=\"ds-done\"><span class=\"ds-st\"></span>Scripts</li><li class=\"ds-done ds-cur\"><span class=\"ds-st\"></span>Prévision</li></ol>",
-      "css": ".ds-route{display:flex;margin:0;padding:0;list-style:none;font:400 12.5px/1.2 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;}.ds-route li{position:relative;width:76px;display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--ink-2, #3B5373);white-space:nowrap;}.ds-route li+li::before{content:'';position:absolute;top:5px;right:50%;width:100%;height:2px;background:var(--line-strong, #9DB6D6);}.ds-route li.ds-done+li::before{background:var(--act, #1C57B0);}.ds-st{position:relative;z-index:1;width:12px;height:12px;border-radius:50%;background:var(--sky, #E8F0FA);box-shadow:inset 0 0 0 2px var(--line-strong, #9DB6D6);}.ds-route .ds-done .ds-st{background:var(--act, #1C57B0);box-shadow:none;}.ds-route .ds-cur{color:var(--ink, #0D2240);font-weight:600;}.ds-route .ds-cur .ds-st{background:var(--surface, #FFFFFF);box-shadow:inset 0 0 0 2px var(--act, #1C57B0),0 0 0 4px color-mix(in srgb,var(--act, #1C57B0) 18%,transparent);}.ds-route .ds-done.ds-cur .ds-st{background:var(--act, #1C57B0);box-shadow:0 0 0 4px color-mix(in srgb,var(--act, #1C57B0) 18%,transparent);}"
+      "css": ".ds-route{display:flex;margin:0;padding:0;list-style:none;font:400 12.5px/1.5 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;}.ds-route li{position:relative;width:76px;display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--ink-2, #3B5373);white-space:nowrap;}.ds-route li+li::before{content:'';position:absolute;top:5px;right:50%;width:100%;height:2px;background:var(--line-strong, #9DB6D6);}.ds-route li.ds-done+li::before{background:var(--act, #1C57B0);}.ds-st{position:relative;z-index:1;width:12px;height:12px;border-radius:50%;background:var(--sky, #E8F0FA);box-shadow:inset 0 0 0 2px var(--line-strong, #9DB6D6);}.ds-route .ds-done .ds-st{background:var(--act, #1C57B0);box-shadow:none;}.ds-route .ds-cur{color:var(--ink, #0D2240);font-weight:600;}.ds-route .ds-cur .ds-st{background:var(--surface, #FFFFFF);box-shadow:inset 0 0 0 2px var(--act, #1C57B0),0 0 0 4px color-mix(in srgb,var(--act, #1C57B0) 18%,transparent);}.ds-route .ds-done.ds-cur .ds-st{background:var(--act, #1C57B0);box-shadow:0 0 0 4px color-mix(in srgb,var(--act, #1C57B0) 18%,transparent);}"
     },
     {
       "name": "Card",
       "kind": "card",
       "refersTo": "card",
-      "description": "Bulletin Paper container on the sky: 14px radius, 1px Chart Rule, hairline rest shadow, 24px padding. Shown as the trend-fronts panel: retained fronts sit inside as unboxed rows led by the warm-front glyph and divided by a Faint Rule.",
-      "html": "<section class=\"ds-card\"><h2 class=\"ds-card-title\">Fronts de tendance retenus</h2><ul class=\"ds-fronts\"><li class=\"ds-front-row\"><svg class=\"ds-front\" viewBox=\"0 0 34 14\" aria-hidden=\"true\"><path d=\"M1 12h32\"/><path class=\"ds-front-fill\" d=\"M5 12a3.5 3.5 0 0 1 7 0M15 12a3.5 3.5 0 0 1 7 0M25 12a3.5 3.5 0 0 1 7 0\"/></svg><b>Les artisans passent au format court</b><p>Les vidéos de savoir-faire de moins d'une minute montent sur Reels et YouTube Shorts.</p><small>Google Trends</small></li><li class=\"ds-front-row\"><svg class=\"ds-front\" viewBox=\"0 0 34 14\" aria-hidden=\"true\"><path d=\"M1 12h32\"/><path class=\"ds-front-fill\" d=\"M5 12a3.5 3.5 0 0 1 7 0M15 12a3.5 3.5 0 0 1 7 0M25 12a3.5 3.5 0 0 1 7 0\"/></svg><b>L'atelier se montre en coulisses</b><p>Les posts qui montrent les étapes et les ratés d'une pièce gagnent en commentaires.</p><small>Reddit</small></li></ul></section>",
-      "css": ".ds-card{background:var(--surface, #FFFFFF);border:1px solid var(--line, #D2DEEC);border-radius:14px;box-shadow:var(--shadow-1, 0 1px 2px rgba(13,34,64,.06), 0 1px 1px rgba(13,34,64,.04));padding:24px;max-width:420px;font:400 15px/1.5 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;color:var(--ink, #0D2240);}.ds-card-title{margin:0;font:600 12.5px/1.2 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2, #3B5373);}.ds-fronts{list-style:none;margin:14px 0 0;padding:0;display:grid;}.ds-front-row{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:start;padding:12px 0;border-top:1px solid var(--line-2, #E2EAF4);}.ds-front-row:first-child{border-top:0;padding-top:0;}.ds-front-row:last-child{padding-bottom:0;}.ds-front{width:34px;height:14px;margin-top:4px;flex:none;fill:none;stroke:var(--hot, #CC3A22);stroke-width:1.7;stroke-linecap:round;}.ds-front .ds-front-fill{fill:var(--hot, #CC3A22);stroke:none;}.ds-front-row b{font-weight:600;font-size:14.5px;}.ds-front-row p{grid-column:2;margin:0;color:var(--ink-2, #3B5373);font-size:13.5px;line-height:1.45;}.ds-front-row small{grid-column:2;color:var(--ink-3, #5C7392);font-size:12px;}"
+      "description": "Bulletin Paper container on the sky: 14px radius, 1px Chart Rule, hairline rest shadow, 24px padding (20px × 24px on the trend-fronts panel). Shown as the trend-fronts panel: retained fronts are ruled rows, not cards; each opens with a 1px Faint Rule and is led by the warm-front glyph, with no fill, border, radius or shadow of its own.",
+      "html": "<section class=\"ds-card ds-fronts-panel\"><div class=\"ds-fronts-head\"><h2 class=\"ds-card-title\">Fronts de tendance retenus</h2><span class=\"ds-hint\">14 signaux sur 4 sources</span></div><ul class=\"ds-fronts\"><li class=\"ds-front-row\"><svg class=\"ds-front\" viewBox=\"0 0 34 14\" aria-hidden=\"true\"><path d=\"M1 12h32\"/><path class=\"ds-front-fill\" d=\"M5 12a3.5 3.5 0 0 1 7 0M15 12a3.5 3.5 0 0 1 7 0M25 12a3.5 3.5 0 0 1 7 0\"/></svg><b>Les artisans passent au format court</b><p>Les vidéos de savoir-faire de moins d'une minute montent sur Reels et YouTube Shorts.</p><small>Google Trends</small></li><li class=\"ds-front-row\"><svg class=\"ds-front\" viewBox=\"0 0 34 14\" aria-hidden=\"true\"><path d=\"M1 12h32\"/><path class=\"ds-front-fill\" d=\"M5 12a3.5 3.5 0 0 1 7 0M15 12a3.5 3.5 0 0 1 7 0M25 12a3.5 3.5 0 0 1 7 0\"/></svg><b>L'atelier se montre en coulisses</b><p>Les posts qui montrent les étapes et les ratés d'une pièce gagnent en commentaires.</p><small>Reddit</small></li></ul></section>",
+      "css": ".ds-card{background:var(--surface, #FFFFFF);border:1px solid var(--line, #D2DEEC);border-radius:14px;box-shadow:var(--shadow-1, 0 1px 2px rgba(13,34,64,.06), 0 1px 1px rgba(13,34,64,.04));padding:24px;max-width:640px;font:400 15px/1.5 \"Fira Sans\", \"Segoe UI\", system-ui, sans-serif;color:var(--ink, #0D2240);}.ds-fronts-panel{padding:20px 24px;}.ds-fronts-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;}.ds-card-title{margin:0;font:600 12.5px/1.2 \"Fira Sans Condensed\", \"Fira Sans\", \"Arial Narrow\", sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2, #3B5373);}.ds-hint{color:var(--ink-3, #5C7392);font-size:13.5px;}.ds-fronts{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0 28px;}.ds-front-row{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:start;padding:12px 0;border-top:1px solid var(--line-2, #E2EAF4);}.ds-front{width:34px;height:14px;margin-top:4px;flex:none;fill:none;stroke:var(--hot, #CC3A22);stroke-width:1.7;stroke-linecap:round;}.ds-front .ds-front-fill{fill:var(--hot, #CC3A22);stroke:none;}.ds-front-row b{font-weight:600;font-size:14.5px;}.ds-front-row p{grid-column:2;margin:0;color:var(--ink-2, #3B5373);font-size:13.5px;line-height:1.45;}.ds-front-row small{grid-column:2;color:var(--ink-3, #5C7392);font-size:12px;}"
     }
   ],
   "narrative": {
     "northStar": "The Forecast Bulletin",
-    "overview": "Amorce reads like a weather bulletin for content. A score is a forecast, not a grade: a reading set on a thermal scale, a probability band (« Top 25 % de ta niche »), a confidence index, and a slot that waits for the observed reading which later verifies it (« Prévu · relevé »). Every screen is assembled from the instruments of a forecast — the thermometer block, the four-segment band scale with its needle, five confidence dots, the cartographic warm-front symbol for trends, and the route line that strings the steps of a forecast like weather stations. The world deliberately refuses the generic grey gauge dashboard and the \"AI\" look of violet gradients and sparkles; its colours come from the map and the thermometer.\n\nThe frame is a map-blue shell around a cold sky ground by day and a deep-blue night by night; the theme follows the device. Paper-white surfaces sit on the sky as flat tonal layers carrying a hairline shadow. Density is that of a working tool: 40px controls, 8–16px gaps inside groups, 28px between panel columns. The script being read is the largest running text on every screen, because the content is the product. Readings are set in Fira Sans Condensed, with tabular figures on scores, thermal chips and clocks; prose, headings and meta figures are set in Fira Sans.\n\nMotion is a single authored moment per forecast, « le bulletin tombe »: the reading drops in and counts up, the needle slides to its band, the confidence dots light one by one, the factor bars fill. Everything else is quiet: colour and border changes take 140ms on `ease` (200ms for the confidence fill and the rewrite blur); movement (press, toast, chevrons, view entrances, sticky bar) takes 140–260ms on the exponential ease-out cubic-bezier(0.23, 1, 0.32, 1). View changes cross-fade (out 120ms, in 240ms rising 6px). Reduced motion is honoured as less and softer, never as nothing: all CSS animations collapse to 1ms (the busy spinner stops), view transitions are off, view entrances become a 160ms fade, presses don't scale, the sticky bar fades, smooth scrolling jumps, the verdict strip fades 40%→100% over 200ms, and a rewrite only fades the script from 50% to full over 200ms with no count-up.",
+    "overview": "Amorce reads like a weather bulletin for content. A score is a forecast, not a grade: a reading set on a thermal scale, a probability band (« Top 25 % de ta niche »), a confidence index, and a slot that waits for the observed reading which later verifies it (« Prévu · relevé »). Every screen is assembled from the instruments of a forecast — the thermometer block, the four-segment band scale with its needle, five confidence dots, the cartographic warm-front symbol for trends, and the route line that strings the steps of a forecast like weather stations. The world deliberately refuses the generic grey gauge dashboard and the \"AI\" look of violet gradients and sparkles; its colours come from the map and the thermometer.\n\nThe frame is a map-blue shell around a cold sky ground by day and a deep-blue night by night; the theme follows the device. Paper-white surfaces sit on the sky as flat tonal layers carrying a hairline shadow. Density is that of a working tool: 40px controls, 8–16px gaps inside groups, 28px between panel columns. The script being read is the largest running text on every screen, because the content is the product. Readings are set in Fira Sans Condensed, with tabular figures on scores, thermal chips and clocks; prose, headings and meta figures are set in Fira Sans.\n\nMotion is a single authored moment per forecast, « le bulletin tombe »: the reading drops in and counts up, the needle slides to its band, the confidence dots light one by one, the factor bars fill. Before any forecast, the onboarding route traces itself once as it scrolls into view: its stations' text is already in place, only the line between the stations draws, segment after segment, and the final station then fills Warm. Everything else is quiet: colour and border changes take 140ms on `ease` (200ms for the confidence fill and the rewrite blur); movement (press, toast, chevrons, view entrances, sticky bar) takes 140–260ms on the exponential ease-out cubic-bezier(0.23, 1, 0.32, 1). View changes cross-fade (out 120ms, in 240ms rising 6px). Reduced motion is honoured as less and softer, never as nothing: all CSS animations collapse to 1ms (the busy spinner stops), view transitions are off, view entrances become a 160ms fade, presses don't scale, the sticky bar fades, smooth scrolling jumps, the onboarding route is shown already drawn with its Warm final station, the verdict strip fades 40%→100% over 200ms, and a rewrite only fades the script from 50% to full over 200ms with no count-up.",
     "keyCharacteristics": [
       "A five-step thermal scale (cold, mild, tepid, warm, hot) codes every potential value and every band; Warm doubles as the brand's sun.",
       "Map-blue shell, cold-sky ground, paper surfaces; night is deep blue, never black.",
@@ -886,7 +1550,7 @@
       },
       {
         "name": "The Night Bulletin Rule",
-        "body": "Every colour token is redefined under `prefers-color-scheme: dark`; night is deep blue, never black. Components reference `var(--token)`, except deliberate fixed values on the always-dark shell (white text, the rgba(255, 255, 255, 0.14) active wash, status dots #5BC48F ready / #FF8A80 error) and the brand mark's #0D2240 « A ». Ticks drawn on Action Blue or Verified Green use a token (Action Ink), never #FFFFFF.",
+        "body": "Every colour token is redefined under `prefers-color-scheme: dark` (its `-night` twin); night is deep blue, never black. Components reference `var(--token)`, except deliberate fixed values on the always-dark shell (white text, the Shell Active wash, the Ready Green and Error Coral status dots) and the brand mark's #0D2240 « A ». Ticks are tokens too, never #FFFFFF: Action Ink on the Action Blue check circle, Bulletin Paper on the Verified Green dot of a done run stage.",
         "section": "colors"
       },
       {
@@ -932,18 +1596,19 @@
       "Do pair every forecast with its observed reading: a hollow ring on the band scale once entered, a dashed « relevé à venir » until then.",
       "Do mark retained trends and live signals with the warm-front glyph in Hot.",
       "Do draw step progress as a route line with stations (2px line, 12–14px dots, Action Blue when done).",
-      "Do use `var(--token)` for every colour so the night bulletin follows the device; the shell's fixed whites and status dots and the brand mark's « A » are the only literals, and a tick on Action Blue or Verified Green takes Action Ink, never #FFFFFF.",
+      "Do use `var(--token)` for every colour so the night bulletin follows the device; the shell's fixed whites, Shell Active wash and status dots and the brand mark's « A » are the only literals, and ticks take a token, never #FFFFFF (Action Ink on Action Blue, Bulletin Paper on Verified Green).",
       "Do set every reading in Fira Sans Condensed with tabular figures on scores, chips and clocks, and give meta figures that change or line up (calibration %, tweet length, script measure, signal counts) tabular-nums.",
-      "Do keep Mist Ink (#5C7392) for text on Bulletin Paper and Paper Shade only (4.86:1, 4.56:1); on Cold Sky (4.23:1), Paper Wash (4.35:1) and the band-tinted verdict strip (4.13:1 on Top 10 %) use Slate Ink.",
-      "Do keep « le bulletin tombe » as the one authored motion moment, and give reduced motion a short fade rather than nothing."
+      "Do keep Mist Ink (#5C7392) for text on Bulletin Paper and Paper Shade (4.86:1, 4.56:1); on Cold Sky (4.23:1), Paper Wash (4.35:1) and the band-tinted verdict strip (4.13:1 on Top 10 %) use Slate Ink, and on the shell use Shell Ink Dim.",
+      "Do keep « le bulletin tombe » as the one authored moment of a forecast; on the onboarding route only the line draws on scroll, over text that is already there; give reduced motion a short fade or the finished drawing rather than nothing."
     ],
     "donts": [
       "Don't paint a score, band or bar with a colour its value did not earn, and don't use a thermal hue on chrome beyond Warm's brand uses and the warning markers (the Mild status dot, Tepid flag bullets and the Tepid notice border).",
       "Don't fill the fifth confidence dot or present a score as a promise of views.",
       "Don't reach for violet gradients, sparkles or a grey gauge dial: the instruments are the thermometer, the band scale and the front.",
-      "Don't put an uppercase label above a heading as a kicker or eyebrow; a heading stands on its own.",
+      "Don't put an uppercase label above a heading or a script as a kicker or eyebrow; a heading stands on its own, and a script's state is a sentence-case meta line below its title.",
+      "Don't nest a card in a card: trend fronts, tweets and Radar items are rows ruled by a 1px Faint Rule. Inside the bulletin only the weakest factor's row is raised on paper, as an emphasised row without shadow; the evaluation prompt is a ruled row.",
       "Don't render step progress as a progress bar or a ring.",
-      "Don't use Unicode characters or emoji as icons; interface icons are 24px-grid SVG strokes at 1.75px with round caps and joins (ticks inside 16–18px check circles at 3), and the cartographic warm-front glyph is the one authored symbol on its own 34 × 14 grid.",
+      "Don't use Unicode characters or emoji as icons, « → » included: the « Prévu · relevé » connector is the arrow icon. Interface icons are 24px-grid SVG strokes at 1.75px with round caps and joins (ticks inside 16–18px check circles at 3), and the cartographic warm-front glyph is the one authored symbol on its own 34 × 14 grid.",
       "Don't make night black; it is deep blue.",
       "Don't give a surface a resting lift or a hard offset shadow; depth is tonal, shadows are offset and soft."
     ]

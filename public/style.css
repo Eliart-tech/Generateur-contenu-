@@ -219,6 +219,7 @@ h1 { font: 600 28px/1.2 var(--font); letter-spacing: -0.012em; text-wrap: balanc
 .t.t-sm { min-width: 28px; height: 22px; font-size: 13px; padding: 0 5px; border-radius: 5px; }
 .t[data-heat="hot"] { color: var(--hot-ink); }
 .t-empty { background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink-3); }
+.pf-tab .t-empty, .sticky-score .t-empty { color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--ink-3); }
 .recent-item .t-empty { color: var(--ink-on-shell-2); box-shadow: inset 0 0 0 1px var(--ink-on-shell-2); }
 
 .front-glyph { width: 34px; height: 14px; flex: none; fill: none; stroke: var(--hot); stroke-width: 1.7; stroke-linecap: round; }
@@ -487,10 +488,10 @@ kbd { font: 600 11.5px/1 var(--font-cond); padding: 3px 6px; border-radius: 5px;
 a.pending:hover { color: var(--act); border-color: var(--act); }
 .observed { display: inline-flex; align-items: center; gap: 6px; }
 
-.judge-clock { margin-top: 12px; display: flex; align-items: baseline; gap: 10px; color: var(--ink-3); font-size: 13.5px; }
+.judge-clock { margin-top: 12px; display: flex; align-items: baseline; gap: 10px; color: var(--ink-2); font-size: 13.5px; }
 .judge-clock b { font: 600 18px/1 var(--font-cond); font-variant-numeric: tabular-nums; color: var(--ink); }
 .verdict-main, .scale-block { min-width: 0; }
-.partial-note { grid-column: 2 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 12px 16px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); font-size: 14px; color: var(--ink-2); }
+.partial-note { grid-column: 2 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid color-mix(in srgb, var(--band) var(--band-line), var(--line)); font-size: 14px; color: var(--ink-2); }
 
 .bulletin-body { display: grid; grid-template-columns: minmax(0, 1fr) 380px; }
 .script { padding: 22px 32px 28px 28px; min-width: 0; }
