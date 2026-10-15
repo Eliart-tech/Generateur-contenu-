@@ -1118,7 +1118,7 @@ function observedRow(entry, p, sc) {
   const row = el("div", { class: "meta-row" },
     el("span", { class: "label" }, "Prévu · relevé"),
     el("b", {}, isJudged(sc) ? BANDS[sc.bande].label : "—"),
-    el("span", { class: "arrow", "aria-hidden": "true" }, "→"),
+    svg("arrow", "ico arrow"),
   );
   if (real && BANDS[real.band]) {
     row.append(
@@ -1467,18 +1467,22 @@ function bodyBlock(entry, p, job) {
   const script = entry.scripts[p];
   const rewriting = job?.kind === "rewrite" && job.platform === p;
   const stamped = state.rewritten?.id === entry.id && state.rewritten.platform === p;
+  // Le titre (YouTube) ouvre le script ; la ligne d'état le suit, jamais au-dessus en surtitre.
+  const content = scriptContent(p, script);
+  const title = content[0]?.classList?.contains("script-title") ? content.shift() : null;
   const article = el("article", { class: "script", "aria-label": `Script ${PF[p].name}` },
+    title,
     el("div", { class: "script-head" },
-      el("div", {},
-        el("span", { class: "label" }, `Script ${PF[p].name} · prêt à publier`),
-        el("small", {}, measure(p, script)),
+      el("p", { class: "script-meta" },
+        el("b", {}, "Prêt à publier"),
+        el("span", {}, measure(p, script)),
         stamped ? el("span", { class: "rewrite-stamp" }, svg("check"), "Réécrit") : null,
       ),
       el("div", { class: "script-actions" },
         el("button", { type: "button", class: "btn", onclick: () => copyScript(p) }, svg("copy"), "Copier"),
       ),
     ),
-    el("div", { class: `post-wrap${rewriting ? " is-rewriting" : ""}`, "aria-busy": rewriting ? "true" : null }, scriptContent(p, script)),
+    el("div", { class: `post-wrap${rewriting ? " is-rewriting" : ""}`, "aria-busy": rewriting ? "true" : null }, content),
   );
   return el("div", { class: "bulletin-body" }, article, sideBlock(entry, p, job));
 }
@@ -1793,7 +1797,7 @@ function historyEntry(entry) {
               PF[p].name,
               isJudged(sc) ? tchip(sc.final, heatOf(sc.final), true) : tchip(null, null, true),
               real && BANDS[real.band]
-                ? [el("span", { class: "arrow", "aria-hidden": "true" }, "→"), el("span", { class: "sr-only" }, " relevé "), el("b", {}, BANDS[real.band].label)]
+                ? [svg("arrow", "ico arrow"), el("span", { class: "sr-only" }, " relevé "), el("b", {}, BANDS[real.band].label)]
                 : null,
             );
           })
