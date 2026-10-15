@@ -3,128 +3,214 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Générateur de contenu</title>
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#0C315C" />
+  <title>Amorce · Prévois la portée de tes contenus</title>
+  <meta name="description" content="Amorce lit les tendances du moment, écrit tes scripts LinkedIn, Reels, X et YouTube, et prévoit leur potentiel avant publication." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fira+Sans+Condensed:wght@500;600;700&display=swap" rel="stylesheet" />
+  <script>document.documentElement.classList.add("js");</script>
   <link rel="stylesheet" href="/style.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23F08A24'/%3E%3Ctext x='16' y='23' font-family='Arial' font-weight='700' font-size='19' text-anchor='middle' fill='%230D2240'%3EA%3C/text%3E%3C/svg%3E" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="brand-bolt">⚡</span>
-      <div>
-        <h1>Générateur de contenu</h1>
-        <p id="status-line" class="muted">Connexion…</p>
-      </div>
-    </div>
-    <nav class="tabs" id="main-tabs">
-      <button class="tab active" data-tab="create" aria-selected="true">Créer</button>
-      <button class="tab" data-tab="radar" aria-selected="false">Radar</button>
-      <button class="tab" data-tab="history" aria-selected="false">Historique</button>
-      <button class="tab" data-tab="settings" aria-selected="false">Réglages</button>
-    </nav>
-  </header>
+  <a class="skip" href="#main">Aller au contenu</a>
 
-  <main>
-    <!-- ======== CRÉER ======== -->
-    <section id="tab-create" class="tab-panel active">
-      <div id="step-brief" class="card">
-        <h2>1 · Ton idée</h2>
-        <form id="brief-form">
-          <label>Idée brute <span class="req">*</span>
-            <textarea id="f-idea" rows="3" required placeholder="Ex. : pourquoi les artisans devraient publier une vidéo par semaine…"></textarea>
-          </label>
-          <div class="grid-2">
-            <label>Niche / activité
-              <input id="f-niche" type="text" placeholder="Ex. : coaching sportif, SaaS B2B, restauration…" />
+  <div class="app">
+    <!-- ================= SHELL ================= -->
+    <aside class="shell" aria-label="Application">
+      <a class="brand" href="#creer" data-nav="creer" aria-label="Amorce, accueil">
+        <span class="brand-mark" aria-hidden="true">A</span>
+        <span class="brand-name">Amorce</span>
+      </a>
+
+      <nav class="nav" aria-label="Navigation principale">
+        <a href="#creer" data-nav="creer" class="nav-link">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>
+          <span>Créer</span>
+        </a>
+        <a href="#radar" data-nav="radar" class="nav-link">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 12l5.5-5.5"/></svg>
+          <span>Radar</span>
+        </a>
+        <a href="#historique" data-nav="historique" class="nav-link">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+          <span>Historique</span>
+        </a>
+        <a href="#reglages" data-nav="reglages" class="nav-link">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+          <span>Réglages</span>
+        </a>
+      </nav>
+
+      <section class="recents" aria-labelledby="recents-title">
+        <h2 id="recents-title" class="shell-label">Récents</h2>
+        <ul id="recents-list" class="recents-list"></ul>
+      </section>
+
+      <a class="shell-status" href="#reglages" data-nav="reglages" id="shell-status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="shell-status-text">Connexion…</span>
+      </a>
+    </aside>
+
+    <!-- ================= CONTENU ================= -->
+    <main id="main" class="main" tabindex="-1">
+      <div class="notice hidden" id="global-notice" role="status"></div>
+
+      <!-- ---------- CRÉER ---------- -->
+      <section id="view-creer" class="view" data-view="creer" aria-labelledby="creer-title">
+
+        <!-- Étape 1 : brief -->
+        <div id="step-brief" class="step">
+          <header class="page-head">
+            <h1 id="creer-title">Quelle idée veux-tu publier&nbsp;?</h1>
+            <p class="lede">Amorce relève les tendances du moment, te propose des angles, écrit un script par plateforme et prévoit son potentiel avant que tu publies.</p>
+          </header>
+
+          <div id="brief-alert" class="brief-alert"></div>
+
+          <form id="brief-form" class="brief card" novalidate>
+            <label class="field field-idea">
+              <span class="field-label">Ton idée, en une phrase</span>
+              <textarea id="f-idea" name="idea" rows="3" required maxlength="600"
+                placeholder="Ex. : 3 erreurs qui tuent la visibilité des artisans sur les réseaux"></textarea>
+              <span class="field-error" id="f-idea-error" hidden>Écris ton idée pour lancer la prévision.</span>
             </label>
-            <label>Audience cible
-              <input id="f-audience" type="text" placeholder="Ex. : indépendants 25-45 ans" />
-            </label>
-          </div>
-          <div class="grid-2">
-            <label>Objectif
-              <select id="f-goal">
-                <option value="notoriété">Notoriété</option>
-                <option value="abonnés">Gagner des abonnés</option>
-                <option value="leads">Générer des leads</option>
-                <option value="ventes">Vendre</option>
-                <option value="communauté">Engager ma communauté</option>
-              </select>
-            </label>
-            <fieldset class="platforms">
-              <legend>Plateformes</legend>
-              <label><input type="checkbox" name="platform" value="linkedin" checked /> LinkedIn</label>
-              <label><input type="checkbox" name="platform" value="reels" checked /> Reels</label>
-              <label><input type="checkbox" name="platform" value="x" checked /> X</label>
-              <label><input type="checkbox" name="platform" value="youtube" checked /> YouTube</label>
+
+            <div class="brief-grid">
+              <label class="field">
+                <span class="field-label">Niche</span>
+                <input id="f-niche" name="niche" type="text" autocomplete="off" placeholder="Ex. : artisanat, coaching sportif" />
+              </label>
+              <label class="field">
+                <span class="field-label">Audience</span>
+                <input id="f-audience" name="audience" type="text" autocomplete="off" placeholder="Ex. : indépendants 25-45 ans" />
+              </label>
+              <label class="field">
+                <span class="field-label">Objectif</span>
+                <span class="select">
+                  <select id="f-goal" name="goal">
+                    <option value="notoriété">Notoriété</option>
+                    <option value="abonnés">Gagner des abonnés</option>
+                    <option value="leads">Générer des leads</option>
+                    <option value="ventes">Vendre</option>
+                    <option value="communauté">Engager ma communauté</option>
+                  </select>
+                </span>
+              </label>
+            </div>
+
+            <fieldset class="platform-picker">
+              <legend class="field-label">Plateformes</legend>
+              <div class="platform-options" id="platform-options"></div>
+              <span class="field-error" id="f-platform-error" hidden>Choisis au moins une plateforme.</span>
             </fieldset>
-          </div>
-          <button type="submit" class="primary" id="btn-angles">Analyser les tendances et proposer des angles</button>
+
+            <div class="brief-foot">
+              <p class="hint"><kbd>Ctrl</kbd> + <kbd>Entrée</kbd> pour lancer · 1 à 3 minutes au total</p>
+              <button type="submit" class="btn btn-primary btn-lg" id="btn-forecast">
+                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 12l5.5-5.5"/></svg>
+                Lancer la prévision
+              </button>
+            </div>
+          </form>
+
+          <section class="how" aria-labelledby="how-title">
+            <h2 id="how-title" class="section-title">Comment Amorce prévoit</h2>
+            <ol class="how-steps">
+              <li class="how-step reveal">
+                <svg class="how-ico" viewBox="0 0 40 16" aria-hidden="true"><path d="M2 13h36"/><path class="front-fill" d="M7 13a4 4 0 0 1 8 0M17 13a4 4 0 0 1 8 0M27 13a4 4 0 0 1 8 0"/></svg>
+                <h3>Le relevé des tendances</h3>
+                <p>Google Trends, l'actualité, YouTube, Reddit et Hacker News : ce qui monte autour de ton sujet, aujourd'hui.</p>
+              </li>
+              <li class="how-step reveal">
+                <svg class="how-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19L19 5M5 5h6M13 19h6"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/></svg>
+                <h3>Des angles justifiés</h3>
+                <p>4 à 5 façons d'aborder ton idée, chacune appuyée sur une tendance réellement relevée.</p>
+              </li>
+              <li class="how-step reveal">
+                <svg class="how-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg>
+                <h3>Un script par plateforme</h3>
+                <p>Post LinkedIn, Reel de 30-45 s, thread X, vidéo YouTube : chacun écrit pour son format.</p>
+              </li>
+              <li class="how-step reveal">
+                <span class="how-temp" aria-hidden="true">78</span>
+                <h3>Le bulletin avant publication</h3>
+                <p>Un potentiel relatif à ta niche, un indice de confiance, et ce qu'il faut améliorer. Jamais une promesse de vues.</p>
+              </li>
+            </ol>
+          </section>
+        </div>
+
+        <!-- Étapes 2-4 : prévision en cours, angles, bulletin -->
+        <div id="step-flow" class="step hidden">
+          <header class="flow-head" id="flow-head"></header>
+          <div id="flow-body"></div>
+        </div>
+      </section>
+
+      <!-- ---------- RADAR ---------- -->
+      <section id="view-radar" class="view hidden" data-view="radar" aria-labelledby="radar-title">
+        <header class="page-head">
+          <h1 id="radar-title">Ce qui monte en ce moment</h1>
+          <p class="lede">Scanne un sujet : Amorce interroge les sources de tendances et te montre les signaux du jour.</p>
+        </header>
+        <form id="radar-form" class="search card" role="search">
+          <label class="sr-only" for="radar-q">Sujet à scanner</label>
+          <svg class="ico search-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+          <input id="radar-q" type="search" placeholder="Un sujet, une niche, un mot-clé…" required autocomplete="off" />
+          <button type="submit" class="btn btn-primary" id="radar-submit">Scanner</button>
         </form>
-      </div>
+        <div id="radar-results" class="radar-results" aria-live="polite"></div>
+      </section>
 
-      <div id="step-angles" class="hidden">
-        <div class="card" id="trends-card"></div>
-        <div class="card" id="angles-card"></div>
-      </div>
+      <!-- ---------- HISTORIQUE ---------- -->
+      <section id="view-historique" class="view hidden" data-view="historique" aria-labelledby="hist-title">
+        <header class="page-head">
+          <h1 id="hist-title">Prévu · relevé</h1>
+          <p class="lede">Après publication, saisis tes vues réelles : Amorce compare chaque prévision à son relevé et mesure sa propre fiabilité.</p>
+        </header>
+        <div id="calibration" class="calibration"></div>
+        <div id="history-list" class="history-list"></div>
+      </section>
 
-      <div id="step-scripts" class="hidden"></div>
-
-      <div id="create-loading" class="loading hidden">
-        <div class="spinner"></div>
-        <p id="loading-text">Analyse en cours…</p>
-        <p class="muted small">Les générations durent 1 à 3 minutes (raisonnement approfondi).</p>
-      </div>
-      <div id="create-error" class="error hidden"></div>
-    </section>
-
-    <!-- ======== RADAR ======== -->
-    <section id="tab-radar" class="tab-panel">
-      <div class="card">
-        <h2>Radar de tendances</h2>
-        <p class="muted">Ce qui circule en ce moment sur ton sujet (Google Trends, actualité, YouTube, Reddit, Hacker News).</p>
-        <form id="radar-form" class="inline-form">
-          <input id="radar-q" type="text" placeholder="Sujet, niche, mot-clé…" aria-label="Sujet à scanner" required />
-          <button type="submit" class="primary">Scanner</button>
-        </form>
-        <div id="radar-results"></div>
-      </div>
-    </section>
-
-    <!-- ======== HISTORIQUE ======== -->
-    <section id="tab-history" class="tab-panel">
-      <div class="card">
-        <h2>Historique &amp; calibration</h2>
-        <p class="muted">Renseigne les stats réelles de tes posts (J+2 ou J+7) : l'outil compare la bande prédite à la bande observée — c'est ta boucle d'apprentissage.</p>
-        <div id="calibration-banner"></div>
-      </div>
-      <div id="history-list"></div>
-    </section>
-
-    <!-- ======== RÉGLAGES ======== -->
-    <section id="tab-settings" class="tab-panel">
-      <div class="card">
-        <h2>Réglages</h2>
-        <form id="settings-form">
-          <label>Ta voix (ton, style, expressions à garder / éviter)
-            <textarea id="s-voice" rows="3" placeholder="Ex. : tutoiement, direct, pas de jargon marketing, une pointe d'humour sec…"></textarea>
+      <!-- ---------- RÉGLAGES ---------- -->
+      <section id="view-reglages" class="view hidden" data-view="reglages" aria-labelledby="settings-title">
+        <header class="page-head">
+          <h1 id="settings-title">Réglages</h1>
+          <p class="lede">Ta voix guide l'écriture ; tes vues habituelles servent à mesurer chaque relevé par rapport à toi, pas dans l'absolu.</p>
+        </header>
+        <form id="settings-form" class="settings card">
+          <label class="field">
+            <span class="field-label">Ta voix</span>
+            <textarea id="s-voice" rows="3" placeholder="Ex. : tutoiement, direct, sans jargon marketing, une pointe d'humour sec."></textarea>
+            <span class="field-help">Ton, style, expressions à garder ou à éviter.</span>
           </label>
-          <h3>Vues médianes habituelles par plateforme</h3>
-          <p class="muted small">Sert à normaliser tes stats réelles : un post est « outlier » par rapport à TA médiane, pas dans l'absolu.</p>
-          <div class="grid-4">
-            <label>LinkedIn <input id="s-median-linkedin" type="number" min="0" placeholder="ex. 1200" /></label>
-            <label>Reels <input id="s-median-reels" type="number" min="0" placeholder="ex. 3000" /></label>
-            <label>X <input id="s-median-x" type="number" min="0" placeholder="ex. 800" /></label>
-            <label>YouTube <input id="s-median-youtube" type="number" min="0" placeholder="ex. 500" /></label>
+          <fieldset class="medians">
+            <legend class="field-label">Tes vues habituelles par post (médiane)</legend>
+            <div class="medians-grid" id="medians-grid"></div>
+          </fieldset>
+          <div class="settings-foot">
+            <span class="saved hidden" id="settings-saved" role="status">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7"/></svg>Enregistré
+            </span>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
           </div>
-          <button type="submit" class="primary">Enregistrer</button>
-          <span id="settings-saved" class="muted small hidden">Enregistré ✓</span>
         </form>
-        <hr />
-        <div id="env-info" class="muted small"></div>
-      </div>
-    </section>
-  </main>
+        <section class="system card" aria-labelledby="system-title">
+          <h2 id="system-title" class="section-title">État du système</h2>
+          <dl id="env-info" class="env"></dl>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- Barre d'actions collante du bulletin (apparaît au défilement) -->
+  <div class="sticky-bar" id="sticky-bar" aria-hidden="true"></div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="/app.js"></script>
 </body>

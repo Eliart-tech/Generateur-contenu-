@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Amorce · Plateau</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Sofia+Sans+Condensed:wght@600;700;800&family=Sofia+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--s0:#0d1116;--s1:#141920;--s2:#1a2028;--s3:#242b35;--ln:rgba(236,232,223,.11);--ln2:rgba(236,232,223,.24);--ch:#ece8df;--ch2:rgba(236,232,223,.72);--ch3:rgba(236,232,223,.54);
+--rev:#93b9ec;--rev-ink:#2a5aa8;--rev-paper:#eef3fa;--white:#f6f4ee;--pink:#f0b4c4;--weak:#f2a35c;--ink:#191b1f;--ink2:#5a606a}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1440px;height:900px;overflow:hidden}
+body{background:var(--s1);color:var(--ch);font:400 14px/1.45 'Sofia Sans',sans-serif;display:grid;grid-template-columns:232px 1fr;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer;border:0}
+svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.cap{font:700 11.5px/1 'Sofia Sans Condensed',sans-serif;letter-spacing:.13em;text-transform:uppercase;color:var(--ch3)}
+/* barre latérale */
+.side{background:var(--s0);border-right:1px solid var(--ln);padding:22px 14px;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;font:800 21px/1 'Sofia Sans Condensed';letter-spacing:.02em;padding:0 10px 26px}
+.mark{width:22px;height:20px;border-radius:3px;background:var(--ch);position:relative;overflow:hidden}
+.mark::before{content:'';position:absolute;inset:0 0 auto;height:7px;background:repeating-linear-gradient(-45deg,var(--s0) 0 4px,var(--ch) 4px 8px)}
+.side nav a{display:flex;align-items:center;gap:11px;height:40px;padding:0 12px;border-radius:7px;color:var(--ch2);font-weight:500;font-size:15px;position:relative}
+.side nav a.on{background:var(--s3);color:var(--ch)}
+.side nav a.on::before{content:'';position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--rev)}
+.side .note{margin-top:auto;padding:14px 12px 4px;border-top:1px solid var(--ln);color:var(--ch3);font-size:12.5px;line-height:1.5}
+/* zone principale */
+main{padding:22px 32px 26px;display:grid;grid-template-rows:auto auto auto 1fr;gap:16px;min-width:0;height:900px}
+.top{display:flex;align-items:center;justify-content:space-between;height:36px}
+.steps{display:flex;align-items:center;gap:10px;list-style:none;font-size:13.5px;color:var(--ch3)}
+.steps li{display:flex;align-items:center;gap:7px}
+.steps li+li::before{content:'';width:22px;height:1px;background:var(--ln2);margin-right:3px}
+.steps .d{color:var(--ch2)} .steps .d svg{width:14px;height:14px;color:var(--ch3)}
+.steps .n{color:var(--ch);font-weight:600} .steps .n i{width:8px;height:8px;border-radius:50%;background:var(--rev);box-shadow:0 0 0 3px rgba(147,185,236,.22)}
+.top-r{display:flex;align-items:center;gap:12px}
+.demo{font:700 11px/1 'Sofia Sans Condensed';letter-spacing:.12em;text-transform:uppercase;color:var(--ch2);border:1px dashed var(--ln2);border-radius:4px;padding:6px 8px}
+.ghost{display:flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:7px;background:transparent;color:var(--ch);border:1px solid var(--ln2);font-weight:600;font-size:13.5px}
+/* ardoise du brief */
+.slate{display:grid;grid-template-columns:1.25fr .7fr 1.5fr 1.05fr;border:1px solid var(--ln2);border-radius:8px;background:var(--s2)}
+.slate>div{padding:12px 16px 13px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.slate>div+div{border-left:1px solid var(--ln2)}
+.slate b{font-weight:600;font-size:15px;line-height:1.3;color:var(--ch)}
+.slate small{font-size:12.5px;color:var(--ch3);margin-top:-3px}
+.slate .sig b{display:flex;gap:6px;align-items:center}
+.slate .sig svg{color:var(--rev);width:15px;height:15px}
+/* onglets plateformes */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln);margin-top:-2px}
+.tabs a{display:flex;align-items:center;gap:9px;height:42px;padding:0 14px;color:var(--ch2);font-weight:600;font-size:15px;position:relative}
+.tabs a i{font:700 13px/1 'Sofia Sans Condensed';font-style:normal;padding:4px 6px;border-radius:4px;background:var(--s3);color:var(--ch2);letter-spacing:.03em}
+.tabs a em{font-style:normal;font-size:12px;color:var(--ch3);font-weight:500}
+.tabs a.on{color:var(--ch)} .tabs a.on i{background:var(--rev);color:var(--s0)}
+.tabs a.on::after{content:'';position:absolute;left:10px;right:10px;bottom:-1px;height:2px;background:var(--rev);border-radius:2px}
+/* espace de travail */
+.work{display:grid;grid-template-columns:364px 1fr;gap:24px;min-height:0}
+.left{display:flex;flex-direction:column;gap:14px;min-height:0}
+.panel{background:var(--s2);border:1px solid var(--ln);border-radius:10px;padding:15px 18px}
+.vh{display:flex;justify-content:space-between;align-items:center}
+.ptag{display:flex;align-items:center;gap:6px;font:700 11px/1 'Sofia Sans Condensed';letter-spacing:.12em;text-transform:uppercase;color:var(--rev)}
+.sw{width:10px;height:12px;border-radius:2px;display:inline-block;flex:none}
+.sw.w{background:var(--white)} .sw.b{background:var(--rev)} .sw.p{background:var(--pink)}
+.score{display:flex;align-items:flex-end;gap:16px;margin:10px 0 12px}
+.score strong{font:800 84px/.8 'Sofia Sans Condensed';letter-spacing:-.01em}
+.score strong span{font-size:22px;font-weight:600;color:var(--ch3);letter-spacing:0;margin-left:3px}
+.meta{display:flex;flex-direction:column;gap:9px;padding-bottom:2px}
+.band{align-self:flex-start;background:var(--rev);color:var(--s0);font-weight:700;font-size:13.5px;padding:5px 9px;border-radius:5px}
+.conf{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ch2)}
+.conf b{display:flex;gap:3px} .conf b i{width:12px;height:5px;border-radius:2px;background:var(--ch2)} .conf b i:last-child{background:var(--ln2)}
+.say{font-size:17.5px;line-height:1.4;font-weight:500;color:var(--ch);padding-bottom:14px;border-bottom:1px solid var(--ln)}
+.factors{padding-top:13px}
+.factors ul{list-style:none;margin-top:9px}
+.factors li{display:grid;grid-template-columns:1fr 112px 28px;align-items:center;gap:12px;height:24px;font-size:14px;color:var(--ch2)}
+.factors li i{height:4px;border-radius:2px;background:var(--ln);position:relative;overflow:hidden}
+.factors li i::before{content:'';position:absolute;inset:0;width:calc(var(--v) * 1%);background:var(--ch3);border-radius:2px}
+.factors li b{text-align:right;color:var(--ch);font-weight:600}
+.factors li.weak{color:var(--weak)} .factors li.weak b{color:var(--weak)} .factors li.weak i::before{background:var(--weak)}
+.factors li em,.fix li em{font:700 10.5px/1 'Sofia Sans Condensed';font-style:normal;letter-spacing:.1em;text-transform:uppercase;border:1px solid currentColor;border-radius:3px;padding:3px 4px 2px;margin-left:7px;color:var(--weak)}
+.fix ol{list-style:none;counter-reset:f;margin:9px 0 12px}
+.fix li{counter-increment:f;font-size:14.5px;line-height:1.4;padding:4px 0 4px 20px;color:var(--ch);position:relative}
+.fix li::before{content:counter(f);font:700 12px/1 'Sofia Sans Condensed';color:var(--ch3);position:absolute;left:0;top:9px}
+.fix li em{display:inline-block;vertical-align:1px}
+.primary{width:100%;height:44px;border-radius:8px;background:var(--ch);color:var(--s0);font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:9px}
+.hint{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:12.5px;color:var(--ch3)}
+/* prises + page de script */
+.right{display:flex;flex-direction:column;gap:12px;min-height:0}
+.takes{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;align-items:stretch}
+.take{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:1px solid var(--ln);background:var(--s2);min-width:0;position:relative}
+.take div{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.take b{font:700 11.5px/1 'Sofia Sans Condensed';letter-spacing:.11em;text-transform:uppercase;color:var(--ch2)}
+.take small,.take s{font-size:12.5px;color:var(--ch3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.take s{text-decoration-thickness:1px}
+.take .sc{font:800 22px/1 'Sofia Sans Condensed';color:var(--ch2)}
+.take.old .sc{text-decoration:line-through;text-decoration-thickness:2px;color:var(--ch3)}
+.take .st{display:inline-block;margin-left:8px;transform:rotate(-4deg);font:800 10px/1 'Sofia Sans Condensed';letter-spacing:.14em;text-transform:uppercase;color:var(--ch2);border:1.5px solid var(--ch3);border-radius:3px;padding:3px 5px 2px;background:var(--s2)}
+.take.cur{border-color:var(--rev);background:linear-gradient(var(--s3),var(--s3))} .take.cur b{color:var(--rev)} .take.cur .sc{color:var(--ch)}
+.take.cur small{color:var(--ch2)}
+.take.next{border:1px dashed rgba(240,180,196,.45);background:transparent} .take.next b{color:var(--pink)}
+.paper{position:relative;flex:1;min-height:0}
+.paper::before{content:'';position:absolute;inset:7px -7px -7px 7px;background:var(--white);border-radius:4px;opacity:.9}
+.page{position:relative;height:100%;background:var(--rev-paper);color:var(--ink);border-radius:4px;padding:18px 26px 18px 58px;box-shadow:0 1px 0 rgba(0,0,0,.2),0 14px 30px -18px rgba(0,0,0,.7);display:flex;flex-direction:column}
+.ph{display:flex;align-items:center;gap:14px;padding-bottom:14px;margin-bottom:20px;border-bottom:1px solid rgba(42,90,168,.22);font-family:'Courier Prime',monospace}
+.ph .slug{font-weight:700;font-size:14px;letter-spacing:.04em}
+.ph .slug small{display:block;font-weight:400;font-size:12.5px;color:var(--ink2);letter-spacing:0;margin-top:2px}
+.stamp{margin-left:auto;transform:rotate(-3deg);border:2px solid var(--rev-ink);outline:1px solid var(--rev-ink);outline-offset:2px;color:var(--rev-ink);font:800 13px/1 'Sofia Sans Condensed';letter-spacing:.13em;text-transform:uppercase;padding:6px 9px 5px;border-radius:3px}
+.copy{display:flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:7px;background:#fff;border:1px solid rgba(25,27,31,.18);color:var(--ink);font:600 13.5px 'Sofia Sans'}
+.txt{font:400 16px/1.55 'Courier Prime',monospace;max-width:61ch}
+.txt p{margin-bottom:12px;position:relative}
+.txt p.r::after{content:'*';position:absolute;right:-0px;left:calc(61ch + 26px);top:0;color:var(--rev-ink);font-weight:700}
+.txt .ls p{margin-bottom:0}
+.tags{color:var(--rev-ink)}
+.pf{margin-top:auto;display:flex;justify-content:space-between;font:400 12.5px 'Courier Prime',monospace;color:var(--ink2);border-top:1px dashed rgba(25,27,31,.18);padding-top:10px}
+.pf b{color:var(--rev-ink)}
+</style></head>
+<body>
+<aside class="side">
+  <div class="brand"><span class="mark"></span>Amorce</div>
+  <nav>
+    <a class="on"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Créer</a>
+    <a><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12l6-6"/></svg>Radar</a>
+    <a><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>Historique</a>
+    <a><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Réglages</a>
+  </nav>
+  <p class="note">Le score estime un potentiel relatif dans ta niche. Ce n'est jamais une promesse de vues.</p>
+</aside>
+<main>
+  <header class="top">
+    <ol class="steps">
+      <li class="d"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Idée</li>
+      <li class="d"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Tendances</li>
+      <li class="d"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Angle</li>
+      <li class="d"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Scripts</li>
+      <li class="n"><i></i>Score</li>
+    </ol>
+    <div class="top-r"><span class="demo">Exemple · données de démo</span><button class="ghost"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nouvelle idée</button></div>
+  </header>
+  <section class="slate">
+    <div><span class="cap">Idée</span><b>3 erreurs qui tuent la visibilité des artisans sur les réseaux</b></div>
+    <div><span class="cap">Niche</span><b>Artisanat / rénovation</b></div>
+    <div><span class="cap">Angle</span><b>«&nbsp;Le travail bien fait ne parle pas de lui-même&nbsp;»</b></div>
+    <div class="sig"><span class="cap">Signal tendance</span><b><svg viewBox="0 0 24 24"><path d="M4 17l6-6 4 4 7-8M15 7h6v6"/></svg>devenir artisan reconversion</b><small>200+ recherches · Google Trends</small></div>
+  </section>
+  <nav class="tabs">
+    <a class="on">LinkedIn <i>78</i></a><a>Reels <i>73</i><em>0:42</em></a><a>X <i>69</i></a><a>YouTube <i>71</i></a>
+  </nav>
+  <div class="work">
+    <div class="left">
+      <section class="panel">
+        <div class="vh"><span class="cap">Verdict · LinkedIn</span><span class="ptag"><i class="sw b"></i>Prise 2</span></div>
+        <div class="score"><strong>78<span>/100</span></strong>
+          <div class="meta"><span class="band">Top 25 % de ta niche</span><span class="conf">Confiance <b><i></i><i></i><i></i></b> moyenne</span></div>
+        </div>
+        <p class="say">Accroche forte et structure claire ; il manque une preuve chiffrée.</p>
+        <div class="factors"><span class="cap">Facteurs</span>
+          <ul>
+            <li><span>Accroche</span><i style="--v:82"></i><b>82</b></li>
+            <li><span>Structure</span><i style="--v:85"></i><b>85</b></li>
+            <li class="weak"><span>Tendance<em>Point faible</em></span><i style="--v:68"></i><b>68</b></li>
+            <li><span>Émotion</span><i style="--v:75"></i><b>75</b></li>
+            <li><span>Appel à l'action</span><i style="--v:82"></i><b>82</b></li>
+          </ul>
+        </div>
+      </section>
+      <section class="panel fix"><span class="cap">3 améliorations</span>
+        <ol>
+          <li>Ajouter une preuve chiffrée</li>
+          <li>Relier l'accroche à la vague reconversion<em>Tendance</em></li>
+          <li>Raccourcir l'erreur n° 2</li>
+        </ol>
+        <button class="primary"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/></svg>Réécrire avec ces améliorations</button>
+        <p class="hint"><i class="sw p"></i>Deviendra la prise 3, révision rose. La prise 2 reste lisible.</p>
+      </section>
+    </div>
+    <div class="right">
+      <div class="takes">
+        <div class="take old"><i class="sw w"></i><div><b>Prise 1 · blanche<span class="st">Remplacée</span></b><s>Les artisans ont du savoir-faire. Personne ne le voit.</s></div><span class="sc">71</span></div>
+        <div class="take cur"><i class="sw b"></i><div><b>Prise 2 · bleue</b><small>À l'écran · +7 pts</small></div><span class="sc">78</span></div>
+        <div class="take next"><i class="sw p"></i><div><b>Prise 3 · rose</b><small>À tourner</small></div></div>
+      </div>
+      <div class="paper"><article class="page">
+        <div class="ph"><div class="slug">POST LINKEDIN<small>520 caractères · lecture 30 s</small></div><span class="stamp">Prise 2 · révision bleue</span><button class="copy"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copier</button></div>
+        <div class="txt">
+          <p class="r">La plupart des artisans croient que leur travail «&nbsp;parle de lui-même&nbsp;».</p>
+          <p>Résultat : le carnet de commandes dépend du bouche-à-oreille, et des concurrents moins bons mais plus visibles prennent les chantiers.</p>
+          <p>3 erreurs que je vois chaque semaine :</p>
+          <div class="ls"><p>1. Publier le produit fini, jamais le processus.</p><p>2. Parler technique quand le client achète une émotion.</p><p style="margin-bottom:12px">3. Attendre d'avoir le temps.</p></div>
+          <p class="r">Le travail bien fait mérite d'être vu.</p>
+          <p>Vous êtes artisan ? Qu'est-ce qui vous bloque le plus pour publier ? 👇</p>
+          <p class="tags">#artisanat #communication #tpe</p>
+        </div>
+        <div class="pf"><span><b>*</b> ligne révisée depuis la prise 1</span><span>Rév. bleue · 15/10/26 · p. 1</span></div>
+      </article></div>
+    </div>
+  </div>
+</main>
+</body></html>

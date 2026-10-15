@@ -1,51 +1,216 @@
-/* Générateur de contenu — frontend (vanilla JS, aucune dépendance). */
+/* Amorce — interface (vanilla JS, aucune dépendance, aucun build).
+   Parcours : brief → relevé des tendances → angles → scripts → bulletin de prévision. */
 "use strict";
 
-const PLATFORM_LABELS = { linkedin: "LinkedIn", reels: "Reels", x: "X", youtube: "YouTube" };
-const BAND_LABELS = {
-  top10: "Top 10 % potentiel",
-  top25: "Top 25 % potentiel",
-  top50: "Top 50 % potentiel",
-  moitie_basse: "Sous la médiane",
+/* =========================================================================
+   Référentiels
+   ========================================================================= */
+
+const PLATFORMS = ["linkedin", "reels", "x", "youtube"];
+const PF = {
+  linkedin: { name: "LinkedIn", icon: "linkedin" },
+  reels: { name: "Reels", icon: "reels" },
+  x: { name: "X", icon: "x" },
+  youtube: { name: "YouTube", icon: "youtube" },
 };
+
+// Bandes de potentiel, de la plus froide à la plus chaude.
+const BAND_ORDER = ["moitie_basse", "top50", "top25", "top10"];
+const BANDS = {
+  moitie_basse: { label: "Bas 50 %", title: "Sous la médiane de ta niche", heat: "cold", idx: 0 },
+  top50: { label: "Top 50 %", title: "Top 50 % de ta niche", heat: "mild", idx: 1 },
+  top25: { label: "Top 25 %", title: "Top 25 % de ta niche", heat: "warm", idx: 2 },
+  top10: { label: "Top 10 %", title: "Top 10 % de ta niche", heat: "hot", idx: 3 },
+};
+// Une prévision n'est jamais certaine : l'indice plafonne à 4/5.
+const CONFIDENCE = { faible: 2, moyenne: 3, haute: 4 };
 const FACTOR_LABELS = {
-  hook: "Hook",
+  hook: "Accroche",
   structure: "Structure",
-  adequation_tendance: "Adéquation tendance",
+  adequation_tendance: "Tendance",
   emotion: "Émotion",
   cta: "Appel à l'action",
 };
 const TYPE_LABELS = {
-  contrarian: "contrarian",
-  storytelling: "storytelling",
-  liste: "liste",
-  educatif: "éducatif",
-  reaction: "réaction",
-  etude_de_cas: "étude de cas",
+  contrarian: "Contre-courant",
+  storytelling: "Récit",
+  liste: "Liste",
+  educatif: "Pédagogie",
+  reaction: "Réaction",
+  etude_de_cas: "Étude de cas",
+};
+const VIEW_TITLES = { creer: "Créer", radar: "Radar", historique: "Historique", reglages: "Réglages" };
+const RADAR_IDEAS = ["intelligence artificielle", "reconversion", "marketing local", "productivité"];
+
+const ICONS = {
+  check: '<path d="M5 12l4.5 4.5L19 7"/>',
+  copy: '<rect x="8" y="8" width="11" height="11" rx="2"/><path d="M5 15V6a1 1 0 0 1 1-1h9"/>',
+  rewrite: '<path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/>',
+  chev: '<path d="M9 6l6 6-6 6"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  back: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  alert: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.4v.1"/>',
+  front: '<path d="M1 12h32"/><path class="front-fill" d="M5 12a3.5 3.5 0 0 1 7 0M15 12a3.5 3.5 0 0 1 7 0M25 12a3.5 3.5 0 0 1 7 0"/>',
+  linkedin: '<rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><path d="M8 10.5V16M8 7.75v.01M11.5 16v-5.5M11.5 13.2c0-1.6.9-2.7 2.3-2.7s2.2 1 2.2 2.7V16"/>',
+  reels: '<rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path d="M3.5 8.5h17M9 3.5l2.4 5M14.6 3.5l2.4 5M10.6 12.3v4.4l3.7-2.2z"/>',
+  x: '<path d="M5 4.5h3.6L19 19.5h-3.6zM18.6 4.5L12.9 11M11.1 13l-5.7 6.5"/>',
+  youtube: '<rect x="2.75" y="5.5" width="18.5" height="13" rx="4"/><path d="M10.3 9.5v5l4.2-2.5z"/>',
 };
 
-let currentEntry = null;
-let busy = false; // verrou anti double-clic pendant les générations longues
-let historyToken = 0; // invalide les rendus d'historique concurrents
+const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
+const EASE_IN_OUT = "cubic-bezier(0.77, 0, 0.175, 1)";
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-/* ---------- utilitaires DOM ---------- */
+/* =========================================================================
+   État
+   ========================================================================= */
+
+const state = {
+  health: null,
+  entries: [], // historique, le plus récent d'abord
+  entriesLoaded: false,
+  entriesError: null,
+  calibration: null,
+  settings: null,
+  route: { view: "creer", id: null },
+  entry: null, // prévision ouverte (#prevision/<id>)
+  job: null, // { kind: angles|scripts|judge|rewrite, id, platform, t0, ... } — une seule génération à la fois
+  error: null, // { kind, id, platform, message, ... }
+  showAngles: false,
+  activePf: null,
+  rewritten: null, // { id, platform } : script réécrit dans cette session
+  dropOnShow: null, // id dont le bulletin doit « tomber » au retour sur l'onglet
+  healthLoaded: false,
+  openHistory: new Set(),
+  focusIdea: false,
+};
+
+/* =========================================================================
+   Utilitaires
+   ========================================================================= */
+
+const $ = (sel, root = document) => root.querySelector(sel);
 
 function el(tag, attrs = {}, ...children) {
   const node = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v === null || v === undefined || v === false) continue;
     if (k === "class") node.className = v;
+    else if (k === "vars") for (const [name, val] of Object.entries(v)) node.style.setProperty(name, val);
     else if (k.startsWith("on") && typeof v === "function") node.addEventListener(k.slice(2), v);
-    else if (v !== null && v !== undefined) node.setAttribute(k, v);
+    else node.setAttribute(k, v === true ? "" : v);
   }
-  for (const child of children.flat()) {
-    if (child === null || child === undefined) continue;
+  for (const child of children.flat(2)) {
+    if (child === null || child === undefined || child === false) continue;
     node.append(child.nodeType ? child : document.createTextNode(String(child)));
   }
   return node;
 }
 
-function show(id) { document.getElementById(id).classList.remove("hidden"); }
-function hide(id) { document.getElementById(id).classList.add("hidden"); }
+function svg(name, cls = "ico", viewBox = "0 0 24 24") {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  node.setAttribute("viewBox", viewBox);
+  if (cls) node.setAttribute("class", cls);
+  node.setAttribute("aria-hidden", "true");
+  node.setAttribute("focusable", "false");
+  node.innerHTML = ICONS[name];
+  return node;
+}
+
+const frontGlyph = () => svg("front", "front-glyph", "0 0 34 14");
+const fmt = (n) => Number(n || 0).toLocaleString("fr-FR");
+const fmtRatio = (r) => Number(r || 0).toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+const timeOf = (iso) => new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+const dateOf = (iso) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+const countWords = (text) => (String(text).trim().match(/\S+/g) || []).length;
+const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+
+// Échelle thermique d'une note sur 100.
+function heatOf(score) {
+  if (score >= 85) return "hot";
+  if (score >= 75) return "warm";
+  if (score >= 60) return "tepid";
+  if (score >= 40) return "mild";
+  return "cold";
+}
+
+function tchip(value, heat, small = false) {
+  if (value === null || value === undefined || !heat) {
+    return el("span", { class: `t${small ? " t-sm" : ""} t-empty` }, "—");
+  }
+  return el("span", { class: `t${small ? " t-sm" : ""}`, "data-heat": heat, vars: { "--t": `var(--${heat})` } }, String(value));
+}
+
+function bar(score, heat) {
+  return el("i", { vars: { "--v": `${Math.max(0, Math.min(100, score))}%`, "--t": `var(--${heat})` } });
+}
+
+function disclosure(summary, body, cls = "") {
+  return el("details", { class: `disclosure ${cls}`.trim() },
+    el("summary", {}, svg("chev", "ico chev"), summary),
+    el("div", { class: "disclosure-body" }, body),
+  );
+}
+
+function alertBox(title, message, actions = []) {
+  return el("div", { class: "alert enter", role: "alert" },
+    svg("alert"),
+    el("div", {},
+      el("strong", {}, title),
+      el("p", {}, message),
+      actions.length
+        ? el("div", { class: "alert-actions" },
+            actions.map(([label, fn, primary]) =>
+              el("button", { type: "button", class: `btn${primary ? " btn-primary" : ""}`, onclick: fn }, label),
+            ),
+          )
+        : null,
+    ),
+  );
+}
+
+let toastTimer = 0;
+function toast(message) {
+  const node = $("#toast");
+  node.textContent = message;
+  node.classList.add("is-on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => node.classList.remove("is-on"), 3200);
+}
+
+// Transition de vue native quand le navigateur la propose (sauf mouvement réduit).
+function transition(update) {
+  if (!document.startViewTransition || reduceMotion.matches || document.hidden) {
+    update();
+    return Promise.resolve();
+  }
+  return document.startViewTransition(update).updateCallbackDone.catch((err) => console.error(err));
+}
+
+function scrollTop() {
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const area = el("textarea", { "aria-hidden": "true", readonly: true, class: "copy-buffer" });
+    area.value = text;
+    document.body.append(area);
+    area.select();
+    let ok = false;
+    try {
+      ok = document.execCommand("copy");
+    } catch {
+      ok = false;
+    }
+    area.remove();
+    return ok;
+  }
+}
 
 async function api(path, options = {}) {
   const res = await fetch(path, {
@@ -65,519 +230,1802 @@ async function api(path, options = {}) {
   return data;
 }
 
-function setLoading(text) {
-  busy = Boolean(text);
-  if (text) {
-    document.getElementById("loading-text").textContent = text;
-    show("create-loading");
-  } else hide("create-loading");
-  hide("create-error");
+const post = (path, body) => api(path, { method: "POST", body: JSON.stringify(body) });
+
+/* =========================================================================
+   Données de prévision
+   ========================================================================= */
+
+const isJudged = (score) => Boolean(score && BANDS[score.bande] && score.facteurs?.length);
+
+function platformsOf(entry) {
+  return (entry.brief?.platforms || []).filter((p) => entry.scripts?.[p]);
 }
 
-function setError(message) {
-  busy = false;
-  hide("create-loading");
-  const box = document.getElementById("create-error");
-  box.textContent = message;
-  show("create-error");
+function bestOf(entry) {
+  let best = null;
+  for (const p of platformsOf(entry)) {
+    const sc = entry.scripts[p].score;
+    if (isJudged(sc) && (!best || sc.final > best.final)) best = { final: sc.final, heat: BANDS[sc.bande].heat };
+  }
+  return best;
 }
 
-/* ---------- onglets ---------- */
+function sortEntries(list) {
+  return [...list].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+}
 
-document.getElementById("main-tabs").addEventListener("click", (e) => {
-  const btn = e.target.closest(".tab");
-  if (!btn) return;
-  document.querySelectorAll(".tab").forEach((t) => {
-    t.classList.toggle("active", t === btn);
-    t.setAttribute("aria-selected", String(t === btn));
-  });
-  document.querySelectorAll(".tab-panel").forEach((p) =>
-    p.classList.toggle("active", p.id === `tab-${btn.dataset.tab}`),
-  );
-  if (btn.dataset.tab === "history") loadHistory();
-  if (btn.dataset.tab === "settings") loadSettings();
-});
+let pendingLoad = null;
+let mutatedDuringLoad = null;
 
-/* ---------- santé ---------- */
+// Recharge l'historique. Une entrée mise à jour pendant le chargement garde sa version locale.
+function loadEntries() {
+  if (pendingLoad) return pendingLoad;
+  mutatedDuringLoad = new Set();
+  pendingLoad = api("/api/history")
+    .then((data) => {
+      const local = new Map(state.entries.map((e) => [e.id, e]));
+      const fresh = (data.entries || []).map((e) =>
+        mutatedDuringLoad.has(e.id) && local.has(e.id) ? local.get(e.id) : e,
+      );
+      for (const id of mutatedDuringLoad) {
+        if (!fresh.some((e) => e.id === id) && local.has(id)) fresh.push(local.get(id));
+      }
+      state.entries = sortEntries(fresh);
+      state.calibration = data.calibration || state.calibration;
+      state.entriesLoaded = true;
+      state.entriesError = null;
+      if (state.entry?.id) state.entry = state.entries.find((e) => e.id === state.entry.id) || state.entry;
+      renderRecents();
+    })
+    .catch((err) => {
+      state.entriesError = err.message;
+    })
+    .finally(() => {
+      pendingLoad = null;
+      mutatedDuringLoad = null;
+    });
+  return pendingLoad;
+}
 
-async function loadHealth() {
+function upsertEntry(entry) {
+  if (!entry?.id) return;
+  mutatedDuringLoad?.add(entry.id);
+  const i = state.entries.findIndex((e) => e.id === entry.id);
+  if (i >= 0) state.entries[i] = entry;
+  else state.entries.unshift(entry);
+  if (state.entry?.id === entry.id) state.entry = entry;
+  renderRecents();
+}
+
+async function loadSettingsData() {
   try {
-    const h = await api("/api/health");
-    const where = h.deployed ? "les variables d'environnement Vercel" : ".env";
-    const bits = [`modèle ${h.model}`, `tendances ${h.geo}`];
-    if (!h.hasAnthropicKey) bits.push(`⚠ clé API manquante (${where})`);
-    if (h.storage === "temporaire") bits.push("⚠ historique non sauvegardé (Redis absent)");
-    document.getElementById("status-line").textContent = bits.join(" · ");
-    const storageText = {
-      redis: "Redis (persistant) ✓",
-      fichiers: "fichiers locaux dans data/ ✓",
-      temporaire: "temporaire ✗ — l'historique est perdu à chaque redémarrage. Ajoute Upstash Redis au projet Vercel (voir README).",
-    }[h.storage] || h.storage;
-    const env = document.getElementById("env-info");
-    env.textContent = "";
-    env.append(
-      el("p", {}, `Modèle : ${h.model} (effort ${h.effort}) — modifiable via CLAUDE_MODEL / CLAUDE_EFFORT dans ${where}`),
-      el("p", {}, `Clé Anthropic : ${h.hasAnthropicKey ? "présente ✓" : "absente ✗ (obligatoire)"}`),
-      el("p", {}, `Clé YouTube : ${h.hasYoutubeKey ? "présente ✓" : "absente (source optionnelle du radar)"}`),
-      el("p", {}, `Stockage : ${storageText}`),
-      h.deployed
-        ? el("p", {}, "En ligne : vérifie que Settings → Deployment Protection → « All Deployments » est activé sur Vercel, sinon n'importe qui avec l'URL peut utiliser ta clé API.")
-        : null,
-    );
+    state.settings = await api("/api/settings");
   } catch {
-    document.getElementById("status-line").textContent = "Serveur injoignable";
+    state.settings = state.settings || { voice: "", medianViews: {} };
+  }
+  return state.settings;
+}
+
+/* =========================================================================
+   Navigation
+   ========================================================================= */
+
+function parseHash() {
+  const [view, id] = location.hash.replace(/^#/, "").split("/");
+  if (view === "prevision" && id) return { view: "prevision", id: decodeURIComponent(id) };
+  if (VIEW_TITLES[view]) return { view, id: null };
+  return { view: "creer", id: null };
+}
+
+const viewName = (route) => (route.view === "prevision" ? "creer" : route.view);
+const isViewingFlow = (id) => state.route.view === "prevision" && state.route.id === id;
+
+function applyRoute({ focus = false } = {}) {
+  const route = parseHash();
+  state.route = route;
+  const name = viewName(route);
+
+  for (const view of document.querySelectorAll(".view")) {
+    view.classList.toggle("hidden", view.dataset.view !== name);
+  }
+  for (const link of document.querySelectorAll(".nav-link")) {
+    if (link.dataset.nav === name) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  }
+  document.title = `${VIEW_TITLES[name]} · Amorce`;
+  stopSticky();
+  scrollTop();
+
+  let target = null;
+  if (name === "creer") {
+    const flow = syncCreer();
+    if (route.view === "prevision") openEntry(route.id, focus);
+    else if (flow) renderFlow();
+    if (!flow) {
+      target = state.focusIdea ? $("#f-idea") : $("#creer-title");
+      state.focusIdea = false;
+    } else if (route.view !== "prevision") target = $(".flow-title");
+  } else if (name === "radar") {
+    renderRadarIdle();
+    target = $("#radar-title");
+  } else if (name === "historique") {
+    loadHistoryView();
+    target = $("#hist-title");
+  } else if (name === "reglages") {
+    loadSettingsView();
+    target = $("#settings-title");
+  }
+  renderRecents();
+  if (focus && target) {
+    if (!target.hasAttribute("tabindex") && !/^(INPUT|TEXTAREA)$/.test(target.tagName)) target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
   }
 }
 
-/* ---------- étape 1 : brief → angles ---------- */
-
-document.getElementById("brief-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  if (busy) return;
-  const platforms = [...document.querySelectorAll('input[name="platform"]:checked')].map((c) => c.value);
-  const payload = {
-    idea: document.getElementById("f-idea").value,
-    niche: document.getElementById("f-niche").value,
-    audience: document.getElementById("f-audience").value,
-    goal: document.getElementById("f-goal").value,
-    platforms,
-  };
-  const btn = document.getElementById("btn-angles");
-  btn.disabled = true;
-  setLoading("Collecte des tendances (Google Trends, actualité, YouTube, Reddit…) puis proposition d'angles…");
-  hide("step-angles");
-  hide("step-scripts");
-  try {
-    currentEntry = await api("/api/angles", { method: "POST", body: JSON.stringify(payload) });
-    renderAngles(currentEntry);
-    setLoading(null);
-    show("step-angles");
-  } catch (err) {
-    setError(err.message);
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-function renderTrendSources(trends, container) {
-  container.textContent = "";
-  const sources = Object.values(trends?.sources || {});
-  if (!sources.length) {
-    container.append(el("p", { class: "muted" }, "Aucune source de tendances n'a répondu (réseau ? clés ?). Les angles reposeront sur le brief seul."));
-  }
-  for (const source of sources) {
-    const list = el("ul", {}, source.items.slice(0, 8).map((it) =>
-      el("li", {},
-        it.url ? el("a", { href: it.url, target: "_blank", rel: "noopener" }, it.title) : it.title,
-        " ",
-        el("span", { class: "sig" }, it.signal || ""),
-      ),
-    ));
-    container.append(el("details", { class: "trend-source" }, el("summary", {}, `${source.label} (${source.items.length})`), list));
-  }
-  for (const err of trends?.errors || []) {
-    container.append(el("p", { class: "muted small" }, `· ${err.source} indisponible : ${err.error}`));
-  }
+// Dans « Créer » : le brief, ou le parcours pendant le relevé des tendances.
+function syncCreer() {
+  const name = viewName(state.route);
+  if (name !== "creer") return false;
+  const flow = state.route.view === "prevision" || state.job?.kind === "angles";
+  $("#step-brief").classList.toggle("hidden", flow);
+  $("#step-flow").classList.toggle("hidden", !flow);
+  return flow;
 }
 
-function renderAngles(entry) {
-  const trendsCard = document.getElementById("trends-card");
-  trendsCard.textContent = "";
-  trendsCard.append(el("h2", {}, "2 · Ce que disent les réseaux en ce moment"));
-  renderTrendSources(entry.trends, trendsCard.appendChild(el("div")));
+function go(hash) {
+  if (location.hash === hash) applyRoute({ focus: true });
+  else location.hash = hash;
+}
 
-  const retained = entry.angles?.tendances_retenues || [];
-  if (retained.length) {
-    trendsCard.append(el("h3", {}, "Tendances retenues pour ton idée"));
-    trendsCard.append(el("div", { class: "chips" }, retained.map((t) =>
-      el("span", { class: "chip", title: t.pourquoi }, `${t.titre} · ${t.source}`),
-    )));
-  }
-
-  const anglesCard = document.getElementById("angles-card");
-  anglesCard.textContent = "";
-  anglesCard.append(el("h2", {}, "3 · Choisis un angle"));
-  (entry.angles?.angles || []).forEach((angle, i) => {
-    anglesCard.append(
-      el("div", { class: "angle" },
-        el("div", { class: "angle-head" },
-          el("strong", {}, angle.titre),
-          el("span", { class: "badge" }, TYPE_LABELS[angle.type] || angle.type),
+async function openEntry(id, focus) {
+  if (state.entry?.id !== id) {
+    let found = state.entries.find((e) => e.id === id);
+    if (!found) {
+      $("#flow-head").replaceChildren();
+      $("#flow-body").replaceChildren(
+        el("div", { class: "card loading-card", "aria-busy": "true" },
+          el("div", { class: "skeleton sk-title" }),
+          el("div", { class: "skeleton sk-line" }),
+          el("div", { class: "skeleton sk-line" }),
         ),
-        el("p", { class: "hook" }, `« ${angle.accroche} »`),
-        el("p", { class: "why" }, angle.justification),
-        el("div", { class: "angle-foot" },
-          el("div", { class: "meter", title: `Adéquation tendances : ${angle.score_tendance}/100` },
-            el("div", { style: `width:${angle.score_tendance}%` }),
-          ),
-          el("button", { class: "primary", onclick: () => generateScripts(i) }, "Choisir cet angle →"),
+      );
+      await loadEntries();
+      if (state.route.view !== "prevision" || state.route.id !== id) return;
+      found = state.entries.find((e) => e.id === id);
+    }
+    if (!found) {
+      $("#flow-body").replaceChildren(
+        alertBox("Prévision introuvable.", state.entriesError || "Elle a peut-être été générée sur un stockage temporaire, effacé depuis.", [
+          ["Nouvelle prévision", () => go("#creer"), true],
+        ]),
+      );
+      return;
+    }
+    state.entry = found;
+    state.showAngles = false;
+    state.activePf = null;
+    if (state.rewritten?.id !== id) state.rewritten = null;
+  }
+  document.title = `${state.entry.brief.idea.slice(0, 48)} · Amorce`;
+  renderFlow();
+  if (focus) $(".flow-title")?.focus({ preventScroll: true });
+}
+
+/* =========================================================================
+   Brief
+   ========================================================================= */
+
+const DRAFT_KEY = "amorce.brief";
+
+function readDraft() {
+  try {
+    return JSON.parse(localStorage.getItem(DRAFT_KEY) || "null") || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveDraft({ niche, audience, goal, platforms }) {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ niche, audience, goal, platforms }));
+  } catch {
+    /* stockage navigateur indisponible : simple confort perdu */
+  }
+}
+
+function renderPlatformOptions(selected) {
+  $("#platform-options").replaceChildren(
+    ...PLATFORMS.map((p) =>
+      el("label", { class: "pf-toggle" },
+        el("input", { type: "checkbox", name: "platform", value: p, checked: selected.includes(p) }),
+        el("span", {},
+          el("span", { class: "check", "aria-hidden": "true" }, svg("check", "")),
+          svg(PF[p].icon, "ico pf-ico"),
+          PF[p].name,
         ),
       ),
-    );
-  });
-}
-
-/* ---------- étape 2 : scripts + scores ---------- */
-
-async function generateScripts(angleIndex) {
-  if (busy) return;
-  setLoading("Étape 1/2 · Écriture des scripts par plateforme…");
-  hide("step-scripts");
-  try {
-    currentEntry = await api("/api/scripts", {
-      method: "POST",
-      body: JSON.stringify({ id: currentEntry.id, angleIndex }),
-    });
-    renderScripts(currentEntry);
-    show("step-scripts");
-    document.getElementById("step-scripts").scrollIntoView({ behavior: "smooth" });
-  } catch (err) {
-    setError(err.message);
-    return;
-  }
-  busy = false;
-  await judge("Étape 2/2 · Évaluation critique des scripts…");
-}
-
-// Passe du juge IA sur tous les scripts de la génération courante.
-async function judge(text = "Évaluation critique des scripts…") {
-  if (busy) return;
-  const activeTab = document.querySelector(".script-tab.active")?.dataset.platform;
-  setLoading(text);
-  try {
-    currentEntry = await api("/api/judge", {
-      method: "POST",
-      body: JSON.stringify({ id: currentEntry.id }),
-    });
-    renderScripts(currentEntry, activeTab);
-    setLoading(null);
-  } catch (err) {
-    setError(`Les scripts sont prêts, mais l'évaluation IA a échoué : ${err.message}`);
-  }
-}
-
-function scorePanel(script) {
-  const score = script.score || {};
-  const panel = el("div", { class: "score-panel" });
-  panel.append(
-    el("div", { class: "score-big" },
-      el("div", { class: "n" }, String(score.final ?? "—")),
-      score.bande ? el("span", { class: `band ${score.bande}` }, BAND_LABELS[score.bande]) : null,
-      el("div", { class: "sub" }, score.confiance ? `confiance ${score.confiance}` : ""),
     ),
   );
-
-  const right = el("div");
-  for (const f of score.facteurs || []) {
-    right.append(
-      el("div", { class: "factor" },
-        el("span", {}, FACTOR_LABELS[f.nom] || f.nom),
-        el("div", { class: "meter" }, el("div", { style: `width:${f.score}%` })),
-        el("span", { class: "val" }, String(f.score)),
-        el("div", { class: "factor-comment" }, f.commentaire),
-      ),
-    );
-  }
-  const heur = score.heuristique;
-  if (heur) {
-    right.append(
-      el("div", { class: "factor" },
-        el("span", {}, "Conformité du format"),
-        el("div", { class: "meter" }, el("div", { style: `width:${heur.global}%` })),
-        el("span", { class: "val" }, String(heur.global)),
-      ),
-    );
-    if (heur.flags?.length) {
-      right.append(el("ul", { class: "flags" }, heur.flags.map((f) => el("li", {}, f))));
-    }
-  }
-  panel.append(right);
-  return panel;
 }
 
-function renderScripts(entry, activePlatform) {
-  const container = document.getElementById("step-scripts");
-  container.textContent = "";
-  const card = el("div", { class: "card" });
-  card.append(
-    el("h2", {}, "4 · Tes scripts, notés avant publication"),
-    el("p", { class: "muted small" },
-      "Le score est un potentiel relatif (jamais une promesse de vues) : il combine une évaluation critique IA et la conformité aux codes du format. ",
-      "Après publication, saisis tes stats réelles dans l'Historique pour vérifier la prédiction."),
-  );
-  const notJudged = Object.values(entry.scripts || {}).some((s) => !s.score?.juge);
-  if (notJudged) {
-    const judgeBtn = el("button", { class: "primary" }, "Lancer l'évaluation IA");
-    judgeBtn.addEventListener("click", () => judge());
-    card.append(
-      el("div", { class: "banner", style: "margin:12px 0" },
-        el("p", { style: "margin:0 0 10px" }, "Score provisoire : seule la conformité au format est notée. L'évaluation critique IA (hook, émotion, adéquation aux tendances…) n'est pas encore passée."),
-        judgeBtn,
-      ),
-    );
+function readBrief() {
+  return {
+    idea: $("#f-idea").value.trim(),
+    niche: $("#f-niche").value.trim(),
+    audience: $("#f-audience").value.trim(),
+    goal: $("#f-goal").value,
+    platforms: [...document.querySelectorAll('input[name="platform"]:checked')].map((c) => c.value),
+  };
+}
+
+function goalLabel(goal) {
+  const option = [...$("#f-goal").options].find((o) => o.value === goal);
+  return option ? option.textContent : goal;
+}
+
+function setFieldError(fieldEl, errorEl, on) {
+  if (fieldEl) fieldEl.dataset.invalid = String(on);
+  errorEl.hidden = !on;
+}
+
+function initBrief() {
+  const draft = readDraft();
+  renderPlatformOptions(Array.isArray(draft.platforms) && draft.platforms.length ? draft.platforms : ["linkedin", "reels"]);
+  if (draft.niche) $("#f-niche").value = draft.niche;
+  if (draft.audience) $("#f-audience").value = draft.audience;
+  if (draft.goal && [...$("#f-goal").options].some((o) => o.value === draft.goal)) $("#f-goal").value = draft.goal;
+
+  const form = $("#brief-form");
+  const idea = $("#f-idea");
+  idea.setAttribute("aria-describedby", "f-idea-error");
+  idea.addEventListener("input", () => setFieldError(idea.closest(".field"), $("#f-idea-error"), false));
+  $("#platform-options").addEventListener("change", () => setFieldError(null, $("#f-platform-error"), false));
+  form.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) {
+      ev.preventDefault();
+      form.requestSubmit();
+    }
+  });
+  form.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const brief = readBrief();
+    const missingIdea = !brief.idea;
+    const missingPf = !brief.platforms.length;
+    setFieldError(idea.closest(".field"), $("#f-idea-error"), missingIdea);
+    setFieldError(null, $("#f-platform-error"), missingPf);
+    if (missingIdea) return idea.focus();
+    if (missingPf) return $('input[name="platform"]').focus();
+    saveDraft(brief);
+    startForecast(brief);
+  });
+}
+
+function showBriefAlert(node) {
+  const box = $("#brief-alert");
+  box.replaceChildren(...(node ? [node] : []));
+}
+
+/* =========================================================================
+   Générations
+   ========================================================================= */
+
+function busyToast() {
+  toast("Une génération est déjà en cours : patiente jusqu'à la fin.");
+}
+
+function pickSignals(trends) {
+  const lists = Object.values(trends?.sources || {}).map((s) => s.items.map((it) => ({ title: it.title, source: s.label })));
+  const out = [];
+  for (let i = 0; out.length < 6 && lists.some((l) => l[i]); i++) {
+    for (const list of lists) if (list[i] && out.length < 6) out.push(list[i]);
+  }
+  return out;
+}
+
+async function startForecast(brief) {
+  if (state.job) return busyToast();
+  showBriefAlert(null);
+  state.error = null;
+  state.job = { kind: "angles", brief, t0: Date.now(), stage: "trends", signals: [], signalCount: 0 };
+  const onBrief = state.route.view === "creer";
+  if (onBrief) {
+    await transition(() => {
+      syncCreer();
+      renderFlow();
+      scrollTop();
+    });
+    $(".flow-title")?.focus({ preventScroll: true });
   }
 
-  const platforms = Object.keys(entry.scripts || {});
-  const active = activePlatform && entry.scripts?.[activePlatform] ? activePlatform : platforms[0];
-  const tabsBar = el("div", { class: "script-tabs" });
-  const panels = {};
+  // 1. Relevé des tendances, affiché en direct (la même requête est ensuite servie par le cache).
+  const query = [brief.idea, brief.niche].filter(Boolean).join(" ").slice(0, 120).trim();
+  try {
+    const trends = await api(`/api/trends?q=${encodeURIComponent(query)}`);
+    state.job.signals = pickSignals(trends);
+    state.job.signalCount = Object.values(trends.sources || {}).reduce((n, s) => n + s.items.length, 0);
+  } catch {
+    state.job.signals = [];
+  }
+  state.job.stage = "angles";
+  if (state.route.view === "creer") renderFlow();
 
-  platforms.forEach((p) => {
-    const script = entry.scripts[p];
-    const tabBtn = el("button", { class: `script-tab${p === active ? " active" : ""}`, "aria-selected": String(p === active), "data-platform": p },
-      PLATFORM_LABELS[p] || p,
-      el("span", { class: "score-pill" }, String(script.score?.final ?? "")),
-    );
-    tabBtn.addEventListener("click", () => {
-      tabsBar.querySelectorAll(".script-tab").forEach((b) => {
-        b.classList.toggle("active", b === tabBtn);
-        b.setAttribute("aria-selected", String(b === tabBtn));
+  // 2. Angles proposés par l'IA.
+  try {
+    const entry = await post("/api/angles", brief);
+    state.job = null;
+    upsertEntry(entry);
+    if (state.route.view === "creer") {
+      state.entry = entry;
+      state.showAngles = false;
+      state.activePf = null;
+      history.pushState(null, "", `#prevision/${entry.id}`);
+      state.route = { view: "prevision", id: entry.id };
+      document.title = `${entry.brief.idea.slice(0, 48)} · Amorce`;
+      await transition(() => {
+        syncCreer();
+        renderFlow();
+        scrollTop();
       });
-      Object.entries(panels).forEach(([key, node]) => node.classList.toggle("hidden", key !== p));
-    });
-    tabsBar.append(tabBtn);
+      renderRecents();
+      toast("Angles prêts : choisis celui à écrire.");
+    } else {
+      toast("Tes angles sont prêts : retrouve-les dans Récents.");
+      if (state.route.view === "creer") syncCreer();
+    }
+  } catch (err) {
+    state.job = null;
+    if (viewName(state.route) === "creer" && state.route.view === "creer") {
+      await transition(() => {
+        syncCreer();
+        scrollTop();
+      });
+    }
+    showBriefAlert(
+      alertBox("La prévision n'a pas abouti.", err.message, [["Réessayer", () => startForecast(brief), true]]),
+    );
+    if (state.route.view !== "creer") toast("La prévision n'a pas abouti : le détail est dans « Créer ».");
+  }
+}
 
-    const panel = el("div", { class: p === active ? "" : "hidden" });
-    panel.append(scorePanel(script));
-    if (script.score?.comparaison) {
-      panel.append(el("p", { class: "comparison" }, script.score.comparaison));
-    }
-    if (script.titre) panel.append(el("h3", {}, script.titre));
-    panel.append(el("div", { class: "script-content" }, script.contenu));
-    if (script.hashtags?.length) {
-      panel.append(el("div", { class: "chips" }, script.hashtags.map((h) =>
-        el("span", { class: "chip" }, h.startsWith("#") ? h : `#${h}`),
-      )));
-    }
-    if (script.score?.suggestions?.length) {
-      panel.append(el("h3", {}, "Pour gagner des points"));
-      panel.append(el("ol", { class: "suggestions" }, script.score.suggestions.map((s) => el("li", {}, s))));
-    }
-    const copyBtn = el("button", { class: "ghost" }, "Copier le script");
-    copyBtn.addEventListener("click", async () => {
-      await navigator.clipboard.writeText(`${script.titre ? script.titre + "\n\n" : ""}${script.contenu}`);
-      copyBtn.textContent = "Copié ✓";
-      setTimeout(() => (copyBtn.textContent = "Copier le script"), 1500);
-    });
-    const rewriteBtn = el("button", { class: "primary" }, "Réécrire selon les suggestions");
-    rewriteBtn.addEventListener("click", () => rewrite(p));
-    panel.append(el("div", { class: "script-actions" }, copyBtn, rewriteBtn));
-    panels[p] = panel;
+async function pickAngle(index) {
+  if (state.job) return busyToast();
+  const entry = state.entry;
+  const angle = entry?.angles?.angles?.[index];
+  if (!angle) return;
+  state.error = null;
+  state.job = { kind: "scripts", id: entry.id, t0: Date.now(), angle };
+  await transition(() => {
+    renderFlow();
+    scrollTop();
   });
+  try {
+    const updated = await post("/api/scripts", { id: entry.id, angleIndex: index });
+    state.job = null;
+    upsertEntry(updated);
+    if (state.rewritten?.id === entry.id) state.rewritten = null;
+    if (isViewingFlow(entry.id)) {
+      state.showAngles = false;
+      state.activePf = null;
+      await transition(() => {
+        renderFlow();
+        scrollTop();
+      });
+    }
+  } catch (err) {
+    state.job = null;
+    state.error = { kind: "scripts", id: entry.id, angleIndex: index, message: err.message };
+    state.showAngles = true;
+    if (isViewingFlow(entry.id)) renderFlow();
+    else toast("L'écriture des scripts n'a pas abouti.");
+    return;
+  }
+  await runJudge(entry.id);
+}
 
-  card.append(tabsBar);
-  platforms.forEach((p) => card.append(panels[p]));
-  container.append(card);
+async function runJudge(id) {
+  if (state.job) return busyToast();
+  if (state.error?.id === id) state.error = null;
+  state.job = { kind: "judge", id, t0: Date.now() };
+  if (isViewingFlow(id)) renderFlow();
+  try {
+    const updated = await post("/api/judge", { id });
+    state.job = null;
+    upsertEntry(updated);
+    if (isViewingFlow(id)) {
+      // Onglet en arrière-plan : le bulletin tombera au retour de l'utilisateur.
+      if (document.hidden) {
+        renderFlow();
+        state.dropOnShow = id;
+      } else renderFlow({ drop: true });
+    }
+    const summary = platformsOf(updated)
+      .filter((p) => isJudged(updated.scripts[p].score))
+      .map((p) => `${PF[p].name} ${updated.scripts[p].score.final} (${BANDS[updated.scripts[p].score.bande].label})`)
+      .join(", ");
+    toast(`Bulletin prêt : ${summary}.`);
+  } catch (err) {
+    state.job = null;
+    state.error = { kind: "judge", id, message: err.message };
+    if (isViewingFlow(id)) renderFlow();
+    else toast("L'évaluation n'a pas abouti.");
+  }
 }
 
 async function rewrite(platform) {
-  if (busy) return;
-  setLoading(`Réécriture du script ${PLATFORM_LABELS[platform]} puis réévaluation…`);
+  if (state.job) return busyToast();
+  const entry = state.entry;
+  const before = entry.scripts[platform].score?.final;
+  state.error = null;
+  state.job = { kind: "rewrite", id: entry.id, platform, t0: Date.now() };
+  if (isViewingFlow(entry.id)) renderFlow();
   try {
-    currentEntry = await api("/api/rewrite", {
-      method: "POST",
-      body: JSON.stringify({ id: currentEntry.id, platform }),
-    });
-    renderScripts(currentEntry, platform);
-    setLoading(null);
+    const updated = await post("/api/rewrite", { id: entry.id, platform });
+    state.job = null;
+    upsertEntry(updated);
+    state.rewritten = { id: entry.id, platform };
+    const after = updated.scripts[platform].score?.final;
+    if (isViewingFlow(entry.id)) {
+      state.activePf = platform;
+      renderFlow({ rewrote: platform, from: before });
+    }
+    toast(`Script ${PF[platform].name} réécrit : ${before ?? "—"} → ${after ?? "—"}.`);
   } catch (err) {
-    setError(err.message);
+    state.job = null;
+    state.error = { kind: "rewrite", id: entry.id, platform, message: err.message };
+    if (isViewingFlow(entry.id)) renderFlow();
+    else toast("La réécriture n'a pas abouti.");
   }
 }
 
-/* ---------- radar ---------- */
+/* =========================================================================
+   Parcours : en-tête
+   ========================================================================= */
 
-document.getElementById("radar-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const q = document.getElementById("radar-q").value.trim();
-  const box = document.getElementById("radar-results");
-  const submitBtn = e.target.querySelector("button");
-  submitBtn.disabled = true;
-  box.textContent = "";
-  box.append(el("p", { class: "muted" }, "Scan en cours…"));
-  try {
-    const trends = await api(`/api/trends?q=${encodeURIComponent(q)}`);
-    box.textContent = "";
-    renderTrendSources(trends, box);
-    box.querySelectorAll("details").forEach((d) => (d.open = true));
-  } catch (err) {
-    box.textContent = "";
-    box.append(el("p", { class: "error" }, err.message));
-  } finally {
-    submitBtn.disabled = false;
+function stepsList(entry, draftRun) {
+  const judged = platformsOf(entry).length > 0 && platformsOf(entry).every((p) => isJudged(entry.scripts[p].score));
+  const job = state.job;
+  let done;
+  if (draftRun) {
+    done = [true, job.stage !== "trends", false, false, false];
+  } else {
+    const writing = job?.kind === "scripts" && job.id === entry.id;
+    done = [true, true, Boolean(entry.scripts) || writing, Boolean(entry.scripts) && !writing, judged && !writing];
   }
-});
+  const names = ["Idée", "Tendances", "Angle", "Scripts", "Prévision"];
+  const now = done.indexOf(false);
+  return el("ol", { class: "steps", "aria-label": "Progression" },
+    names.map((name, i) => {
+      const cls = i === now ? "now" : done[i] ? null : "todo";
+      return el("li", { class: cls, "aria-current": i === now ? "step" : null },
+        el("i", { "aria-hidden": "true" }, done[i] ? svg("check", "") : null),
+        name,
+        done[i] ? el("span", { class: "sr-only" }, " (fait)") : null,
+      );
+    }),
+  );
+}
 
-/* ---------- historique & calibration ---------- */
-
-async function loadHistory() {
-  const token = ++historyToken;
-  const list = document.getElementById("history-list");
-  const banner = document.getElementById("calibration-banner");
-  list.textContent = "";
-  banner.textContent = "";
-  let data;
-  try {
-    data = await api("/api/history");
-  } catch (err) {
-    if (token !== historyToken) return;
-    list.append(el("p", { class: "error" }, err.message));
-    return;
+function flowHead(entry, draftRun) {
+  const brief = entry.brief;
+  const bits = [];
+  if (brief.niche) bits.push(el("span", {}, brief.niche));
+  if (entry.chosenAngle && entry.scripts && !state.showAngles) {
+    bits.push(el("span", {}, "Angle ", el("q", {}, entry.chosenAngle.titre)));
+  } else {
+    if (brief.goal) bits.push(el("span", {}, `Objectif : ${goalLabel(brief.goal).toLowerCase()}`));
+    bits.push(el("span", {}, brief.platforms.map((p) => PF[p].name).join(" · ")));
   }
-  if (token !== historyToken) return;
+  const meta = el("div", { class: "flow-meta" });
+  bits.forEach((b, i) => {
+    if (i) meta.append(el("span", { class: "meta-sep", "aria-hidden": "true" }));
+    meta.append(b);
+  });
+  const front = entry.angles?.tendances_retenues?.[0];
+  if (front && entry.scripts && !state.showAngles) {
+    meta.append(
+      el("span", { class: "front-pill", title: "Front de tendance retenu" },
+        frontGlyph(),
+        el("span", {}, el("strong", {}, front.titre), ` · ${front.source}`),
+      ),
+    );
+  }
+  if (entry.demo) meta.append(el("span", { class: "tag-demo" }, "Exemple"));
 
-  const cal = data.calibration;
-  banner.append(
-    el("div", { class: "banner" },
-      cal.n
-        ? `Calibration sur ${cal.n} post(s) mesuré(s) : ${cal.exact} % de bandes exactes, ${cal.adjacent} % à ±1 bande.`
-        : "Aucun post mesuré pour l'instant — publie un script puis saisis ses stats ici.",
+  if (!draftRun) {
+    const actions = el("div", { class: "head-actions" });
+    const hasAngles = Boolean(entry.angles?.angles?.length);
+    if (entry.scripts && hasAngles && !state.job) {
+      actions.append(
+        state.showAngles
+          ? el("button", { type: "button", class: "btn btn-quiet", onclick: () => toggleAngles(false) }, svg("back"), "Revenir au bulletin")
+          : el("button", { type: "button", class: "btn btn-quiet", onclick: () => toggleAngles(true) }, "Changer d'angle"),
+      );
+    }
+    actions.append(el("button", { type: "button", class: "btn btn-quiet", onclick: newIdea }, svg("plus"), "Nouvelle idée"));
+    return [el("h1", { class: "flow-title", tabindex: "-1" }, brief.idea), stepsList(entry, draftRun), meta, actions];
+  }
+
+  return [el("h1", { class: "flow-title", tabindex: "-1" }, brief.idea), stepsList(entry, draftRun), meta];
+}
+
+function toggleAngles(on) {
+  transition(() => {
+    state.showAngles = on;
+    renderFlow();
+    scrollTop();
+  });
+}
+
+function newIdea() {
+  $("#f-idea").value = "";
+  state.focusIdea = true;
+  go("#creer");
+}
+
+/* =========================================================================
+   Parcours : corps
+   ========================================================================= */
+
+function renderFlow(opts = {}) {
+  const draftRun = state.route.view === "creer" && state.job?.kind === "angles";
+  const entry = draftRun ? { brief: state.job.brief } : state.entry;
+  if (!entry) return;
+  stopSticky();
+  const job = !draftRun && state.job?.id === entry.id ? state.job : null;
+  const hadFocus = $("#step-flow").contains(document.activeElement);
+
+  $("#flow-head").replaceChildren(...flowHead(entry, draftRun));
+  let content;
+  if (draftRun) content = runPanelAngles(state.job);
+  else if (job?.kind === "scripts") content = runPanelScripts(entry, job);
+  else if (entry.scripts && !state.showAngles) content = bulletinView(entry, job, opts);
+  else content = anglesView(entry);
+  $("#flow-body").replaceChildren(...[content].flat());
+
+  // Le contenu remplacé emportait le focus : on le pose sur un repère proche.
+  if (hadFocus && (!document.activeElement || document.activeElement === document.body)) {
+    const target = $("#flow-body [data-focus]") || $(".flow-title");
+    target?.focus({ preventScroll: true });
+  }
+}
+
+function clockText() {
+  if (!state.job) return "0:00";
+  const s = Math.floor((Date.now() - state.job.t0) / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function runPanel({ title, sub, stages, side }) {
+  return el("section", { class: "run card enter", "aria-labelledby": "run-title" },
+    el("div", {},
+      el("h2", { class: "run-title", id: "run-title", tabindex: "-1", "data-focus": "" }, title),
+      el("p", { class: "run-sub" }, sub),
+      el("ol", { class: "run-stages", "aria-live": "polite" },
+        stages.map((st) =>
+          el("li", { class: "run-stage", "data-state": st.state },
+            el("span", { class: "dot", "aria-hidden": "true" }, st.state === "done" ? svg("check", "") : null),
+            el("span", {}, st.label),
+            el("span", { class: "when" }, st.when || ""),
+          ),
+        ),
+      ),
+    ),
+    el("div", { class: "run-side" },
+      el("span", { class: "label" }, "Temps écoulé"),
+      el("div", { class: "run-clock", "data-clock": "", "aria-hidden": "true" }, clockText()),
+      side,
+    ),
+  );
+}
+
+function runPanelAngles(job) {
+  const trendsDone = job.stage !== "trends";
+  const stages = [
+    {
+      label: "Relevé des tendances",
+      state: trendsDone ? "done" : "active",
+      when: trendsDone ? (job.signalCount ? plural(job.signalCount, "signal", "signaux") : "sources muettes") : "en cours",
+    },
+    { label: "Choix des angles", state: trendsDone ? "active" : "todo", when: trendsDone ? "en cours" : "" },
+    { label: "Écriture des scripts", state: "todo", when: "après ton choix" },
+  ];
+  let signals;
+  if (!trendsDone) {
+    signals = el("div", { class: "live-signals", "aria-hidden": "true" },
+      [0, 1, 2, 3].map(() => el("div", { class: "skeleton sk-line" })),
+    );
+  } else if (!job.signals.length) {
+    signals = el("p", {}, "Aucune source n'a répondu : les angles s'appuieront sur ton brief.");
+  } else {
+    signals = el("ul", { class: "live-signals" },
+      job.signals.map((s, i) =>
+        el("li", { class: "live-signal", vars: { "--i": i } }, frontGlyph(), el("b", {}, s.title), el("span", { class: "src" }, s.source)),
+      ),
+    );
+  }
+  return runPanel({
+    title: "Prévision en cours",
+    sub: "Amorce relève ce qui monte autour de ton idée, puis cherche les angles qui ont une raison de marcher aujourd'hui.",
+    stages,
+    side: [
+      el("p", {}, "Compte 1 à 2 minutes. Tu peux changer d'onglet : la prévision continue."),
+      el("span", { class: "label" }, "Signaux relevés"),
+      signals,
+    ],
+  });
+}
+
+function runPanelScripts(entry, job) {
+  const names = entry.brief.platforms.map((p) => PF[p].name).join(", ");
+  return runPanel({
+    title: "Écriture des scripts",
+    sub: `Un script par plateforme, écrit pour son format à partir de l'angle « ${job.angle.titre} ».`,
+    stages: [
+      { label: "Angle choisi", state: "done" },
+      { label: "Écriture des scripts", state: "active", when: names },
+      { label: "Évaluation critique", state: "todo", when: "ensuite" },
+    ],
+    side: [
+      el("p", {}, "Compte 1 à 2 minutes. L'évaluation suit : tu pourras lire tes scripts pendant qu'elle tourne."),
+      el("span", { class: "label" }, "Accroche retenue"),
+      el("p", { class: "run-hook" }, `« ${job.angle.accroche} »`),
+    ],
+  });
+}
+
+/* ---------- Tendances & angles ---------- */
+
+function errorsLine(trends) {
+  const errors = trends?.errors || [];
+  if (!errors.length) return null;
+  return el("p", { class: "sources-missing" },
+    `Sans réponse aujourd'hui : ${errors.map((e) => e.source).join(", ")}.`,
+  );
+}
+
+function sourceItem(item, cls) {
+  const label = item.url
+    ? el("a", { href: item.url, target: "_blank", rel: "noopener noreferrer" }, item.title, el("span", { class: "sr-only" }, " (nouvel onglet)"))
+    : el("span", {}, item.title);
+  return el("li", { class: cls }, label, el("span", { class: "sig" }, item.signal || ""));
+}
+
+function frontsCard(entry) {
+  const retained = entry.angles?.tendances_retenues || [];
+  const sources = Object.values(entry.trends?.sources || {});
+  const total = sources.reduce((n, s) => n + s.items.length, 0);
+  const when = entry.trends?.fetchedAt ? ` · relevés à ${timeOf(entry.trends.fetchedAt)}` : "";
+  return el("section", { class: "fronts card", "aria-labelledby": "fronts-title" },
+    el("div", { class: "fronts-head" },
+      el("h2", { class: "section-title", id: "fronts-title" }, "Fronts de tendance retenus"),
+      el("span", { class: "hint" },
+        total ? `${plural(total, "signal", "signaux")} sur ${plural(sources.length, "source", "sources")}${when}` : "Aucune source n'a répondu",
+      ),
+    ),
+    retained.length
+      ? el("ul", { class: "fronts-list" },
+          retained.map((t) =>
+            el("li", { class: "front-card" }, frontGlyph(), el("b", {}, t.titre), el("p", {}, t.pourquoi), el("small", {}, t.source)),
+          ),
+        )
+      : el("p", { class: "sources-missing" }, "Aucune tendance ne recoupe directement ton idée : les angles s'appuient sur ton brief."),
+    total
+      ? disclosure(`Voir les ${plural(total, "signal brut", "signaux bruts")}`,
+          el("div", { class: "sources" },
+            sources.map((s) =>
+              el("div", { class: "source" }, el("h4", {}, s.label), el("ul", {}, s.items.slice(0, 8).map((it) => sourceItem(it)))),
+            ),
+          ),
+        )
+      : null,
+    errorsLine(entry.trends),
+  );
+}
+
+function angleCard(entry, angle, index, recommended) {
+  const heat = heatOf(angle.score_tendance);
+  const current = entry.scripts && entry.chosenAngle?.titre === angle.titre;
+  const tag = current ? "Angle actuel" : recommended ? "Le plus porté" : null;
+  return el("article", { class: "angle enter", vars: { "--i": index } },
+    el("div", { class: "angle-top" },
+      el("span", { class: "angle-type" }, TYPE_LABELS[angle.type] || angle.type),
+      tag ? el("span", { class: "cur-tag" }, tag) : null,
+    ),
+    el("h3", {}, angle.titre),
+    el("p", { class: "hook" }, `« ${angle.accroche} »`),
+    el("p", { class: "why" }, angle.justification),
+    el("div", { class: "angle-foot" },
+      el("span", { class: "fit" },
+        "Tendance",
+        el("span", { class: "fit-bar", "aria-hidden": "true" }, bar(angle.score_tendance, heat)),
+        tchip(angle.score_tendance, heat, true),
+      ),
+      el("button", {
+        type: "button",
+        class: `btn${recommended ? " btn-primary" : ""}`,
+        disabled: Boolean(state.job),
+        "aria-label": `Écrire l'angle « ${angle.titre} »`,
+        onclick: () => pickAngle(index),
+      }, "Écrire cet angle", svg("arrow")),
+    ),
+  );
+}
+
+function anglesView(entry) {
+  const out = [];
+  if (state.error?.kind === "scripts" && state.error.id === entry.id) {
+    const idx = state.error.angleIndex;
+    out.push(alertBox("L'écriture des scripts n'a pas abouti.", state.error.message, [["Réessayer", () => pickAngle(idx), true]]));
+  }
+  out.push(frontsCard(entry));
+  const angles = entry.angles?.angles || [];
+  out.push(el("h2", { class: "angles-title", id: "angles-title", tabindex: "-1", "data-focus": "" }, "Choisis l'angle à écrire"));
+  if (entry.scripts) {
+    out.push(el("p", { class: "angles-note" }, "Écrire un autre angle remplace les scripts actuels de cette prévision."));
+  }
+  if (!angles.length) {
+    out.push(el("p", { class: "radar-empty" }, "Aucun angle n'a été proposé pour cette idée."));
+    return out;
+  }
+  const best = angles.reduce((b, a, i) => (a.score_tendance > angles[b].score_tendance ? i : b), 0);
+  out.push(el("div", { class: "angles" }, angles.map((a, i) => angleCard(entry, a, i, i === best))));
+  return out;
+}
+
+/* ---------- Bulletin ---------- */
+
+function bulletinView(entry, job, opts) {
+  const pfs = platformsOf(entry);
+  if (!pfs.includes(state.activePf)) state.activePf = pfs[0];
+  const tabs = el("div", { class: "pf-tabs", role: "tablist", "aria-label": "Plateformes" },
+    pfs.map((p) => tabButton(entry, p)),
+    el("span", { class: "tabs-hint" }, "Potentiel relatif à ta niche, pas une promesse de vues"),
+  );
+  tabs.addEventListener("keydown", onTabsKey);
+  const panel = el("section", { class: "bulletin", id: "bulletin-panel", role: "tabpanel" });
+  const wrap = el("div", { class: "bulletin-wrap" }, tabs, panel);
+  // Le panneau doit être dans le document pour observer la barre collante.
+  queueMicrotask(() => fillPanel(panel, entry, state.activePf, job, opts));
+  return wrap;
+}
+
+function tabButton(entry, p) {
+  const sc = entry.scripts[p].score || {};
+  const judged = isJudged(sc);
+  const selected = p === state.activePf;
+  return el("button", {
+    type: "button",
+    role: "tab",
+    class: "pf-tab",
+    id: `tab-${p}`,
+    "data-pf": p,
+    "aria-selected": String(selected),
+    "aria-controls": "bulletin-panel",
+    tabindex: selected ? "0" : "-1",
+    "aria-label": judged
+      ? `${PF[p].name} : potentiel ${sc.final} sur 100, ${BANDS[sc.bande].label}`
+      : `${PF[p].name} : évaluation en attente`,
+    "data-focus": selected ? "" : null,
+    onclick: () => selectTab(p),
+  },
+    svg(PF[p].icon, "ico pf-ico"),
+    PF[p].name,
+    judged ? tchip(sc.final, BANDS[sc.bande].heat, true) : tchip(null, null, true),
+  );
+}
+
+function onTabsKey(ev) {
+  const tabs = [...ev.currentTarget.querySelectorAll(".pf-tab")];
+  const i = tabs.indexOf(document.activeElement);
+  if (i < 0) return;
+  let next = null;
+  if (ev.key === "ArrowRight") next = tabs[(i + 1) % tabs.length];
+  else if (ev.key === "ArrowLeft") next = tabs[(i - 1 + tabs.length) % tabs.length];
+  else if (ev.key === "Home") next = tabs[0];
+  else if (ev.key === "End") next = tabs[tabs.length - 1];
+  if (!next) return;
+  ev.preventDefault();
+  selectTab(next.dataset.pf, true);
+}
+
+function selectTab(p, focus = false) {
+  const entry = state.entry;
+  if (!entry?.scripts?.[p]) return;
+  for (const tab of document.querySelectorAll(".pf-tab")) {
+    const on = tab.dataset.pf === p;
+    tab.setAttribute("aria-selected", String(on));
+    tab.tabIndex = on ? 0 : -1;
+    if (on && focus) tab.focus();
+  }
+  if (state.activePf === p) return;
+  state.activePf = p;
+  const job = state.job?.id === entry.id ? state.job : null;
+  fillPanel($("#bulletin-panel"), entry, p, job, {});
+}
+
+function fillPanel(panel, entry, p, job, opts) {
+  if (!panel?.isConnected) return;
+  panel.setAttribute("aria-labelledby", `tab-${p}`);
+  panel.replaceChildren(verdictBlock(entry, p, job), bodyBlock(entry, p, job));
+  if (opts.drop) dropBulletin(panel);
+  else if (opts.rewrote === p) dropRewrite(panel, opts.from);
+  observeSticky(panel.querySelector(".verdict"), entry, p, job);
+}
+
+function verdictNodes(text) {
+  const m = String(text).match(/^(.{8,90}?)(\s*[;:—–]\s+)(.+)$/u);
+  if (!m) return [text];
+  return [el("strong", {}, m[1]), m[2], m[3]];
+}
+
+function derivedVerdict(sc) {
+  const fs = [...(sc.facteurs || [])].sort((a, b) => b.score - a.score);
+  if (fs.length < 2) return "Évaluation disponible : détaille les facteurs ci-dessous.";
+  const strong = FACTOR_LABELS[fs[0].nom] || fs[0].nom;
+  const weak = (FACTOR_LABELS[fs.at(-1).nom] || fs.at(-1).nom).toLowerCase();
+  return `${strong} solide ; ${weak} à renforcer en priorité.`;
+}
+
+function scaleBlock(band) {
+  const idx = band ? band.idx : -1;
+  return el("div", { class: "scale-block" },
+    el("span", { class: "label" }, "Échelle de potentiel"),
+    el("div", {
+      class: "scale",
+      role: "img",
+      "aria-label": band
+        ? `Position sur l'échelle : ${band.label}, de Bas 50 % à Top 10 %`
+        : "Position sur l'échelle : à venir",
+    },
+      el("div", { class: "scale-track" },
+        BAND_ORDER.map((k, i) => el("span", { class: i === idx ? "cur" : null, vars: { "--t": `var(--${BANDS[k].heat})` } })),
+      ),
+      el("div", { class: "scale-needle", hidden: idx < 0, vars: { transform: `translateX(${Math.max(idx, 0) * 100}%)` } }),
+    ),
+    el("div", { class: "scale-labels", "aria-hidden": "true" },
+      BAND_ORDER.map((k, i) => el("span", { class: i === idx ? "cur" : null }, BANDS[k].label)),
+    ),
+  );
+}
+
+function confidenceRow(level) {
+  const n = CONFIDENCE[level] || 0;
+  return el("div", { class: "meta-row" },
+    el("span", { class: "label" }, "Indice de confiance"),
+    el("span", { class: "conf-dots", "aria-hidden": "true" }, [1, 2, 3, 4, 5].map((i) => el("i", { class: i <= n ? "f" : null }))),
+    level ? [el("b", {}, `${n}/5`), ` ${level}`] : el("span", {}, "à venir"),
+  );
+}
+
+function matchBadge(predicted, observed) {
+  if (!BANDS[predicted] || !BANDS[observed]) return null;
+  const gap = Math.abs(BANDS[predicted].idx - BANDS[observed].idx);
+  if (gap === 0) return el("span", { class: "match ok" }, "Juste");
+  if (gap === 1) return el("span", { class: "match near" }, "À une bande");
+  return el("span", { class: "match miss" }, `Écart de ${gap} bandes`);
+}
+
+function observedRow(entry, p, sc) {
+  const real = entry.realStats?.[p];
+  const row = el("div", { class: "meta-row" }, el("span", { class: "label" }, "Prévu · relevé"));
+  if (isJudged(sc)) row.append(el("b", {}, BANDS[sc.bande].label));
+  if (real && BANDS[real.band]) {
+    row.append(
+      el("span", { class: "observed" }, "→ ", el("b", {}, BANDS[real.band].label), ` (×${fmtRatio(real.ratio)})`),
+      matchBadge(sc.bande, real.band),
+    );
+  } else {
+    row.append(el("a", { class: "pending", href: "#historique", title: "À saisir dans l'Historique après publication" }, "relevé à venir"));
+  }
+  return row;
+}
+
+function verdictBlock(entry, p, job) {
+  const sc = entry.scripts[p].score || {};
+  const judged = isJudged(sc);
+  const band = judged ? BANDS[sc.bande] : null;
+  const judging = job?.kind === "judge";
+  const verdict = el("div", { class: "verdict", vars: { "--band": band ? `var(--${band.heat})` : "var(--line-strong)" } });
+
+  verdict.append(
+    el("div", {
+      class: "temp",
+      role: "img",
+      "data-heat": band ? band.heat : "pending",
+      "aria-label": judged ? `Potentiel ${sc.final} sur 100` : "Potentiel pas encore évalué",
+    },
+      el("b", { "aria-hidden": "true" }, judged ? String(sc.final) : "—"),
+      el("span", { "aria-hidden": "true" }, judged ? "/ 100" : judging ? "en cours" : "à évaluer"),
     ),
   );
 
-  if (!data.entries.length) {
-    list.append(el("p", { class: "muted" }, "Aucune génération pour l'instant."));
-    return;
+  if (judged) {
+    verdict.append(
+      el("div", { class: "verdict-main" },
+        el("h2", { class: "band-title" }, band.title),
+        el("p", { class: "verdict-say" }, verdictNodes(sc.verdict || derivedVerdict(sc))),
+      ),
+    );
+  } else if (judging) {
+    verdict.append(
+      el("div", { class: "verdict-main" },
+        el("h2", { class: "band-title" }, "Évaluation en cours…"),
+        el("p", { class: "verdict-say" },
+          el("strong", {}, "Tes scripts sont prêts"),
+          " : lis-les pendant qu'Amorce les relit comme un éditeur exigeant.",
+        ),
+        el("p", { class: "judge-clock", "aria-hidden": "true" }, "Temps écoulé", el("b", { "data-clock": "" }, clockText())),
+      ),
+    );
+  } else {
+    const heur = sc.heuristique?.global;
+    verdict.append(
+      el("div", { class: "verdict-main" },
+        el("h2", { class: "band-title" }, "Prévision incomplète"),
+        el("p", { class: "verdict-say" },
+          heur !== undefined ? `Seuls les codes du format sont notés (${heur}/100) : l'évaluation critique n'a pas abouti.` : "L'évaluation critique n'a pas encore tourné.",
+        ),
+      ),
+    );
   }
 
-  const settings = await api("/api/settings").catch(() => ({ medianViews: {} }));
-  if (token !== historyToken) return;
+  verdict.append(
+    el("div", { class: "verdict-meta" }, scaleBlock(band), confidenceRow(judged ? sc.confiance : null), observedRow(entry, p, sc)),
+  );
 
-  for (const entry of data.entries) {
-    const card = el("div", { class: "card history-entry" });
-    const date = new Date(entry.createdAt).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" });
-    const body = el("div", { class: "hidden" });
-    const toggle = () => body.classList.toggle("hidden");
-    const head = el("div", {
-      class: "history-head",
-      role: "button",
-      tabindex: "0",
-      onclick: toggle,
-      onkeydown: (ev) => {
-        if (ev.key === "Enter" || ev.key === " ") {
-          ev.preventDefault();
-          toggle();
-        }
-      },
-    },
-      el("h3", {}, entry.brief.idea.slice(0, 90) + (entry.brief.idea.length > 90 ? "…" : "")),
-      el("span", { class: "muted small" }, date),
+  if (!judged && !judging) {
+    const failed = state.error?.kind === "judge" && state.error.id === entry.id ? state.error.message : null;
+    verdict.append(
+      el("div", { class: "partial-note", role: failed ? "alert" : null },
+        el("span", {}, failed ? `L'évaluation a échoué : ${failed}` : "Lance l'évaluation pour obtenir la bande, la confiance et les améliorations."),
+        el("button", { type: "button", class: "btn btn-primary", disabled: Boolean(state.job), onclick: () => runJudge(entry.id) },
+          failed ? "Relancer l'évaluation" : "Lancer l'évaluation"),
+      ),
     );
-    card.append(head);
+  }
+  return verdict;
+}
 
-    const platRow = el("div", { class: "history-platforms" });
-    for (const [p, script] of Object.entries(entry.scripts || {})) {
-      const real = entry.realStats?.[p];
-      platRow.append(
-        el("span", { class: "chip" },
-          `${PLATFORM_LABELS[p]} · ${script.score?.final ?? "—"}`,
-          script.score?.bande ? el("span", { class: `band ${script.score.bande}`, style: "margin-left:6px" }, BAND_LABELS[script.score.bande]) : null,
-          real ? ` → réel : ×${real.ratio}` : null,
-        ),
-      );
-    }
-    card.append(platRow);
+/* ---------- Rendu des scripts ---------- */
 
-    if (entry.chosenAngle) body.append(el("p", { class: "muted small" }, `Angle : ${entry.chosenAngle.titre}`));
+const CAPTION_RE = /^\s*(?:l[ée]gende|caption)\s*[:\-]/im;
+const HASHTAG_LINE_RE = /^(?:#[\p{L}\p{N}_]+[\s,·]*)+$/u;
+const LIST_RE = /^(\d{1,2}[.)]|[-–—•·→▪✓✔✅*👉]|➡\uFE0F?)\s+(.+)$/u;
+const TWEET_SPLIT_RE = /\n\s*\n|\n(?=\d{1,2}\/(?:\d{1,2})?\s)/;
 
-    for (const [p, script] of Object.entries(entry.scripts || {})) {
-      body.append(el("h3", {}, PLATFORM_LABELS[p] || p));
-      body.append(el("div", { class: "script-content" }, `${script.titre ? script.titre + "\n\n" : ""}${script.contenu}`));
-      const real = entry.realStats?.[p];
-      if (real) {
-        body.append(
-          el("div", { class: "vs" },
-            el("span", {}, "Prédit :"),
-            el("span", { class: `band ${script.score?.bande || "top50"}` }, BAND_LABELS[script.score?.bande] || "—"),
-            el("span", {}, "Observé :"),
-            el("span", { class: `band ${real.band}` }, BAND_LABELS[real.band]),
-            el("span", { class: "muted small" }, `${real.views.toLocaleString("fr-FR")} vues, ×${real.ratio} vs ta médiane (${real.medianViews.toLocaleString("fr-FR")})`),
-          ),
-        );
+function splitTweets(text) {
+  return String(text).split(TWEET_SPLIT_RE).map((t) => t.trim()).filter(Boolean);
+}
+
+// Sépare les lignes faites uniquement de hashtags et les fusionne avec la liste fournie.
+function extractHashtags(text, extra = []) {
+  const found = [];
+  const kept = String(text)
+    .split("\n")
+    .filter((line) => {
+      const t = line.trim();
+      if (t && HASHTAG_LINE_RE.test(t)) {
+        found.push(...t.match(/#[\p{L}\p{N}_]+/gu));
+        return false;
+      }
+      return true;
+    })
+    .join("\n")
+    .trim();
+  // Un hashtag déjà écrit dans le texte n'est pas répété en pied de script.
+  const inText = new Set((kept.match(/#[\p{L}\p{N}_]+/gu) || []).map((h) => h.toLowerCase()));
+  const seen = new Set();
+  const tags = [...found, ...extra.map((h) => `#${String(h).replace(/^#+/, "").trim()}`)]
+    .filter((h) => h.length > 1 && !inText.has(h.toLowerCase()) && !seen.has(h.toLowerCase()) && seen.add(h.toLowerCase()));
+  return { text: kept, tags };
+}
+
+function inline(parent, line, opts) {
+  if (!opts.directions) {
+    parent.append(line);
+    return;
+  }
+  const re = /\[([^\]]+)\]/g;
+  let last = 0;
+  let m;
+  while ((m = re.exec(line))) {
+    if (m.index > last) parent.append(line.slice(last, m.index));
+    parent.append(el("span", { class: "direction" }, m[1].trim()));
+    last = re.lastIndex;
+  }
+  if (last < line.length) parent.append(line.slice(last));
+}
+
+function isHeading(line) {
+  if (/^#{1,3}\s+\S/.test(line)) return true;
+  if (line.length > 70 || /[.!?…]$/.test(line)) return false;
+  return /^(?:\[?\d{1,2}:\d{2}|(?:hook|intro(?:duction)?|accroche|chapitre|partie|section|conclusion|outro|cta)\b)/i.test(line);
+}
+
+function paragraphs(text, opts = {}) {
+  const out = [];
+  for (const block of String(text).split(/\n\s*\n/)) {
+    const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+    let buf = [];
+    let lastItem = null;
+    const flush = () => {
+      if (!buf.length) return;
+      const p = el("p");
+      buf.forEach((line, i) => {
+        if (i) p.append(el("br"));
+        inline(p, line, opts);
+      });
+      out.push(p);
+      buf = [];
+    };
+    for (const line of lines) {
+      const m = line.match(LIST_RE);
+      if (m) {
+        flush();
+        const marker = /^\d/.test(m[1]) ? m[1].replace(")", ".") : /^[-*]$/.test(m[1]) ? "–" : m[1];
+        lastItem = el("p", { class: "li" }, el("b", { "aria-hidden": "true" }, marker));
+        inline(lastItem, m[2], opts);
+        out.push(lastItem);
+      } else if (opts.headings && isHeading(line)) {
+        flush();
+        lastItem = null;
+        out.push(el("p", { class: "post-h" }, el("strong", {}, line.replace(/^#{1,3}\s*/, ""))));
+      } else if (lastItem && !buf.length) {
+        lastItem.append(el("br"));
+        inline(lastItem, line, opts);
       } else {
-        body.append(buildStatsForm(entry.id, p, settings.medianViews?.[p] || ""));
+        buf.push(line);
       }
     }
-    card.append(body);
-    list.append(card);
+    flush();
+  }
+  return out;
+}
+
+function measure(p, script) {
+  const text = script.contenu || "";
+  if (p === "linkedin") return `${fmt(text.length)} caractères`;
+  if (p === "reels") {
+    const voice = text.split(CAPTION_RE)[0].replace(/\[[^\]]*\]/g, "");
+    return `≈ ${Math.max(5, Math.round(countWords(voice) / 2.5))} s de voix off`;
+  }
+  if (p === "x") return plural(splitTweets(text).length, "tweet", "tweets");
+  const minutes = Math.max(1, Math.round(countWords(text.replace(/\[[^\]]*\]/g, "")) / 150));
+  return `≈ ${minutes} min de vidéo`;
+}
+
+function scriptContent(p, script) {
+  const { text, tags } = extractHashtags(script.contenu || "", script.hashtags || []);
+  const nodes = [];
+  const title = (script.titre || "").trim();
+  if (title && (p === "youtube" || !text.startsWith(title))) nodes.push(el("h3", { class: "script-title" }, title));
+
+  if (p === "x") {
+    const tweets = splitTweets(text);
+    nodes.push(
+      el("ol", { class: "tweets" },
+        tweets.map((t, i) => {
+          const over = t.length > 280;
+          return el("li", { class: "tweet" },
+            el("span", { class: "tweet-n" }, `${i + 1}/${tweets.length}`),
+            el("div", {},
+              el("p", {}, t.replace(/^\d{1,2}\/(?:\d{1,2})?\s*/, "")),
+              el("small", { class: over ? "over" : null }, `${t.length}/280${over ? " · trop long" : ""}`),
+            ),
+          );
+        }),
+      ),
+    );
+  } else if (p === "reels") {
+    const [voice, ...rest] = text.split(CAPTION_RE);
+    const caption = rest.join("").trim();
+    nodes.push(el("div", { class: "post" },
+      paragraphs(voice, { directions: true }),
+      caption ? el("div", { class: "caption" }, el("span", { class: "label" }, "Légende"), paragraphs(caption)) : null,
+    ));
+  } else {
+    nodes.push(el("div", { class: "post" }, paragraphs(text, { directions: p === "youtube", headings: p === "youtube" })));
+  }
+  if (tags.length) nodes.push(el("p", { class: "hashtags" }, tags.map((t) => el("span", {}, t))));
+  return nodes;
+}
+
+function copyPayload(script) {
+  const { tags } = extractHashtags("", script.hashtags || []);
+  const body = script.contenu || "";
+  const missing = tags.filter((t) => !body.toLowerCase().includes(t.toLowerCase()));
+  return [script.titre && !body.startsWith(script.titre) ? script.titre : null, body, missing.length ? missing.join(" ") : null]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+async function copyScript(p) {
+  const script = state.entry?.scripts?.[p];
+  if (!script) return;
+  const ok = await copyText(copyPayload(script));
+  toast(ok ? `Script ${PF[p].name} copié.` : "Copie impossible : sélectionne le texte à la main.");
+}
+
+function factorsList(facteurs) {
+  const weakest = facteurs.reduce((m, f) => (f.score < m.score ? f : m), facteurs[0]);
+  return el("div", { class: "factors" },
+    facteurs.map((f) => {
+      const heat = heatOf(f.score);
+      const weak = f === weakest && f.score < 80;
+      const button = el("button", { type: "button", class: `factor${weak ? " weak" : ""}`, "aria-expanded": String(weak) },
+        el("span", { class: "factor-row" },
+          el("span", { class: "name" }, FACTOR_LABELS[f.nom] || f.nom),
+          el("span", { class: "factor-bar", "aria-hidden": "true" }, bar(f.score, heat)),
+          tchip(f.score, heat, true),
+        ),
+        el("span", { class: "factor-note" }, weak ? el("span", { class: "weak-tag" }, "Priorité") : null, f.commentaire),
+      );
+      button.addEventListener("click", () =>
+        button.setAttribute("aria-expanded", String(button.getAttribute("aria-expanded") !== "true")),
+      );
+      return button;
+    }),
+  );
+}
+
+function sideBlock(entry, p, job) {
+  const sc = entry.scripts[p].score || {};
+  const judged = isJudged(sc);
+  const rewriting = job?.kind === "rewrite" && job.platform === p;
+  const side = el("aside", { class: "side", "aria-label": "Diagnostic du script" });
+
+  if (judged) {
+    side.append(el("section", {}, el("h3", {}, "Facteurs"), factorsList(sc.facteurs)));
+    const tips = (sc.suggestions || []).slice(0, 3);
+    if (tips.length) {
+      side.append(el("section", {},
+        el("h3", {}, plural(tips.length, "amélioration", "améliorations")),
+        el("ol", { class: "improve" }, tips.map((t) => el("li", {}, t))),
+      ));
+    }
+  } else {
+    side.append(el("section", {},
+      el("h3", {}, "Facteurs"),
+      job?.kind === "judge"
+        ? el("div", { class: "factors", "aria-hidden": "true" }, [0, 1, 2, 3, 4].map(() => el("div", { class: "skeleton sk-factor" })))
+        : el("p", { class: "side-note" }, "Accroche, structure, émotion, tendance et appel à l'action arrivent avec l'évaluation."),
+    ));
+  }
+
+  side.append(
+    el("button", {
+      type: "button",
+      class: "btn btn-primary rewrite-btn",
+      "data-busy": rewriting ? "true" : null,
+      disabled: Boolean(state.job) && !rewriting,
+      "aria-disabled": rewriting ? "true" : null,
+      onclick: () => rewrite(p),
+    }, svg("rewrite"), rewriting ? "Réécriture en cours…" : judged ? "Réécrire avec ces améliorations" : "Réécrire selon les codes du format"),
+  );
+  if (state.error?.kind === "rewrite" && state.error.id === entry.id && state.error.platform === p) {
+    side.append(alertBox("La réécriture n'a pas abouti.", state.error.message));
+  }
+
+  const heur = sc.heuristique || { global: null, flags: [] };
+  const flags = heur.flags || [];
+  const foot = el("div", { class: "side-foot" },
+    el("div", { class: "format-line" },
+      el("span", {}, `Codes du format ${PF[p].name}`),
+      flags.length
+        ? tchip(heur.global, heatOf(heur.global), true)
+        : el("span", { class: "ok" }, svg("check"), "respectés"),
+    ),
+    flags.length
+      ? disclosure(plural(flags.length, "point de format à corriger", "points de format à corriger"),
+          el("ul", { class: "flags" }, flags.map((f) => el("li", {}, f))))
+      : null,
+    sc.comparaison ? disclosure("Analyse de l'éditeur", el("div", { class: "analysis" }, el("p", {}, sc.comparaison))) : null,
+    el("p", { class: "side-note" }, "Après publication, saisis tes vues réelles dans l'Historique : chaque relevé mesure la fiabilité des prévisions."),
+  );
+  side.append(foot);
+  return side;
+}
+
+function bodyBlock(entry, p, job) {
+  const script = entry.scripts[p];
+  const rewriting = job?.kind === "rewrite" && job.platform === p;
+  const stamped = state.rewritten?.id === entry.id && state.rewritten.platform === p;
+  const article = el("article", { class: "script", "aria-label": `Script ${PF[p].name}` },
+    el("div", { class: "script-head" },
+      el("div", {},
+        el("span", { class: "label" }, `Script ${PF[p].name} · prêt à publier`),
+        el("small", {}, measure(p, script)),
+        stamped ? el("span", { class: "rewrite-stamp" }, svg("check"), "Réécrit") : null,
+      ),
+      el("div", { class: "script-actions" },
+        el("button", { type: "button", class: "btn", onclick: () => copyScript(p) }, svg("copy"), "Copier"),
+      ),
+    ),
+    el("div", { class: `post-wrap${rewriting ? " is-rewriting" : ""}`, "aria-busy": rewriting ? "true" : null }, scriptContent(p, script)),
+  );
+  return el("div", { class: "bulletin-body" }, article, sideBlock(entry, p, job));
+}
+
+/* ---------- « Le bulletin tombe » ---------- */
+
+function countUp(node, from, to, duration, delay = 0) {
+  if (!node || !Number.isFinite(to)) return;
+  node.textContent = String(from);
+  const start = performance.now() + delay;
+  const step = (now) => {
+    const p = Math.max(0, Math.min(1, (now - start) / duration));
+    const eased = 1 - Math.pow(1 - p, 3);
+    node.textContent = String(Math.round(from + (to - from) * eased));
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+const rise = (node, delay, distance = 6, duration = 320) =>
+  node?.animate(
+    [{ opacity: 0, transform: `translateY(${distance}px)` }, { opacity: 1, transform: "none" }],
+    { duration, delay, easing: EASE_OUT, fill: "backwards" },
+  );
+
+// Moment rare (une fois par prévision) : la note tombe, l'aiguille glisse, les facteurs se remplissent.
+function dropBulletin(panel) {
+  const verdict = panel.querySelector(".verdict");
+  if (!verdict) return;
+  if (reduceMotion.matches) {
+    verdict.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: 200, easing: "ease" });
+    return;
+  }
+  const temp = verdict.querySelector(".temp");
+  const num = temp.querySelector("b");
+  temp.animate(
+    [{ opacity: 0, transform: "translateY(-12px) scale(0.96)" }, { opacity: 1, transform: "none" }],
+    { duration: 460, easing: EASE_OUT, fill: "backwards" },
+  );
+  countUp(num, 0, Number(num.textContent), 900, 120);
+  verdict.querySelectorAll(".band-title, .verdict-say").forEach((n, i) => rise(n, 180 + i * 80));
+  const needle = verdict.querySelector(".scale-needle:not([hidden])");
+  if (needle) {
+    needle.animate([{ transform: "translateX(0)" }, { transform: needle.style.transform }], {
+      duration: 720, delay: 240, easing: EASE_IN_OUT, fill: "backwards",
+    });
+  }
+  verdict.querySelectorAll(".conf-dots i.f").forEach((dot, i) =>
+    dot.animate([{ opacity: 0, transform: "scale(0.6)" }, { opacity: 1, transform: "none" }], {
+      duration: 220, delay: 480 + i * 90, easing: EASE_OUT, fill: "backwards",
+    }),
+  );
+  panel.querySelectorAll(".factor-bar i").forEach((b, i) =>
+    b.animate([{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], {
+      duration: 560, delay: 320 + i * 60, easing: EASE_OUT, fill: "backwards",
+    }),
+  );
+  panel.querySelectorAll(".improve li").forEach((li, i) => rise(li, 640 + i * 70));
+  document.querySelectorAll(".pf-tab .t").forEach((chip, i) =>
+    chip.animate([{ opacity: 0, transform: "scale(0.9)" }, { opacity: 1, transform: "none" }], {
+      duration: 240, delay: 200 + i * 60, easing: EASE_OUT, fill: "backwards",
+    }),
+  );
+}
+
+function dropRewrite(panel, from) {
+  const num = panel.querySelector(".temp b");
+  const post = panel.querySelector(".post-wrap");
+  if (reduceMotion.matches) {
+    post?.animate([{ opacity: 0.5 }, { opacity: 1 }], { duration: 200, easing: "ease" });
+    return;
+  }
+  post?.animate([{ opacity: 0.5, filter: "blur(2px)" }, { opacity: 1, filter: "blur(0)" }], { duration: 260, easing: EASE_OUT });
+  if (Number.isFinite(from) && num) countUp(num, from, Number(num.textContent), 700, 80);
+  panel.querySelectorAll(".factor-bar i").forEach((b, i) =>
+    b.animate([{ transform: "scaleX(0.6)" }, { transform: "scaleX(1)" }], {
+      duration: 420, delay: 80 + i * 50, easing: EASE_OUT, fill: "backwards",
+    }),
+  );
+  rise(panel.querySelector(".rewrite-stamp"), 120, 4, 240);
+}
+
+/* ---------- Barre collante ---------- */
+
+let stickyObserver = null;
+
+function setSticky(on) {
+  const bar = $("#sticky-bar");
+  bar.classList.toggle("is-on", on);
+  bar.setAttribute("aria-hidden", String(!on));
+  bar.inert = !on;
+}
+
+function stopSticky() {
+  stickyObserver?.disconnect();
+  stickyObserver = null;
+  setSticky(false);
+}
+
+function observeSticky(verdict, entry, p, job) {
+  stickyObserver?.disconnect();
+  if (!verdict || !("IntersectionObserver" in window)) return;
+  const pfs = platformsOf(entry);
+  const rewriting = job?.kind === "rewrite";
+  $("#sticky-bar").replaceChildren(
+    el("span", { class: "sticky-title" }, entry.brief.idea),
+    el("div", { class: "sticky-scores" },
+      pfs.map((q) => {
+        const sc = entry.scripts[q].score || {};
+        return el("button", {
+          type: "button",
+          class: "sticky-score",
+          "aria-pressed": String(q === p),
+          onclick: () => {
+            selectTab(q);
+            $(".pf-tabs")?.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
+          },
+        }, PF[q].name, isJudged(sc) ? tchip(sc.final, BANDS[sc.bande].heat, true) : tchip(null, null, true));
+      }),
+    ),
+    el("button", { type: "button", class: "btn", "aria-label": `Copier le script ${PF[p].name}`, onclick: () => copyScript(p) },
+      svg("copy"), el("span", {}, "Copier")),
+    el("button", {
+      type: "button",
+      class: "btn btn-primary",
+      disabled: Boolean(state.job),
+      "data-busy": rewriting ? "true" : null,
+      "aria-label": `Réécrire le script ${PF[p].name}`,
+      onclick: () => rewrite(p),
+    }, svg("rewrite"), el("span", {}, rewriting ? "Réécriture…" : "Réécrire")),
+  );
+  stickyObserver = new IntersectionObserver(
+    ([obs]) => setSticky(!obs.isIntersecting && obs.boundingClientRect.top < 0),
+    { rootMargin: "-64px 0px 0px 0px" },
+  );
+  stickyObserver.observe(verdict);
+}
+
+/* =========================================================================
+   Récents (barre latérale)
+   ========================================================================= */
+
+function renderRecents() {
+  const list = $("#recents-list");
+  if (!state.entriesLoaded) return;
+  const items = state.entries.slice(0, 6);
+  if (!items.length) {
+    list.replaceChildren(el("li", { class: "recents-empty" }, "Tes prévisions apparaîtront ici."));
+    return;
+  }
+  list.replaceChildren(
+    ...items.map((e) => {
+      const best = bestOf(e);
+      const current = state.route.view === "prevision" && state.route.id === e.id;
+      return el("li", {},
+        el("a", { class: "recent-item", href: `#prevision/${e.id}`, "aria-current": current ? "page" : null },
+          el("span", {}, e.brief.idea),
+          best ? tchip(best.final, best.heat, true) : tchip(null, null, true),
+        ),
+      );
+    }),
+  );
+}
+
+/* =========================================================================
+   Radar
+   ========================================================================= */
+
+let radarSearched = false;
+
+function renderRadarIdle() {
+  if (radarSearched) return;
+  const niches = [...new Set(state.entries.map((e) => e.brief?.niche).filter(Boolean))].slice(0, 2);
+  const ideas = [...niches, ...RADAR_IDEAS].slice(0, 5);
+  $("#radar-results").replaceChildren(
+    el("div", { class: "radar-suggest" },
+      el("span", {}, "Essaie :"),
+      ideas.map((q) => el("button", { type: "button", class: "chip-btn", onclick: () => runRadar(q) }, q)),
+    ),
+  );
+}
+
+async function runRadar(q) {
+  const query = String(q).trim();
+  if (!query) return;
+  $("#radar-q").value = query;
+  radarSearched = true;
+  const box = $("#radar-results");
+  const btn = $("#radar-submit");
+  btn.disabled = true;
+  btn.dataset.busy = "true";
+  box.setAttribute("aria-busy", "true");
+  box.replaceChildren(
+    el("p", { class: "sr-only" }, "Scan en cours…"),
+    el("div", { class: "radar-grid", "aria-hidden": "true" },
+      [0, 1, 2].map(() =>
+        el("div", { class: "radar-source card" },
+          el("div", { class: "skeleton sk-title" }),
+          [0, 1, 2, 3, 4].map(() => el("div", { class: "skeleton sk-line" })),
+        ),
+      ),
+    ),
+  );
+  try {
+    const trends = await api(`/api/trends?q=${encodeURIComponent(query)}`);
+    const sources = Object.values(trends.sources || {});
+    const total = sources.reduce((n, s) => n + s.items.length, 0);
+    if (!sources.length) {
+      box.replaceChildren(
+        el("p", { class: "radar-empty" }, "Aucune source n'a répondu pour ce sujet. Essaie un mot-clé plus large."),
+        errorsLine(trends),
+      );
+    } else {
+      box.replaceChildren(
+        el("p", { class: "radar-meta hint" },
+          `${plural(total, "signal", "signaux")} sur ${plural(sources.length, "source", "sources")} · relevés à ${timeOf(trends.fetchedAt || new Date().toISOString())}`),
+        el("div", { class: "radar-grid" },
+          sources.map((s, i) =>
+            el("section", { class: "radar-source card enter", vars: { "--i": i }, "aria-label": s.label },
+              el("div", { class: "radar-source-head" }, el("h2", {}, s.label), el("span", {}, plural(s.items.length, "signal", "signaux"))),
+              el("ul", { class: "radar-items" }, s.items.slice(0, 10).map((it) => sourceItem(it, "radar-item"))),
+            ),
+          ),
+        ),
+        errorsLine(trends),
+      );
+    }
+  } catch (err) {
+    box.replaceChildren(alertBox("Le scan n'a pas abouti.", err.message, [["Réessayer", () => runRadar(query), true]]));
+  } finally {
+    btn.disabled = false;
+    delete btn.dataset.busy;
+    box.removeAttribute("aria-busy");
   }
 }
 
-function buildStatsForm(id, platform, medianDefault) {
-  const views = el("input", { type: "number", min: "0", placeholder: "vues" });
-  const likes = el("input", { type: "number", min: "0", placeholder: "likes" });
-  const comments = el("input", { type: "number", min: "0", placeholder: "comm." });
-  const median = el("input", { type: "number", min: "1", placeholder: "médiane", value: medianDefault });
-  const btn = el("button", { class: "ghost" }, "Enregistrer les stats réelles");
-  const form = el("div", { class: "stats-form" },
-    el("label", {}, "Vues", views),
-    el("label", {}, "Likes", likes),
-    el("label", {}, "Commentaires", comments),
-    el("label", {}, "Tes vues médianes", median),
-    btn,
+/* =========================================================================
+   Historique
+   ========================================================================= */
+
+let historySignature = "";
+
+async function loadHistoryView() {
+  if (state.entriesLoaded) renderHistory();
+  else {
+    $("#calibration").replaceChildren();
+    $("#history-list").replaceChildren(
+      ...[0, 1, 2].map(() => el("div", { class: "h-entry h-skeleton", "aria-hidden": "true" }, el("div", { class: "skeleton sk-line" }))),
+    );
+  }
+  await Promise.all([loadEntries(), state.settings ? null : loadSettingsData()]);
+  if (state.route.view !== "historique") return;
+  const signature = JSON.stringify(state.entries.map((e) => [e.id, e.realStats, platformsOf(e).map((p) => e.scripts[p].score?.final)]));
+  if (signature !== historySignature || !$("#history-list").querySelector(".h-entry:not(.h-skeleton), .empty, .alert")) {
+    renderHistory();
+  }
+}
+
+function renderHistory() {
+  historySignature = JSON.stringify(state.entries.map((e) => [e.id, e.realStats, platformsOf(e).map((p) => e.scripts[p].score?.final)]));
+  const list = $("#history-list");
+  const cal = $("#calibration");
+  if (state.entriesError && !state.entriesLoaded) {
+    cal.replaceChildren();
+    list.replaceChildren(alertBox("Historique indisponible.", state.entriesError, [["Réessayer", () => loadHistoryView(), true]]));
+    return;
+  }
+  if (!state.entries.length) {
+    cal.replaceChildren();
+    list.replaceChildren(
+      el("div", { class: "empty card" },
+        el("h2", {}, "Aucune prévision pour l'instant"),
+        el("p", {}, "Lance ta première prévision : elle apparaîtra ici, prête à être comparée à tes vues réelles après publication."),
+        el("a", { class: "btn btn-primary", href: "#creer" }, "Créer une prévision"),
+      ),
+    );
+    return;
+  }
+  const c = state.calibration || { n: 0 };
+  const filled = c.n ? Math.round((c.adjacent || 0) / 10) : 0;
+  cal.replaceChildren(
+    el("div", { class: "calib-meter", "aria-hidden": "true" }, Array.from({ length: 10 }, (_, i) => el("i", { class: i < filled ? "f" : null }))),
+    c.n
+      ? el("p", {},
+          "Sur ", el("strong", {}, plural(c.n, "relevé", "relevés")),
+          ", Amorce a vu juste à une bande près ", el("strong", {}, `${c.adjacent} %`),
+          " du temps, dont ", el("strong", {}, `${c.exact} %`), " dans la bande exacte.")
+      : el("p", {}, "Aucun relevé pour l'instant. Après publication, saisis les vues réelles d'un post : Amorce comparera la prévision à ce qui s'est passé et mesurera sa fiabilité."),
   );
-  btn.addEventListener("click", async () => {
-    if (views.value.trim() === "" || !Number.isFinite(Number(views.value)) || Number(views.value) < 0) {
-      alert("Renseigne le nombre de vues (0 ou plus).");
-      return;
-    }
-    if (median.value.trim() === "" || Number(median.value) <= 0) {
-      alert("Renseigne tes vues médianes habituelles (nécessaire pour normaliser).");
-      return;
-    }
-    btn.disabled = true;
+  list.replaceChildren(...state.entries.map(historyEntry));
+}
+
+function historyEntry(entry) {
+  const open = state.openHistory.has(entry.id);
+  const pfs = platformsOf(entry);
+  const art = el("article", { class: "h-entry", "data-open": String(open) });
+  const sub = [dateOf(entry.createdAt), entry.brief.niche].filter(Boolean).join(" · ");
+  const row = el("button", { type: "button", class: "h-row", "aria-expanded": String(open), "aria-controls": `h-detail-${entry.id}` },
+    el("span", { class: "h-main" }, el("span", { class: "h-idea" }, entry.brief.idea), el("span", { class: "h-sub" }, sub)),
+    el("span", { class: "h-pfs" },
+      pfs.length
+        ? pfs.map((p) => {
+            const sc = entry.scripts[p].score || {};
+            const real = entry.realStats?.[p];
+            return el("span", { class: "h-pf" },
+              PF[p].name,
+              isJudged(sc) ? tchip(sc.final, BANDS[sc.bande].heat, true) : tchip(null, null, true),
+              real && BANDS[real.band]
+                ? [el("span", { class: "arrow", "aria-hidden": "true" }, "→"), el("span", { class: "sr-only" }, " relevé "), el("b", {}, BANDS[real.band].label)]
+                : null,
+            );
+          })
+        : el("span", { class: "h-pf" }, "Angles proposés, script à écrire"),
+    ),
+    svg("chev", "ico h-chev"),
+  );
+  row.addEventListener("click", () => {
+    const next = row.getAttribute("aria-expanded") !== "true";
+    if (next) state.openHistory.add(entry.id);
+    else state.openHistory.delete(entry.id);
+    row.setAttribute("aria-expanded", String(next));
+    art.dataset.open = String(next);
+    art.querySelector(".h-detail")?.remove();
+    if (next) art.append(historyDetail(state.entries.find((e) => e.id === entry.id) || entry));
+  });
+  art.append(row);
+  if (open) art.append(historyDetail(entry));
+  return art;
+}
+
+function historyDetail(entry) {
+  const pfs = platformsOf(entry);
+  const detail = el("div", { class: "h-detail enter", id: `h-detail-${entry.id}` },
+    el("header", { class: "h-detail-head" },
+      el("span", {}, entry.chosenAngle ? ["Angle ", el("q", {}, entry.chosenAngle.titre)] : "Aucun angle choisi pour l'instant"),
+      el("a", { class: "btn", href: `#prevision/${entry.id}` }, entry.scripts ? "Ouvrir le bulletin" : "Choisir un angle", svg("arrow")),
+    ),
+  );
+  for (const p of pfs) {
+    const real = entry.realStats?.[p];
+    detail.append(
+      el("div", { class: "h-pf-block" },
+        el("span", { class: "h-pf-name" }, PF[p].name),
+        real && BANDS[real.band] ? vsLine(entry, p, real) : statForm(entry, p),
+      ),
+    );
+  }
+  return detail;
+}
+
+function vsLine(entry, p, real) {
+  const sc = entry.scripts[p].score || {};
+  return el("div", { class: "vs" },
+    el("span", {}, "Prévu ", el("b", {}, isJudged(sc) ? BANDS[sc.bande].label : "—")),
+    el("span", { class: "meta-sep", "aria-hidden": "true" }),
+    el("span", {}, "Relevé ", el("b", {}, BANDS[real.band].label)),
+    el("span", { class: "meta-sep", "aria-hidden": "true" }),
+    el("span", {}, `${fmt(real.views)} vues, ×${fmtRatio(real.ratio)} ta médiane (${fmt(real.medianViews)})`),
+    matchBadge(sc.bande, real.band),
+  );
+}
+
+function statForm(entry, p) {
+  const median = state.settings?.medianViews?.[p] || "";
+  const field = (name, label, value = "") =>
+    el("label", { class: "stat-input" },
+      el("span", {}, label),
+      el("input", { type: "number", name, min: "0", step: "1", inputmode: "numeric", value }),
+    );
+  const error = el("p", { class: "stat-err", role: "alert", hidden: true });
+  const submit = el("button", { type: "submit", class: "btn" }, "Enregistrer le relevé");
+  const form = el("form", { class: "stat-form", novalidate: true, "aria-label": `Relevé ${PF[p].name}` },
+    field("views", "Vues"),
+    field("likes", "Likes"),
+    field("comments", "Commentaires"),
+    field("median", "Tes vues médianes", median),
+    submit,
+    error,
+  );
+  form.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const data = Object.fromEntries(new FormData(form));
+    const fail = (message, name) => {
+      error.textContent = message;
+      error.hidden = false;
+      form.elements[name]?.focus();
+    };
+    if (data.views === "" || !(Number(data.views) >= 0)) return fail("Renseigne le nombre de vues (0 ou plus).", "views");
+    if (!(Number(data.median) > 0)) return fail("Renseigne tes vues médianes habituelles : elles servent à situer ce post par rapport à toi.", "median");
+    error.hidden = true;
+    submit.disabled = true;
     try {
-      await api("/api/stats", {
-        method: "POST",
-        body: JSON.stringify({
-          id,
-          platform,
-          views: views.value,
-          likes: likes.value,
-          comments: comments.value,
-          medianViews: median.value,
-        }),
+      const res = await post("/api/stats", {
+        id: entry.id,
+        platform: p,
+        views: data.views,
+        likes: data.likes,
+        comments: data.comments,
+        medianViews: data.median,
       });
-      loadHistory();
+      upsertEntry(res.entry);
+      state.calibration = res.calibration;
+      if (state.settings) state.settings.medianViews = { ...state.settings.medianViews, [p]: Number(data.median) };
+      state.openHistory.add(entry.id);
+      renderHistory();
+      $(`[aria-controls="h-detail-${entry.id}"]`)?.focus();
+      const real = res.entry.realStats[p];
+      toast(`Relevé ${PF[p].name} enregistré : ${BANDS[real.band].label} (×${fmtRatio(real.ratio)} ta médiane).`);
     } catch (err) {
-      alert(err.message);
-      btn.disabled = false;
+      submit.disabled = false;
+      fail(err.message);
     }
   });
   return form;
 }
 
-/* ---------- réglages ---------- */
+/* =========================================================================
+   Réglages & état du système
+   ========================================================================= */
 
-async function loadSettings() {
-  try {
-    const s = await api("/api/settings");
-    document.getElementById("s-voice").value = s.voice || "";
-    for (const p of ["linkedin", "reels", "x", "youtube"]) {
-      document.getElementById(`s-median-${p}`).value = s.medianViews?.[p] || "";
-    }
-  } catch { /* le serveur affichera l'erreur ailleurs */ }
+async function loadSettingsView() {
+  renderEnv();
+  const settings = await loadSettingsData();
+  if (state.route.view !== "reglages") return;
+  const form = $("#settings-form");
+  if (form.contains(document.activeElement) && form.dataset.filled) return;
+  $("#s-voice").value = settings.voice || "";
+  $("#medians-grid").replaceChildren(
+    ...PLATFORMS.map((p) =>
+      el("label", { class: "median-field" },
+        el("span", {}, svg(PF[p].icon, "ico pf-ico"), PF[p].name),
+        el("input", {
+          type: "number", min: "0", step: "1", inputmode: "numeric", id: `s-median-${p}`,
+          placeholder: "ex. 1 500", value: settings.medianViews?.[p] || "",
+        }),
+      ),
+    ),
+  );
+  form.dataset.filled = "true";
 }
 
-document.getElementById("settings-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const medianViews = {};
-  for (const p of ["linkedin", "reels", "x", "youtube"]) {
-    const v = Number(document.getElementById(`s-median-${p}`).value);
-    // 0 explicite pour un champ vidé : permet d'effacer une médiane enregistrée.
-    medianViews[p] = Number.isFinite(v) && v > 0 ? v : 0;
-  }
-  try {
-    await api("/api/settings", {
-      method: "POST",
-      body: JSON.stringify({ voice: document.getElementById("s-voice").value, medianViews }),
-    });
-    show("settings-saved");
-    setTimeout(() => hide("settings-saved"), 2000);
-  } catch (err) {
-    alert(err.message);
-  }
-});
+function initSettings() {
+  $("#settings-form").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const medianViews = {};
+    for (const p of PLATFORMS) {
+      const v = Number($(`#s-median-${p}`)?.value);
+      // 0 explicite pour un champ vidé : efface une médiane enregistrée.
+      medianViews[p] = Number.isFinite(v) && v > 0 ? v : 0;
+    }
+    const btn = ev.submitter || $("#settings-form button[type=submit]");
+    btn.disabled = true;
+    try {
+      state.settings = await post("/api/settings", { voice: $("#s-voice").value, medianViews });
+      const saved = $("#settings-saved");
+      saved.classList.remove("hidden");
+      setTimeout(() => saved.classList.add("hidden"), 2400);
+    } catch (err) {
+      toast(`Enregistrement impossible : ${err.message}`);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
 
-/* ---------- démarrage ---------- */
-loadHealth();
+function renderEnv() {
+  const h = state.health;
+  const dl = $("#env-info");
+  if (!state.healthLoaded) {
+    dl.replaceChildren(el("dt", {}, "Serveur"), el("dd", {}, "Vérification…"));
+    return;
+  }
+  if (!h) {
+    dl.replaceChildren(el("dt", {}, "Serveur"), el("dd", { class: "bad" }, "Injoignable : vérifie que l'application tourne."));
+    return;
+  }
+  const where = h.deployed ? "les variables d'environnement Vercel" : "le fichier .env";
+  const storage = {
+    redis: ["Redis, persistant", "good"],
+    fichiers: ["Fichiers locaux (data/)", "good"],
+    temporaire: ["Temporaire : effacé à chaque redémarrage. Ajoute Upstash Redis au projet Vercel (voir README).", "bad"],
+  }[h.storage] || [h.storage, null];
+  const rows = [
+    ["Modèle d'écriture", `${h.model} · effort ${h.effort}`, null],
+    ["Clé Anthropic", h.hasAnthropicKey ? "Présente" : `Absente : ajoute ANTHROPIC_API_KEY dans ${where}`, h.hasAnthropicKey ? "good" : "bad"],
+    ["Clé YouTube", h.hasYoutubeKey ? "Présente" : "Absente (facultative : ajoute YOUTUBE_API_KEY pour la source YouTube)", h.hasYoutubeKey ? "good" : null],
+    ["Historique", storage[0], storage[1]],
+    ["Pays des tendances", h.geo, null],
+  ];
+  if (h.deployed) {
+    rows.push(["Accès", "Vérifie que Settings → Deployment Protection → « All Deployments » est activé sur Vercel : sans protection, n'importe qui avec l'URL utilise ta clé.", null]);
+  }
+  dl.replaceChildren(...rows.flatMap(([k, v, cls]) => [el("dt", {}, k), el("dd", { class: cls }, v)]));
+}
+
+async function loadHealth() {
+  try {
+    state.health = await api("/api/health");
+  } catch {
+    state.health = null;
+  }
+  state.healthLoaded = true;
+  const status = $("#shell-status");
+  const text = $("#shell-status-text");
+  const h = state.health;
+  let s = ["err", "Serveur injoignable"];
+  if (h && !h.hasAnthropicKey) s = ["err", "Clé API manquante"];
+  else if (h && h.storage === "temporaire") s = ["warn", "Historique temporaire"];
+  else if (h) s = ["ok", "Prêt · historique sauvegardé"];
+  status.dataset.state = s[0];
+  text.textContent = s[1];
+  status.setAttribute("aria-label", `État : ${s[1]}. Ouvrir les réglages`);
+
+  const notice = $("#global-notice");
+  if (h && !h.hasAnthropicKey) {
+    const where = h.deployed ? "les variables d'environnement Vercel, puis redéploie" : "le fichier .env, puis relance l'application";
+    notice.replaceChildren(
+      el("strong", {}, "Clé API Anthropic absente. "),
+      `La prévision ne peut pas tourner : ajoute ANTHROPIC_API_KEY dans ${where}. `,
+      el("a", { href: "#reglages" }, "Voir l'état du système"),
+    );
+    notice.classList.remove("hidden");
+  } else notice.classList.add("hidden");
+  if (state.route.view === "reglages") renderEnv();
+}
+
+/* =========================================================================
+   Révélations au défilement (section « Comment Amorce prévoit »)
+   ========================================================================= */
+
+function initReveal() {
+  const items = [...document.querySelectorAll(".reveal")];
+  if (!("IntersectionObserver" in window)) {
+    items.forEach((n) => n.classList.add("is-in"));
+    return;
+  }
+  const io = new IntersectionObserver(
+    (records) => {
+      let k = 0;
+      for (const r of records) {
+        if (!r.isIntersecting) continue;
+        r.target.style.setProperty("--i", k++);
+        r.target.classList.add("is-in");
+        io.unobserve(r.target);
+      }
+    },
+    { rootMargin: "0px 0px -8% 0px", threshold: 0.15 },
+  );
+  items.forEach((n) => io.observe(n));
+}
+
+/* =========================================================================
+   Démarrage
+   ========================================================================= */
+
+function init() {
+  initBrief();
+  initSettings();
+  initReveal();
+  $("#radar-form").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    runRadar($("#radar-q").value);
+  });
+  window.addEventListener("hashchange", () => transition(() => applyRoute({ focus: true })));
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden || !state.dropOnShow) return;
+    const id = state.dropOnShow;
+    state.dropOnShow = null;
+    const panel = $("#bulletin-panel");
+    if (isViewingFlow(id) && panel) dropBulletin(panel);
+  });
+  // Horloge des générations longues (texte seul, pas d'annonce lecteur d'écran).
+  setInterval(() => {
+    if (!state.job) return;
+    const t = clockText();
+    document.querySelectorAll("[data-clock]").forEach((n) => (n.textContent = t));
+  }, 1000);
+
+  applyRoute();
+  loadHealth();
+  loadEntries().then(() => {
+    if (state.route.view === "radar") renderRadarIdle();
+  });
+}
+
+init();

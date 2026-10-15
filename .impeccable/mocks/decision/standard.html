@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Amorce · Résultat (Standard)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F3F5F4;--side:#ECEFED;--card:#fff;--line:#DFE4E1;--line-2:#ECEFED;--ink:#0F1513;--ink-2:#46504B;--ink-3:#77827C;--acc:#0B7A58;--acc-ink:#075C42;--acc-soft:#E2F1EB;--warn:#B25A12;--warn-soft:#FBEFE3}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;display:grid;grid-template-columns:232px 1fr;background:var(--bg);color:var(--ink);font:400 14px/1.45 "Geist",sans-serif;-webkit-font-smoothing:antialiased}
+.num{font-family:"Geist Mono",monospace;font-variant-numeric:tabular-nums}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* Shell */
+aside{background:var(--side);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 8px 0;font-weight:600;font-size:15px}
+.brand b{width:24px;height:24px;border-radius:6px;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:13px}
+nav{margin-top:26px;display:grid;gap:2px}
+nav a{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:7px;color:var(--ink-2);text-decoration:none}
+nav a.on{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 0 0 1px var(--line)}
+nav a.on svg{color:var(--acc)}
+.calib{margin-top:auto;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.calib h4{font-size:12.5px;font-weight:600}
+.calib p{margin-top:4px;font-size:12.5px;color:var(--ink-3);line-height:1.45}
+main{padding:22px 36px 24px;display:flex;flex-direction:column;gap:18px;min-width:0}
+/* Header */
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:32px}
+.crumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-3)}
+.crumb span:nth-child(2){color:var(--line)}
+.demo{margin-left:6px;font-size:11.5px;font-weight:600;color:var(--ink-2);border:1px dashed #A9B3AE;border-radius:5px;padding:1px 7px}
+h1{margin-top:8px;font-size:22px;line-height:1.25;font-weight:600;letter-spacing:-.012em}
+.meta{margin-top:8px;display:flex;align-items:center;gap:10px;color:var(--ink-2);font-size:13.5px}
+.chip{height:24px;display:inline-flex;align-items:center;padding:0 9px;border-radius:6px;background:var(--card);border:1px solid var(--line);font-size:12.5px;color:var(--ink-2)}
+.meta .dot{color:var(--ink-3)}
+.meta q{color:var(--ink);quotes:"« " " »"}
+.steps{display:flex;align-items:center;gap:8px;list-style:none;margin-top:2px;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.steps li{display:flex;align-items:center;gap:7px}
+.steps li+li::before{content:"";width:18px;height:1px;background:#C5CDC9;margin-right:1px}
+.steps i{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:#fff;font-style:normal}
+.steps i svg{width:11px;height:11px;stroke-width:2.4}
+.steps .cur{color:var(--ink);font-weight:600}
+.steps .cur i{background:var(--acc);box-shadow:0 0 0 3px var(--acc-soft)}
+/* Tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tab{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;margin-bottom:-1px;color:var(--ink-2);border-bottom:2px solid transparent;font-size:14px}
+.tab .num{font-size:12px;padding:2px 6px;border-radius:5px;background:var(--line-2);color:var(--ink-2)}
+.tab.on{color:var(--ink);font-weight:600;border-color:var(--ink)}
+.tab.on .num{background:var(--acc-soft);color:var(--acc-ink);font-weight:600}
+.tabs .when{margin-left:auto;align-self:center;font-size:12.5px;color:var(--ink-3)}
+/* Cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px}
+.label{font-size:12.5px;color:var(--ink-3)}
+/* Verdict */
+.verdict{display:grid;grid-template-columns:auto 1fr 1px 420px;align-items:center;column-gap:28px;padding:20px 24px}
+.ring{position:relative;width:104px;height:104px}
+.ring svg{width:104px;height:104px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:5}
+.ring div{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring strong{font:600 34px/1 "Geist",sans-serif;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.ring small{display:block;margin-top:3px;font-size:11.5px;color:var(--ink-3)}
+.band{display:flex;align-items:center;gap:12px}
+.band h2{font-size:20px;font-weight:600;letter-spacing:-.01em}
+.conf{display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 9px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;color:var(--ink-2)}
+.conf span{display:inline-flex;gap:2px;align-items:flex-end}
+.conf b{width:3px;border-radius:1px;background:var(--ink)}
+.conf b:nth-child(1){height:6px}.conf b:nth-child(2){height:9px}.conf b:nth-child(3){height:12px;background:#CBD2CE}
+.why{margin-top:8px;font-size:15.5px;color:var(--ink)}
+.fine{margin-top:6px;font-size:12.5px;color:var(--ink-3)}
+.vsep{align-self:stretch;background:var(--line-2)}
+.factors{display:grid;grid-template-columns:172px 1fr 30px;row-gap:9px;column-gap:14px;align-items:center;font-size:13.5px;color:var(--ink-2)}
+.factors .bar{height:4px;border-radius:2px;background:var(--line-2);overflow:hidden}
+.factors .bar i{display:block;height:100%;background:var(--ink-2);border-radius:2px}
+.factors .num{text-align:right;color:var(--ink);font-size:13px}
+.factors .weak{color:var(--warn);font-weight:600}
+.factors .bar.weak i{background:var(--warn)}
+.factors .weak em{font-style:normal;font-size:11px;font-weight:600;background:var(--warn-soft);border-radius:4px;padding:1px 5px;margin-left:6px}
+/* Work area */
+.work{flex:1;min-height:0;display:grid;grid-template-columns:1fr 372px;gap:18px}
+.script{display:flex;flex-direction:column}
+.bar-h{display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 16px 0 24px;border-bottom:1px solid var(--line-2)}
+.bar-h h3{font-size:14px;font-weight:600}
+.bar-h h3 span{font-weight:400;color:var(--ink-3);margin-left:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:32px;padding:0 12px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 13px "Geist",sans-serif}
+.btn kbd{font:400 11.5px "Geist Mono",monospace;color:var(--ink-3)}
+.btn.primary{height:38px;width:100%;background:var(--acc);border-color:var(--acc);color:#fff;font-size:14px}
+.post{position:relative;flex:1;padding:22px 56px 0 56px;font-size:16px;line-height:1.6;color:var(--ink)}
+.post>*+*{margin-top:12px}
+.post ol{list-style:none}
+.post .tags{color:var(--acc-ink)}
+.post [data-n]{position:relative}
+.post [data-n]::before{content:attr(data-n);position:absolute;left:-34px;top:4px;width:18px;height:18px;border-radius:50%;border:1px solid #B9C3BE;color:var(--ink-2);font:600 11px/16px "Geist Mono",monospace;text-align:center;background:var(--card)}
+.post [data-n]::after{content:"";position:absolute;left:-12px;top:3px;bottom:3px;width:2px;border-radius:1px;background:var(--line)}
+.foot{display:flex;gap:18px;align-items:center;height:44px;padding:0 24px;border-top:1px solid var(--line-2);font-size:12.5px;color:var(--ink-3)}
+.foot b{font-weight:600;color:var(--acc-ink)}
+.side{display:flex;flex-direction:column;gap:18px;min-height:0}
+.pad{padding:18px 20px}
+.side h3{font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:baseline}
+.side h3 span{font-weight:400;font-size:12.5px;color:var(--ink-3)}
+.imp{list-style:none;margin:12px 0 16px;display:grid;gap:12px}
+.imp li{display:grid;grid-template-columns:18px 1fr;column-gap:12px;font-size:14px;line-height:1.4}
+.imp li>b{width:18px;height:18px;margin-top:1px;border-radius:50%;border:1px solid #B9C3BE;font:600 11px/16px "Geist Mono",monospace;text-align:center;color:var(--ink-2)}
+.imp small{grid-column:2;margin-top:2px;font-size:12px;color:var(--ink-3)}
+.trend .q{margin-top:10px;font-size:15px;font-weight:600}
+.trend .row{margin-top:10px;display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--ink-3)}
+.trend .row .num{font-size:13px;color:var(--ink);font-weight:600}
+.trend .src{display:inline-flex;align-items:center;gap:6px}
+.trend .src i{width:6px;height:6px;border-radius:50%;background:var(--acc)}
+.trend a{display:inline-block;margin-top:12px;font-size:13px;font-weight:600;color:var(--ink);text-decoration:none}
+</style></head>
+<body>
+<aside>
+  <div class="brand"><b>A</b>Amorce</div>
+  <nav>
+    <a class="on" href="#"><svg class="i" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></svg>Créer</a>
+    <a href="#"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2"/><path d="M8 8l4-4"/></svg>Radar</a>
+    <a href="#"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.5"/></svg>Historique</a>
+    <a href="#"><svg class="i" viewBox="0 0 16 16"><path d="M3 5h10M3 11h10"/><circle cx="6" cy="5" r="1.6" fill="#ECEFED"/><circle cx="10.5" cy="11" r="1.6" fill="#ECEFED"/></svg>Réglages</a>
+  </nav>
+  <div class="calib">
+    <h4>Calibration du score</h4>
+    <p>Aucune stat réelle pour l’instant. Saisis tes vues à J+2 dans l’Historique pour mesurer la précision.</p>
+  </div>
+</aside>
+<main>
+  <header>
+    <div>
+      <div class="crumb"><span>Créer</span><span>/</span><span>Résultat</span><span class="demo">Exemple</span></div>
+      <h1>3 erreurs qui tuent la visibilité des artisans sur les réseaux</h1>
+      <div class="meta"><span class="chip">Artisanat / rénovation</span><span class="dot">·</span>Angle <q>Le travail bien fait ne parle pas de lui-même</q></div>
+    </div>
+    <ol class="steps">
+      <li><i><svg class="i" viewBox="0 0 12 12"><path d="M2.5 6.2l2.3 2.3 4.7-5"/></svg></i>Idée</li>
+      <li><i><svg class="i" viewBox="0 0 12 12"><path d="M2.5 6.2l2.3 2.3 4.7-5"/></svg></i>Tendances</li>
+      <li><i><svg class="i" viewBox="0 0 12 12"><path d="M2.5 6.2l2.3 2.3 4.7-5"/></svg></i>Angle</li>
+      <li><i><svg class="i" viewBox="0 0 12 12"><path d="M2.5 6.2l2.3 2.3 4.7-5"/></svg></i>Scripts</li>
+      <li class="cur"><i></i>Score</li>
+    </ol>
+  </header>
+
+  <div class="tabs">
+    <div class="tab on">LinkedIn <span class="num">78</span></div>
+    <div class="tab">Reels <span class="num">73</span></div>
+    <div class="tab">X <span class="num">69</span></div>
+    <div class="tab">YouTube <span class="num">71</span></div>
+    <span class="when">4 scripts évalués · il y a 2 min</span>
+  </div>
+
+  <section class="card verdict">
+    <div class="ring">
+      <svg viewBox="0 0 104 104"><circle cx="52" cy="52" r="46" stroke="#ECEFED"/><circle cx="52" cy="52" r="46" stroke="#0B7A58" stroke-linecap="round" stroke-dasharray="225.4 289"/></svg>
+      <div><strong>78</strong><small>sur 100</small></div>
+    </div>
+    <div>
+      <div class="band"><h2>Top 25 % de ta niche</h2><span class="conf"><span><b></b><b></b><b></b></span>Confiance moyenne</span></div>
+      <p class="why">Accroche forte et structure claire ; il manque une preuve chiffrée.</p>
+      <p class="fine">Potentiel relatif estimé avant publication, pas une promesse de vues.</p>
+    </div>
+    <div class="vsep"></div>
+    <div class="factors">
+      <span>Accroche</span><div class="bar"><i style="width:82%"></i></div><span class="num">82</span>
+      <span>Structure</span><div class="bar"><i style="width:85%"></i></div><span class="num">85</span>
+      <span class="weak">Tendance<em>Point faible</em></span><div class="bar weak"><i style="width:68%"></i></div><span class="num weak">68</span>
+      <span>Émotion</span><div class="bar"><i style="width:75%"></i></div><span class="num">75</span>
+      <span>Appel à l’action</span><div class="bar"><i style="width:82%"></i></div><span class="num">82</span>
+    </div>
+  </section>
+
+  <div class="work">
+    <section class="card script">
+      <div class="bar-h"><h3>Post LinkedIn<span>85 mots · 526 caractères</span></h3><span class="btn"><svg class="i" viewBox="0 0 16 16"><rect x="5" y="5" width="8" height="8" rx="1.5"/><path d="M3 10.5V4.5A1.5 1.5 0 0 1 4.5 3h6"/></svg>Copier <kbd>⌘C</kbd></span></div>
+      <div class="post">
+        <p data-n="2">La plupart des artisans croient que leur travail « parle de lui-même ».</p>
+        <p data-n="1">Résultat : le carnet de commandes dépend du bouche-à-oreille, et des concurrents moins bons mais plus visibles prennent les chantiers.</p>
+        <p>3 erreurs que je vois chaque semaine :</p>
+        <ol><li>1. Publier le produit fini, jamais le processus.</li><li data-n="3">2. Parler technique quand le client achète une émotion.</li><li>3. Attendre d’avoir le temps.</li></ol>
+        <p>Le travail bien fait mérite d’être vu.</p>
+        <p>Vous êtes artisan ? Qu’est-ce qui vous bloque le plus pour publier ? 👇</p>
+        <p class="tags">#artisanat #communication #tpe</p>
+      </div>
+      <div class="foot"><span><b>Format conforme</b></span><span>Accroche visible avant « voir plus »</span><span>526 / 3 000 caractères</span></div>
+    </section>
+
+    <div class="side">
+      <section class="card pad">
+        <h3>3 améliorations <span>repérées dans le texte</span></h3>
+        <ol class="imp">
+          <li><b>1</b>Ajouter une preuve chiffrée<small>Crédibilité · paragraphe 2</small></li>
+          <li><b>2</b>Relier l’accroche à la vague reconversion<small>Tendance 68 → point faible</small></li>
+          <li><b>3</b>Raccourcir l’erreur n°2<small>Structure · lisibilité mobile</small></li>
+        </ol>
+        <span class="btn primary"><svg class="i" viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 3v3h-3"/></svg>Réécrire avec ces améliorations</span>
+      </section>
+      <section class="card pad trend">
+        <h3>Pourquoi cet angle <span>Signal de tendance</span></h3>
+        <p class="q">devenir artisan reconversion</p>
+        <div class="row"><span class="src"><i></i>Google Trends</span><span><span class="num">200+</span> recherches</span></div>
+        <a href="#">Ouvrir dans le Radar →</a>
+      </section>
+    </div>
+  </div>
+</main>
+</body></html>

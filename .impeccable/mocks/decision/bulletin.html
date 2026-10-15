@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Amorce · Résultat (Bulletin)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600&family=Fira+Sans+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--shell:#0C315C;--sky:#E8F0FA;--tint:#F5F8FC;--line:#D2DEEC;--line-2:#E2EAF4;--ink:#0D2240;--ink-2:#3B5373;--ink-3:#647B98;--act:#1C57B0;--cold:#4A86D8;--mild:#F2C845;--warm:#F08A24;--hot:#D8432B}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;font:400 14.5px/1.45 "Fira Sans",sans-serif;color:var(--ink);background:var(--sky);display:grid;grid-template-columns:224px 1fr}
+.cap{font:600 11.5px/1 "Fira Sans Condensed",sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.t{display:inline-block;min-width:30px;padding:4px 6px;border-radius:5px;background:var(--t);color:var(--ink);font:700 15px/1 "Fira Sans Condensed",sans-serif;text-align:center}
+svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+aside{background:var(--shell);color:#C6D6EB;padding:22px 14px;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px;color:#fff;font:600 18px/1 "Fira Sans",sans-serif}
+.brand b{width:28px;height:28px;border-radius:7px;background:var(--warm);color:var(--ink);display:grid;place-items:center;font:700 16px "Fira Sans Condensed",sans-serif}
+nav{margin-top:30px;display:grid;gap:2px}
+nav a{display:flex;align-items:center;gap:11px;height:40px;padding:0 10px;border-radius:8px;color:#C6D6EB;text-decoration:none;font-weight:500}
+nav a.on{background:rgba(255,255,255,.13);color:#fff}
+nav svg{width:18px;height:18px}
+.recent{margin-top:34px;padding:0 10px;list-style:none}
+.recent .cap{color:#8EA8CA;margin-bottom:4px}
+.recent li{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:11px;font-size:13.5px}
+.recent li span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recent .t{font-size:13px;min-width:26px;padding:3px 5px}
+main{padding:24px 32px;display:flex;flex-direction:column;min-width:0}
+header{display:grid;grid-template-columns:1fr auto;column-gap:32px;align-items:start}
+.eyebrow{display:flex;align-items:center;gap:10px;color:var(--ink-2);font-size:13.5px}
+.tag{font:600 11px/1 "Fira Sans Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);border:1px dashed #8A9DB6;border-radius:4px;padding:3px 6px}
+h1{font:600 23px/1.25 "Fira Sans",sans-serif;margin-top:8px;letter-spacing:-.005em}
+.angle{grid-column:1/-1;margin-top:9px;white-space:nowrap;display:flex;align-items:center;gap:14px;color:var(--ink-2)}
+.angle q{color:var(--ink);quotes:"« " " »"}
+.front{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px 12px 4px 9px}
+.front strong{color:var(--ink);font-weight:500}
+.front svg{width:34px;height:14px;stroke:var(--hot)}
+.steps{display:flex;align-items:center;gap:7px;list-style:none;margin-top:2px;font-size:13px;color:var(--ink-2)}
+.steps li{display:flex;align-items:center;gap:7px}
+.steps li+li::before{content:"";width:16px;height:2px;border-radius:1px;background:#9DB6D6}
+.steps i{width:20px;height:20px;border-radius:50%;background:var(--act);color:#fff;display:grid;place-items:center;font:normal 600 11px "Fira Sans",sans-serif}
+.steps .now{color:var(--ink);font-weight:600}
+.steps .now i{background:#fff;box-shadow:inset 0 0 0 2px var(--act),inset 0 0 0 6px #fff,inset 0 0 0 10px var(--act)}
+.tabs{display:flex;align-items:flex-end;gap:4px;margin-top:20px;position:relative;z-index:1}
+.tab{display:flex;align-items:center;gap:10px;height:46px;padding:0 14px 0 16px;border:1px solid transparent;border-bottom:0;border-radius:10px 10px 0 0;font:500 14.5px "Fira Sans",sans-serif;color:var(--ink-2);background:transparent}
+.tab.on{background:#fff;border-color:var(--line);color:var(--ink);font-weight:600;height:47px;margin-bottom:-1px}
+.tabs .hint{margin-left:auto;align-self:center;font-size:13px;color:var(--ink-3)}
+.panel{flex:1;min-height:0;background:#fff;border:1px solid var(--line);border-radius:0 12px 12px 12px;display:grid;grid-template-rows:auto 1fr;overflow:hidden}
+.verdict{display:grid;grid-template-columns:120px 1fr 356px;gap:28px;align-items:center;padding:22px 28px;background:#FEF4E8;border-bottom:1px solid #F6DFC4}
+.temp{height:112px;border-radius:14px;background:var(--warm);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 -3px 0 rgba(13,34,64,.12)}
+.temp b{font:700 66px/.9 "Fira Sans Condensed",sans-serif;letter-spacing:-.02em}
+.temp span{font:600 12px/1 "Fira Sans Condensed",sans-serif;letter-spacing:.08em;margin-top:8px;color:#4A2A0C}
+.band{font:600 29px/1.15 "Fira Sans",sans-serif;margin-top:9px;letter-spacing:-.01em}
+.say{margin-top:9px;font-size:17px;line-height:1.4;color:var(--ink-2)}
+.say strong{color:var(--ink);font-weight:500}
+.meta{border-left:1px solid #F0D6B8;padding-left:28px;display:grid;gap:14px}
+.scale{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:9px}
+.scale span{height:8px;border-radius:2px;background:var(--t);opacity:.55}
+.scale span.cur{opacity:1;outline:2px solid var(--ink);outline-offset:1px}
+.lab{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:6px;font:500 12px/1 "Fira Sans Condensed",sans-serif;color:var(--ink-3)}
+.lab .cur{color:var(--ink);font-weight:700}
+.row{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-2)}
+.row .cap{width:136px;flex:none}
+.dots{display:flex;gap:4px}
+.dots i{width:10px;height:10px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--act)}
+.dots i.f{background:var(--act)}
+.row b{color:var(--ink);font-weight:600}
+.pending{border:1px dashed #9AAAC0;border-radius:4px;padding:1px 6px;color:var(--ink-3)}
+.body{display:grid;grid-template-columns:1fr 372px;min-height:0}
+.script{padding:20px 32px 22px 28px;min-height:0}
+.sh{display:flex;justify-content:space-between;align-items:center}
+.sh .cap{color:var(--ink-2)}
+.sh small{font-size:13px;color:var(--ink-3);margin-left:10px}
+.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:#fff;font:500 14px "Fira Sans",sans-serif;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn svg{width:16px;height:16px}
+.post{margin-top:18px;font-size:18px;line-height:1.58;max-width:66ch}
+.post p+p,.post p+ol,.post ol+p{margin-top:14px}
+.post ol{list-style:none}
+.post li{padding-left:24px;text-indent:-24px}
+.post li b{display:inline-block;width:24px;text-indent:0;font-weight:600;color:var(--act)}
+.hash{color:var(--act)}
+.side{border-left:1px solid var(--line-2);background:var(--tint);padding:20px 28px 22px;display:flex;flex-direction:column}
+.fx{margin-top:12px;display:grid;gap:4px}
+.fx div{display:grid;grid-template-columns:112px 1fr 34px;align-items:center;gap:12px;height:30px;padding:0 8px;margin:0 -8px;border-radius:6px;font-size:14px;color:var(--ink-2)}
+.fx u{height:5px;border-radius:3px;background:linear-gradient(90deg,var(--t) var(--v),#DCE5F0 var(--v))}
+.fx .t{font-size:14px;padding:3px 4px}
+.fx .weak{background:#fff;box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);font-weight:500}
+.fx .weak em{font:600 10.5px/1 "Fira Sans Condensed",sans-serif;letter-spacing:.07em;text-transform:uppercase;color:#9A4A12;font-style:normal;margin-left:6px}
+.imp{list-style:none;margin-top:12px;display:grid;gap:10px}
+.imp li{display:grid;grid-template-columns:22px 1fr;gap:10px;font-size:14.5px;line-height:1.4}
+.imp i{width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 1px var(--line);display:grid;place-items:center;font:normal 600 12px "Fira Sans",sans-serif;color:var(--act)}
+.imp mark{background:none;font:600 11px/1 "Fira Sans Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#9A4A12;margin-left:4px;white-space:nowrap}
+.primary{margin-top:18px;height:44px;width:100%;background:var(--act);border-color:var(--act);color:#fff;font-weight:600;font-size:15px}
+.note{margin-top:auto;font-size:12.5px;color:var(--ink-3);line-height:1.4}
+</style></head>
+<body>
+<aside>
+  <div class="brand"><b>A</b>Amorce</div>
+  <nav aria-label="Navigation principale">
+    <a class="on" href="#"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>Créer</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 12l5.5-5.5"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>Historique</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Réglages</a>
+  </nav>
+  <ul class="recent">
+    <li class="cap">Récents</li>
+    <li><span>Avant / après cuisine</span><b class="t" style="--t:#EC7A2B">81</b></li>
+    <li><span>Devis qui rassurent</span><b class="t" style="--t:#F5A630">74</b></li>
+    <li><span>Refuser un chantier</span><b class="t" style="--t:#F2D266">64</b></li>
+  </ul>
+</aside>
+<main>
+  <header>
+    <div>
+      <div class="eyebrow"><span class="cap">Brief</span><span>Artisanat / rénovation</span><span class="tag">Exemple</span></div>
+      <h1>3 erreurs qui tuent la visibilité des artisans sur les réseaux</h1>
+    </div>
+    <ol class="steps" aria-label="Progression">
+      <li><i>✓</i>Idée</li><li><i>✓</i>Tendances</li><li><i>✓</i>Angle</li><li><i>✓</i>Scripts</li><li class="now" aria-current="step"><i></i>Score</li>
+    </ol>
+    <div class="angle"><span>Angle <q>Le travail bien fait ne parle pas de lui-même</q></span>
+        <span class="front" title="Front de tendance montant"><svg viewBox="0 0 34 14"><path d="M1 12h32"/><path d="M5 12a3.5 3.5 0 0 1 7 0M15 12a3.5 3.5 0 0 1 7 0M25 12a3.5 3.5 0 0 1 7 0" fill="#D8432B"/></svg><strong>devenir artisan reconversion</strong> ↗ 200+ recherches · Google Trends</span></div>
+  </header>
+  <div class="tabs" role="tablist">
+    <button class="tab on" role="tab" aria-selected="true">LinkedIn <b class="t" style="--t:var(--warm)">78</b></button>
+    <button class="tab" role="tab">Reels <b class="t" style="--t:#F5A630">73</b></button>
+    <button class="tab" role="tab">X <b class="t" style="--t:#F2C845">69</b></button>
+    <button class="tab" role="tab">YouTube <b class="t" style="--t:#F4B83A">71</b></button>
+    <span class="hint">Potentiel relatif à ta niche, pas une promesse de vues</span>
+  </div>
+  <section class="panel">
+    <div class="verdict">
+      <div class="temp"><b>78</b><span>/ 100</span></div>
+      <div>
+        <div class="cap">Prévision · LinkedIn</div>
+        <div class="band">Top 25 % de ta niche</div>
+        <p class="say"><strong>Accroche forte et structure claire</strong> ; il manque une preuve chiffrée.</p>
+      </div>
+      <div class="meta">
+        <div><div class="cap">Échelle de potentiel</div>
+          <div class="scale"><span style="--t:var(--cold)"></span><span style="--t:var(--mild)"></span><span class="cur" style="--t:var(--warm)"></span><span style="--t:var(--hot)"></span></div>
+          <div class="lab"><span>Bas 50 %</span><span>Top 50 %</span><span class="cur">Top 25 %</span><span>Top 10 %</span></div></div>
+        <div class="row"><span class="cap">Indice de confiance</span><span class="dots"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></span><b>3/5</b> moyenne</div>
+        <div class="row"><span class="cap">Prévu · Relevé</span><b>Top 25 %</b> · <span class="pending">à mesurer J+2</span></div>
+      </div>
+    </div>
+    <div class="body">
+      <article class="script">
+        <div class="sh"><div><span class="cap">Script LinkedIn · prêt à publier</span><small>525 caractères</small></div>
+          <button class="btn"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M5 15V6a1 1 0 0 1 1-1h9"/></svg>Copier</button></div>
+        <div class="post">
+          <p>La plupart des artisans croient que leur travail “parle de lui-même”.</p>
+          <p>Résultat : le carnet de commandes dépend du bouche-à-oreille, et des concurrents moins bons mais plus visibles prennent les chantiers.</p>
+          <p>3 erreurs que je vois chaque semaine :</p>
+          <ol><li><b>1.</b>Publier le produit fini, jamais le processus.</li><li><b>2.</b>Parler technique quand le client achète une émotion.</li><li><b>3.</b>Attendre d'avoir le temps.</li></ol>
+          <p>Le travail bien fait mérite d'être vu.</p>
+          <p>Vous êtes artisan ? Qu'est-ce qui vous bloque le plus pour publier ? 👇</p>
+          <p class="hash">#artisanat #communication #tpe</p>
+        </div>
+      </article>
+      <div class="side">
+        <div class="cap">Facteurs</div>
+        <div class="fx">
+          <div>Accroche<u style="--t:#EC7A2B;--v:82%"></u><b class="t" style="--t:#EC7A2B">82</b></div>
+          <div>Structure<u style="--t:#E8672C;--v:85%"></u><b class="t" style="--t:#E8672C">85</b></div>
+          <div class="weak"><span>Tendance<em>faible</em></span><u style="--t:#F2C845;--v:68%"></u><b class="t" style="--t:#F2C845">68</b></div>
+          <div>Émotion<u style="--t:#F59A2C;--v:75%"></u><b class="t" style="--t:#F59A2C">75</b></div>
+          <div>Appel à l'action<u style="--t:#EC7A2B;--v:82%"></u><b class="t" style="--t:#EC7A2B">82</b></div>
+        </div>
+        <div class="cap" style="margin-top:24px">3 améliorations</div>
+        <ol class="imp">
+          <li><i>1</i><span>Ajouter une preuve chiffrée</span></li>
+          <li><i>2</i><span>Relier l'accroche à la vague reconversion <mark>↑ Tendance</mark></span></li>
+          <li><i>3</i><span>Raccourcir l'erreur n°2</span></li>
+        </ol>
+        <button class="btn primary"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/></svg>Réécrire avec ces améliorations</button>
+        <p class="note">Après publication, saisis tes vues réelles dans l'Historique : le relevé calibre les prochaines prévisions.</p>
+      </div>
+    </div>
+  </section>
+</main>
+</body></html>

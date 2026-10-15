@@ -1,4 +1,4 @@
-# Générateur de contenu — outil personnel
+# Amorce — générateur de contenu (outil personnel)
 
 Transforme une idée brute en scripts prêts à publier pour **LinkedIn, Instagram Reels, X et YouTube**, guidés par les **tendances du moment**, puis notés **avant publication** par un score de performance explicable. Après publication, saisis tes stats réelles : l'outil compare la prédiction au réalisé.
 
@@ -20,8 +20,10 @@ Prérequis : Node.js ≥ 20 et une clé API Anthropic (console [platform.claude.
 2. **Radar** : l'outil collecte les tendances liées (Google Trends, actualité GDELT, YouTube, Reddit, Hacker News) — gratuites, interrogées en direct, mises en cache 30 min.
 3. **Angles** : Claude propose 4-5 angles éditoriaux justifiés par les tendances réellement collectées, chacun noté.
 4. **Scripts** : pour l'angle choisi, un script natif par plateforme (post LinkedIn, Reel 30-45 s, thread X, vidéo YouTube).
-5. **Score avant publication** : chaque script reçoit un score 0-100 décomposé — juge IA critique (hook, structure, adéquation tendance, émotion, CTA) + conformité aux codes du format (heuristiques vérifiables) — avec une **bande de potentiel relatif** (« top 25 % »), un niveau de confiance et des suggestions de réécriture en un clic.
+5. **Bulletin de prévision** : chaque script reçoit un score 0-100 décomposé — juge IA critique (hook, structure, adéquation tendance, émotion, CTA) + conformité aux codes du format (heuristiques vérifiables) — avec une **bande de potentiel relatif** (« top 25 % »), un niveau de confiance et des suggestions de réécriture en un clic.
 6. **Historique & calibration** : à J+2/J+7, saisis les vues réelles et ta médiane habituelle ; l'outil calcule le ratio (la mesure « outlier »), compare bande prédite vs observée, et affiche ta calibration cumulée.
+
+L'interface suit le thème clair ou sombre de l'appareil et respecte le réglage « réduire les animations ».
 
 Le score est un **potentiel relatif, jamais une promesse de vues** : la viralité reste largement imprévisible, l'outil t'aide à comprendre et améliorer, et il affiche sa propre fiabilité au fil de tes posts mesurés.
 
@@ -47,7 +49,7 @@ Le dépôt est prêt pour Vercel tel quel (`vercel.json` + `api/index.js`). Comp
 2. **Protéger l'accès — indispensable.** Sans ça, n'importe qui avec l'URL utilise ta clé API. Dans le projet Vercel : *Settings → Deployment Protection* → méthode **Vercel Authentication**, portée **All Deployments** (gratuit sur tous les plans). Seul ton compte Vercel pourra ouvrir le site.
 3. **Ajouter le stockage** (sinon l'historique est perdu à chaque redémarrage) : onglet *Storage* du projet → *Create* → **Upstash for Redis** (offre gratuite) → connecte-le au projet. Les variables `KV_REST_API_URL` / `KV_REST_API_TOKEN` (ou `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`) sont ajoutées automatiquement ; l'app reconnaît les deux.
 4. **Variables d'environnement** : *Settings → Environment Variables* → ajoute `ANTHROPIC_API_KEY` (obligatoire), et si tu veux `YOUTUBE_API_KEY`, `CLAUDE_EFFORT`, `TREND_GEO`.
-5. **Redéployer** : *Deployments* → menu ⋯ du dernier déploiement → **Redeploy**, pour que les variables soient prises en compte. Dans l'app, l'onglet *Réglages* doit afficher « Stockage : Redis (persistant) ✓ » et « Clé Anthropic : présente ✓ ».
+5. **Redéployer** : *Deployments* → menu ⋯ du dernier déploiement → **Redeploy**, pour que les variables soient prises en compte. Dans l'app, la page *Réglages* → *État du système* doit afficher « Historique : Redis, persistant » et « Clé Anthropic : Présente » (le point d'état en bas de la barre latérale passe au vert).
 
 Ensuite, chaque push sur `main` redéploie automatiquement.
 
