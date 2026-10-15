@@ -52,8 +52,16 @@ async function api(path, options = {}) {
     headers: { "content-type": "application/json" },
     ...options,
   });
-  const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    if (data?.error) throw new Error(data.error);
+    // Réponse non JSON : coupure par l'hébergeur (Vercel renvoie 504 au-delà de 5 min).
+    if (res.status === 504) {
+      throw new Error("Délai dépassé (limite de 5 min par requête sur Vercel). Mets CLAUDE_EFFORT à « low » dans les variables Vercel, puis réessaie.");
+    }
+    throw new Error(`Erreur serveur (HTTP ${res.status}). Réessaie dans un instant.`);
+  }
+  if (data === null) throw new Error("Réponse illisible du serveur.");
   return data;
 }
 
@@ -95,15 +103,26 @@ document.getElementById("main-tabs").addEventListener("click", (e) => {
 async function loadHealth() {
   try {
     const h = await api("/api/health");
+    const where = h.deployed ? "les variables d'environnement Vercel" : ".env";
     const bits = [`modèle ${h.model}`, `tendances ${h.geo}`];
-    if (!h.hasAnthropicKey) bits.push("⚠ clé API manquante (.env)");
+    if (!h.hasAnthropicKey) bits.push(`⚠ clé API manquante (${where})`);
+    if (h.storage === "temporaire") bits.push("⚠ historique non sauvegardé (Redis absent)");
     document.getElementById("status-line").textContent = bits.join(" · ");
+    const storageText = {
+      redis: "Redis (persistant) ✓",
+      fichiers: "fichiers locaux dans data/ ✓",
+      temporaire: "temporaire ✗ — l'historique est perdu à chaque redémarrage. Ajoute Upstash Redis au projet Vercel (voir README).",
+    }[h.storage] || h.storage;
     const env = document.getElementById("env-info");
     env.textContent = "";
     env.append(
-      el("p", {}, `Modèle : ${h.model} (effort ${h.effort}) — modifiable via CLAUDE_MODEL / CLAUDE_EFFORT dans .env`),
+      el("p", {}, `Modèle : ${h.model} (effort ${h.effort}) — modifiable via CLAUDE_MODEL / CLAUDE_EFFORT dans ${where}`),
       el("p", {}, `Clé Anthropic : ${h.hasAnthropicKey ? "présente ✓" : "absente ✗ (obligatoire)"}`),
       el("p", {}, `Clé YouTube : ${h.hasYoutubeKey ? "présente ✓" : "absente (source optionnelle du radar)"}`),
+      el("p", {}, `Stockage : ${storageText}`),
+      h.deployed
+        ? el("p", {}, "En ligne : vérifie que Settings → Deployment Protection → « All Deployments » est activé sur Vercel, sinon n'importe qui avec l'URL peut utiliser ta clé API.")
+        : null,
     );
   } catch {
     document.getElementById("status-line").textContent = "Serveur injoignable";
@@ -202,7 +221,7 @@ function renderAngles(entry) {
 
 async function generateScripts(angleIndex) {
   if (busy) return;
-  setLoading("Écriture des scripts par plateforme, puis évaluation critique (2 passes IA)…");
+  setLoading("Étape 1/2 · Écriture des scripts par plateforme…");
   hide("step-scripts");
   try {
     currentEntry = await api("/api/scripts", {
@@ -210,11 +229,30 @@ async function generateScripts(angleIndex) {
       body: JSON.stringify({ id: currentEntry.id, angleIndex }),
     });
     renderScripts(currentEntry);
-    setLoading(null);
     show("step-scripts");
     document.getElementById("step-scripts").scrollIntoView({ behavior: "smooth" });
   } catch (err) {
     setError(err.message);
+    return;
+  }
+  busy = false;
+  await judge("Étape 2/2 · Évaluation critique des scripts…");
+}
+
+// Passe du juge IA sur tous les scripts de la génération courante.
+async function judge(text = "Évaluation critique des scripts…") {
+  if (busy) return;
+  const activeTab = document.querySelector(".script-tab.active")?.dataset.platform;
+  setLoading(text);
+  try {
+    currentEntry = await api("/api/judge", {
+      method: "POST",
+      body: JSON.stringify({ id: currentEntry.id }),
+    });
+    renderScripts(currentEntry, activeTab);
+    setLoading(null);
+  } catch (err) {
+    setError(`Les scripts sont prêts, mais l'évaluation IA a échoué : ${err.message}`);
   }
 }
 
@@ -267,6 +305,17 @@ function renderScripts(entry, activePlatform) {
       "Le score est un potentiel relatif (jamais une promesse de vues) : il combine une évaluation critique IA et la conformité aux codes du format. ",
       "Après publication, saisis tes stats réelles dans l'Historique pour vérifier la prédiction."),
   );
+  const notJudged = Object.values(entry.scripts || {}).some((s) => !s.score?.juge);
+  if (notJudged) {
+    const judgeBtn = el("button", { class: "primary" }, "Lancer l'évaluation IA");
+    judgeBtn.addEventListener("click", () => judge());
+    card.append(
+      el("div", { class: "banner", style: "margin:12px 0" },
+        el("p", { style: "margin:0 0 10px" }, "Score provisoire : seule la conformité au format est notée. L'évaluation critique IA (hook, émotion, adéquation aux tendances…) n'est pas encore passée."),
+        judgeBtn,
+      ),
+    );
+  }
 
   const platforms = Object.keys(entry.scripts || {});
   const active = activePlatform && entry.scripts?.[activePlatform] ? activePlatform : platforms[0];
@@ -275,7 +324,7 @@ function renderScripts(entry, activePlatform) {
 
   platforms.forEach((p) => {
     const script = entry.scripts[p];
-    const tabBtn = el("button", { class: `script-tab${p === active ? " active" : ""}`, "aria-selected": String(p === active) },
+    const tabBtn = el("button", { class: `script-tab${p === active ? " active" : ""}`, "aria-selected": String(p === active), "data-platform": p },
       PLATFORM_LABELS[p] || p,
       el("span", { class: "score-pill" }, String(script.score?.final ?? "")),
     );
