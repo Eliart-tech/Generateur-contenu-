@@ -221,7 +221,7 @@ async function api(path, options = {}) {
   });
   const data = await res.json().catch(() => null);
   if (!res.ok) {
-    if (data?.error) throw new Error(data.error);
+    if (data?.error) throw Object.assign(new Error(data.error), { status: res.status });
     // Réponse non JSON : coupure par l'hébergeur (Vercel renvoie 504 au-delà de 5 min).
     if (res.status === 504) {
       throw new Error("Délai dépassé (limite de 5 min par requête sur Vercel). Mets CLAUDE_EFFORT à « low » dans les variables Vercel, puis réessaie.");
@@ -1904,28 +1904,61 @@ async function pollScan() {
 // Une seule rédaction d'idées à la fois par scan, même si l'on quitte l'onglet et revient.
 // Deux temps : Claude lit d'abord le relevé (pertinence, mécanismes, visuels), puis écrit les idées.
 let ideasJob = null;
+// Lecture manquante : relancée d'elle-même une fois par chargement de page, ensuite à la demande.
+const triedAnalysis = new Set();
+let leaving = false;
+addEventListener("pagehide", () => (leaving = true));
+addEventListener("pageshow", () => (leaving = false));
 
-function makeIdeas() {
+// La lecture tourne déjà ailleurs (autre onglet, scan planifié) : on attend son résultat.
+async function waitAnalysis(id, maxMs = 240000) {
+  const until = Date.now() + maxMs;
+  while (Date.now() < until) {
+    await new Promise((r) => setTimeout(r, 4000));
+    const s = await api(`/api/scan?id=${encodeURIComponent(id)}`);
+    if (s.analysis || s.analysisError) return s;
+  }
+  throw new Error("La lecture des posts prend plus de temps que prévu. Recharge la page dans un instant.");
+}
+
+function makeIdeas({ retryAnalysis = false } = {}) {
   const scan = state.scan;
   if (!scan || scan.status !== "done") return Promise.resolve();
   if (ideasJob?.id === scan.id) return ideasJob.promise;
-  const needsAnalysis = !scan.analysis && !scan.analysisError && (scan.posts || []).length > 0;
+  const needsAnalysis = !scan.analysis && (scan.posts || []).length > 0 && (retryAnalysis || !triedAnalysis.has(scan.id));
   const job = { id: scan.id, stage: needsAnalysis ? "analyse" : "idees" };
   ideasJob = job;
   const stillHere = () => state.scan?.id === scan.id && !state.scanPending;
   const show = (s, opts) => {
     if (state.route.view === "idees" && stillHere()) renderScan(s, opts);
   };
+  const stop = (s) => {
+    if (ideasJob === job) ideasJob = null;
+    if (state.scan?.id !== scan.id) return;
+    state.scan = s;
+    show(s);
+  };
   show(scan);
   job.promise = (async () => {
     let cur = scan;
     if (needsAnalysis) {
+      triedAnalysis.add(scan.id);
       try {
         cur = await post("/api/scan/analyze", { id: scan.id });
       } catch (err) {
-        cur = { ...cur, analysisError: err.message };
+        // Page quittée ou réseau coupé : la lecture continue côté serveur, pas d'idées écrites sans elle.
+        if (leaving || err instanceof TypeError) {
+          if (ideasJob === job) ideasJob = null;
+          return;
+        }
+        cur = err.status === 409
+          ? await waitAnalysis(scan.id).catch((e) => ({ ...cur, analysisError: e.message }))
+          : { ...cur, analysisError: err.message };
       }
       if (state.scan?.id === scan.id) state.scan = cur;
+      // Relance demandée alors que les idées existent : réécrites seulement si la lecture a abouti
+      // et qu'elles avaient été écrites sans elle.
+      if (retryAnalysis && cur.ideas?.items?.length && !(cur.analysis && !cur.ideas.withAnalysis)) return stop(cur);
       job.stage = "idees";
       // L'analyse s'affiche (tendances, mécanismes) pendant que Claude écrit les idées.
       show(cur);
@@ -2048,7 +2081,7 @@ function ideaCard(idea, i, scan, reveal = false) {
     el("p", { class: "idea-meta" }, svg(IDEA_ICON[idea.plateforme], "ico pf-ico"), `${IDEA_TARGET[idea.plateforme]} · ${idea.format}`),
     el("p", { class: "hook" }, `«\u00a0${idea.accroche}\u00a0»`),
     el("p", { class: "idea-plan" }, idea.deroule),
-    ideaDetails(idea),
+    ideaDetails(idea, `${scan.id}:${i}`),
     el("div", { class: "idea-why" },
       el("span", { class: "label" }, "Pourquoi maintenant"),
       el("p", {}, idea.pourquoi_maintenant),
@@ -2067,12 +2100,13 @@ function ideaCard(idea, i, scan, reveal = false) {
 }
 
 // Plan détaillé, autres accroches, appel à l'action et hashtags : repliés pour garder la carte lisible.
-function ideaDetails(idea) {
+// Ouvert ou fermé, chaque panneau garde son état quand la vue se redessine (filtre, idées prêtes).
+function ideaDetails(idea, key) {
   const plan = idea.plan || [];
   const variants = idea.variantes_accroche || [];
   const tags = idea.hashtags || [];
   if (!plan.length && !variants.length && !idea.cta && !tags.length) return null;
-  return disclosure("Plan, autres accroches et hashtags",
+  const d = disclosure("Plan, autres accroches et hashtags",
     el("div", { class: "idea-details" },
       plan.length ? [el("span", { class: "label" }, "Plan"), el("ol", { class: "idea-steps" }, plan.map((step) => el("li", {}, step)))] : null,
       variants.length ? [el("span", { class: "label" }, "Autres accroches"), el("ul", { class: "idea-variants" }, variants.map((v) => el("li", {}, `«\u00a0${v}\u00a0»`)))] : null,
@@ -2081,6 +2115,10 @@ function ideaDetails(idea) {
     ),
     "idea-more",
   );
+  state.openIdeas ??= new Set();
+  d.open = state.openIdeas.has(key);
+  d.addEventListener("toggle", () => (d.open ? state.openIdeas.add(key) : state.openIdeas.delete(key)));
+  return d;
 }
 
 // L'idée part directement en prévision : brief pré-rempli et lancé, avec tout ce que Claude a préparé.
@@ -2187,12 +2225,12 @@ function researchBlock(scan) {
       el("h2", { class: "section-title", id: "veille-title" }, "Veille de la semaine"),
       el("span", { class: "hint" }, `Recherche web par Claude${r.createdAt ? `, ${sinceText(r.createdAt)}` : ""}`),
     ),
-    r.synthese ? el("p", { class: "veille-synthese" }, r.synthese) : null,
-    el("div", { class: "veille-grid" },
+    r.synthese || r.extrait ? el("p", { class: "veille-synthese" }, r.synthese || r.extrait) : null,
+    r.a_savoir?.length || r.dates?.length || r.angles?.length ? el("div", { class: "veille-grid" },
       r.a_savoir?.length ? el("div", {}, el("span", { class: "label" }, "À savoir"), el("ul", { class: "veille-list" }, r.a_savoir.map((f) => el("li", {}, f)))) : null,
       r.dates?.length ? el("div", {}, el("span", { class: "label" }, "Dates à venir"), el("ul", { class: "veille-list veille-dates" }, r.dates.map((d) => el("li", {}, el("b", {}, eventDate(d.date)), ` ${d.evenement}`)))) : null,
       r.angles?.length ? el("div", {}, el("span", { class: "label" }, "Débats qui circulent"), el("ul", { class: "veille-list" }, r.angles.map((a) => el("li", {}, a)))) : null,
-    ),
+    ) : null,
     r.mots_du_moment?.length ? el("div", { class: "veille-words" }, el("span", { class: "label" }, "Mots du moment"), el("p", {}, r.mots_du_moment.map((w) => el("span", { class: "word" }, w)))) : null,
     sources.length ? el("p", { class: "veille-sources" }, "Sources\u00a0: ", sources.map((src, i) => [i ? " · " : "", el("a", { href: safeUrl(src.url), target: "_blank", rel: "noopener noreferrer" }, src.title)])) : null,
   );
@@ -2269,7 +2307,12 @@ function renderScan(scan, { reveal = false } = {}) {
     el("button", { type: "button", class: "btn btn-quiet", onclick: () => runScan({ force: true, niche: scan.niche, audience: scan.audience || "", networks: scan.networks }) }, svg("rewrite"), "Rafraîchir"),
   ));
   if (missing) out.push(el("p", { class: "sources-missing" }, missing));
-  if (scan.analysisError) out.push(el("p", { class: "sources-missing" }, `Lecture des posts par Claude indisponible\u00a0: ${scan.analysisError}`));
+  if (scan.analysisError && ideasJob?.id !== scan.id) {
+    out.push(el("p", { class: "sources-missing" },
+      `Lecture des posts par Claude indisponible\u00a0: ${scan.analysisError} `,
+      el("button", { type: "button", class: "btn-inline", onclick: () => makeIdeas({ retryAnalysis: true }) }, "Relancer la lecture"),
+    ));
+  }
 
   // Idées
   if (ideasJob?.id === scan.id) {
@@ -2282,7 +2325,7 @@ function renderScan(scan, { reveal = false } = {}) {
       el("div", { class: "ideas-skel", "aria-hidden": "true" }, [0, 1].map(() => el("div", { class: "skeleton sk-idea" }))),
     ));
   } else if (scan.ideasError) {
-    out.push(alertBox("Les idées n'ont pas pu être générées.", scan.ideasError, [["Réessayer", () => makeIdeas(), true]]));
+    out.push(alertBox("Les idées n'ont pas pu être générées.", scan.ideasError, [["Réessayer", () => makeIdeas({ retryAnalysis: Boolean(scan.analysisError) }), true]]));
   } else if (scan.ideas?.items?.length) {
     out.push(el("section", { "aria-labelledby": "ideas-list-title" },
       el("h2", { class: "scan-h2", id: "ideas-list-title" }, "Idées à publier"),
