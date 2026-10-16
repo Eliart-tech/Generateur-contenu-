@@ -2,3 +2,5 @@ node_modules/
 .env
 data/
 *.log
+.impeccable/review/
+.impeccable/config.local.json
