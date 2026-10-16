@@ -3,6 +3,15 @@
   "framework": null,
   "outputDirectory": "public",
   "rewrites": [
-    { "source": "/api/:route*", "destination": "/api/index?__route=:route*" }
+    {
+      "source": "/api/:route*",
+      "destination": "/api/index?__route=:route*"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/scan",
+      "schedule": "0 6 * * *"
+    }
   ]
 }

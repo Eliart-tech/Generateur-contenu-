@@ -39,7 +39,7 @@ const TYPE_LABELS = {
   reaction: "Réaction",
   etude_de_cas: "Étude de cas",
 };
-const VIEW_TITLES = { creer: "Créer", radar: "Radar", historique: "Historique", reglages: "Réglages" };
+const VIEW_TITLES = { creer: "Créer", idees: "Idées", radar: "Radar", historique: "Historique", reglages: "Réglages" };
 const RADAR_IDEAS = ["intelligence artificielle", "reconversion", "marketing local", "productivité"];
 
 const ICONS = {
@@ -56,6 +56,8 @@ const ICONS = {
   reels: '<rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path d="M3.5 8.5h17M9 3.5l2.4 5M14.6 3.5l2.4 5M10.6 12.3v4.4l3.7-2.2z"/>',
   x: '<path d="M5 4.5h3.6L19 19.5h-3.6zM18.6 4.5L12.9 11M11.1 13l-5.7 6.5"/>',
   youtube: '<rect x="2.75" y="5.5" width="18.5" height="13" rx="4"/><path d="M10.3 9.5v5l4.2-2.5z"/>',
+  tiktok: '<path d="M13.5 3.5v11.2a3.3 3.3 0 1 1-3.3-3.3"/><path d="M13.5 3.5c.4 2.6 2.2 4.4 5 4.6"/>',
+  instagram: '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="3.8"/><path d="M16.9 7.1v.01"/>',
 };
 
 const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
@@ -120,7 +122,7 @@ function svg(name, cls = "ico", viewBox = "0 0 24 24") {
 
 const frontGlyph = () => svg("front", "front-glyph", "0 0 34 14");
 const fmt = (n) => Number(n || 0).toLocaleString("fr-FR");
-const fmtRatio = (r) => Number(r || 0).toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+const fmtRatio = (r) => Number(r || 0).toLocaleString("fr-FR", { maximumFractionDigits: Number(r) >= 10 ? 0 : 1 });
 const timeOf = (iso) => new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 const dateOf = (iso) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 const countWords = (text) => (String(text).trim().match(/\S+/g) || []).length;
@@ -346,6 +348,9 @@ function applyRoute({ focus = false } = {}) {
       target = state.focusIdea ? $("#f-idea") : $("#creer-title");
       state.focusIdea = false;
     } else if (route.view !== "prevision") target = $(".flow-title");
+  } else if (name === "idees") {
+    loadIdeasView();
+    target = $("#ideas-title");
   } else if (name === "radar") {
     renderRadarIdle();
     target = $("#radar-title");
@@ -1648,6 +1653,467 @@ function renderRecents() {
 }
 
 /* =========================================================================
+   Idées tendance : scan des réseaux, signaux viraux, idées à publier
+   ========================================================================= */
+
+const NETS = {
+  tiktok: { name: "TikTok", icon: "tiktok" },
+  instagram: { name: "Instagram", icon: "instagram" },
+  x: { name: "X", icon: "x" },
+  linkedin: { name: "LinkedIn", icon: "linkedin" },
+  youtube: { name: "YouTube Shorts", icon: "youtube" },
+};
+const NET_ORDER = ["tiktok", "instagram", "x", "linkedin", "youtube"];
+const IDEA_TARGET = { reels: "Reel · Instagram / TikTok", linkedin: "LinkedIn", x: "X", youtube: "YouTube" };
+const IDEA_ICON = { reels: "reels", linkedin: "linkedin", x: "x", youtube: "youtube" };
+const STAGE_HEAT = { "Émergent": "warm", "En explosion": "hot", "Établi": "mild", "Saturé": "cold" };
+const NETWORKS_KEY = "amorce.scan.networks";
+
+const fmtCompact = (n) => {
+  if (n === null || n === undefined) return "—";
+  if (n >= 1e6) return `${(n / 1e6).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} M`;
+  if (n >= 1e4) return `${Math.round(n / 1e3).toLocaleString("fr-FR")} k`;
+  if (n >= 1e3) return `${(n / 1e3).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} k`;
+  return n.toLocaleString("fr-FR");
+};
+const ageText = (h) => (h < 1 ? "à l'instant" : h < 48 ? `il y a ${Math.round(h)} h` : `il y a ${Math.round(h / 24)} j`);
+const sinceText = (iso) => ageText((Date.now() - Date.parse(iso)) / 3.6e6);
+
+let scanPolling = false;
+
+function storedNetworks() {
+  try {
+    const v = JSON.parse(localStorage.getItem(NETWORKS_KEY) || "null");
+    return Array.isArray(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function renderScanNetworks() {
+  const box = $("#scan-networks");
+  const avail = state.health?.social || {};
+  const chosen = storedNetworks() || state.settings?.socialNetworks || NET_ORDER;
+  box.replaceChildren(
+    ...NET_ORDER.map((n) => {
+      const usable = avail[n] !== false;
+      return el("label", { class: `pf-toggle${usable ? "" : " is-off"}`, title: usable ? null : n === "youtube" ? "Clé YouTube requise" : "Jeton Apify requis" },
+        el("input", { type: "checkbox", name: "scan-net", value: n, checked: usable && chosen.includes(n), disabled: !usable }),
+        el("span", {},
+          el("span", { class: "check", "aria-hidden": "true" }, svg("check", "")),
+          svg(NETS[n].icon, "ico pf-ico"),
+          NETS[n].name,
+          usable ? null : el("small", {}, n === "youtube" ? "clé requise" : "jeton requis"),
+        ),
+      );
+    }),
+  );
+  updateScanCost();
+}
+
+function selectedNetworks() {
+  return [...document.querySelectorAll('input[name="scan-net"]:checked')].map((c) => c.value);
+}
+
+function updateScanCost() {
+  const costs = state.health?.scanCostUsd || {};
+  const nets = selectedNetworks();
+  const usd = nets.reduce((s, n) => s + (costs[n] || 0), 0);
+  $("#scan-cost").textContent = usd > 0
+    ? `≈ ${usd.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $ de crédit Apify par scan · résultats gardés 6 h · 1 à 3 minutes`
+    : nets.length ? "Sources gratuites uniquement · moins d'une minute" : "Choisis au moins un réseau.";
+}
+
+function renderScanNotice() {
+  const box = $("#scan-notice");
+  const h = state.health;
+  if (!h || h.hasApifyToken) return box.replaceChildren();
+  box.replaceChildren(
+    el("div", { class: "notice-card" },
+      el("strong", {}, "TikTok, Instagram, X et LinkedIn ne sont pas encore branchés."),
+      el("p", {},
+        "Ajoute un jeton Apify (APIFY_TOKEN) dans ",
+        h.deployed ? "les variables d'environnement Vercel, puis redéploie" : "le fichier .env, puis relance",
+        ". En attendant, Amorce s'appuie sur YouTube Shorts (si la clé YouTube est là) et sur les sujets montants en France. ",
+        el("a", { href: "#reglages" }, "Voir l'état du système"),
+      ),
+    ),
+  );
+}
+
+function initIdeas() {
+  const form = $("#scan-form");
+  $("#scan-networks").addEventListener("change", () => {
+    try {
+      localStorage.setItem(NETWORKS_KEY, JSON.stringify(selectedNetworks()));
+    } catch {
+      /* confort seulement */
+    }
+    updateScanCost();
+  });
+  $("#sc-niche").addEventListener("input", () => setFieldError($("#sc-niche").closest(".field"), $("#sc-niche-error"), false));
+  form.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    runScan({ force: Boolean(state.scan && state.scan.niche === $("#sc-niche").value.trim()) });
+  });
+}
+
+async function loadIdeasView() {
+  renderScanNotice();
+  if (!state.settings) await loadSettingsData();
+  renderScanNetworks();
+  if (!$("#sc-niche").value && state.settings?.profile?.niche) $("#sc-niche").value = state.settings.profile.niche;
+  if (!$("#sc-audience").value && state.settings?.profile?.audience) $("#sc-audience").value = state.settings.profile.audience;
+  if (state.scanPending) return renderScanRunning(state.scanPending);
+  if (scanPolling) return renderScan(state.scan);
+  if (!state.scan) {
+    try {
+      state.scan = await api("/api/scan?id=latest");
+    } catch {
+      state.scan = null;
+    }
+  }
+  if (state.route.view !== "idees") return;
+  if (!state.scan) return renderScanIdle();
+  renderScan(state.scan);
+  if (state.scan.status === "running") pollScan();
+  else if (state.scan.status === "done" && !state.scan.ideas && !state.scan.ideasError) makeIdeas();
+}
+
+function renderScanIdle() {
+  $("#scan-body").replaceChildren(
+    el("section", { class: "scan-how", "aria-label": "Comment ça marche" },
+      el("ol", { class: "stations stations-3" },
+        [
+          ["Le relevé", "Les posts de la semaine sur ta niche, avec leurs vraies vues, partages et enregistrements."],
+          ["Le tri", "Un post compte quand il dépasse l'audience de son auteur, vite et avec des partages : c'est le signal qu'il peut se reproduire."],
+          ["Les idées", "6 idées à publier, chacune appuyée sur les posts qui le prouvent, à envoyer en un clic dans la prévision."],
+        ].map(([t, d], i) =>
+          el("li", { class: `station${i === 2 ? " station-end" : ""}` },
+            el("span", { class: "station-dot", "aria-hidden": "true" }),
+            el("h3", {}, t),
+            el("p", {}, d),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+async function runScan({ force = false } = {}) {
+  const niche = $("#sc-niche").value.trim();
+  if (!niche) {
+    setFieldError($("#sc-niche").closest(".field"), $("#sc-niche-error"), true);
+    return $("#sc-niche").focus();
+  }
+  const networks = selectedNetworks();
+  if (!networks.length) return toast("Choisis au moins un réseau à scanner.");
+  if (scanPolling || state.scanPending) return toast("Un scan est déjà en cours.");
+  const btn = $("#btn-scan");
+  btn.disabled = true;
+  btn.dataset.busy = "true";
+  state.scanT0 = Date.now();
+  state.scanStage = "start";
+  state.scanPending = { niche, networks, runs: {}, external: null };
+  renderScanRunning(state.scanPending);
+  try {
+    try {
+      state.scan = await post("/api/scan", { niche, audience: $("#sc-audience").value.trim(), networks, force });
+    } finally {
+      state.scanPending = null;
+    }
+    if (state.settings) state.settings.profile = { niche: state.scan.niche, audience: state.scan.audience };
+    if (state.scan.reused) toast(`Scan de ${timeOf(state.scan.createdAt)} réutilisé (moins de 6 h) : aucun crédit dépensé.`);
+    if (state.scan.status === "running") await pollScan();
+    else {
+      renderScan(state.scan);
+      if (!state.scan.ideas) await makeIdeas();
+    }
+  } catch (err) {
+    $("#scan-body").replaceChildren(alertBox("Le scan n'a pas abouti.", err.message, [["Réessayer", () => runScan({ force }), true]]));
+  } finally {
+    btn.disabled = false;
+    delete btn.dataset.busy;
+  }
+}
+
+async function pollScan() {
+  if (scanPolling || !state.scan) return;
+  scanPolling = true;
+  state.scanT0 = state.scanT0 || Date.parse(state.scan.createdAt);
+  try {
+    while (state.scan.status === "running") {
+      if (state.route.view === "idees") renderScanRunning(state.scan);
+      state.scan = await api(`/api/scan?id=${encodeURIComponent(state.scan.id)}`);
+    }
+    if (state.route.view === "idees") renderScan(state.scan);
+    if (state.scan.status === "done" && !state.scan.ideas) await makeIdeas();
+  } catch (err) {
+    if (state.route.view === "idees") {
+      $("#scan-body").replaceChildren(alertBox("Le suivi du scan a échoué.", err.message, [["Reprendre", () => pollScan(), true]]));
+    }
+  } finally {
+    scanPolling = false;
+  }
+}
+
+async function makeIdeas() {
+  const scan = state.scan;
+  if (!scan || scan.status !== "done") return;
+  state.scanStage = "ideas";
+  if (state.route.view === "idees") renderScan(scan);
+  try {
+    state.scan = await post("/api/ideas", { id: scan.id, force: Boolean(scan.ideas) });
+    toast(`${plural(state.scan.ideas.items.length, "idée prête", "idées prêtes")} : ${state.scan.ideas.items[0]?.titre || ""}`);
+  } catch (err) {
+    state.scan = { ...scan, ideasError: err.message };
+  } finally {
+    state.scanStage = null;
+    if (state.route.view === "idees") renderScan(state.scan, { reveal: true });
+  }
+}
+
+function scanClock() {
+  const s = Math.max(0, Math.floor((Date.now() - (state.scanT0 || Date.now())) / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function renderScanRunning(scan) {
+  const runs = scan.runs || {};
+  const stages = (scan.networks || []).map((n) => {
+    const r = runs[n];
+    const st = n === "youtube" ? (scan.status ? "done" : "active") : !r ? "active" : r.status === "SUCCEEDED" ? "done" : r.status === "ERROR" || r.status === "FAILED" ? "done" : "active";
+    const when = !r && n !== "youtube" ? "lancement" : r?.status === "SUCCEEDED" || n === "youtube" ? "relevé" : r?.status === "ERROR" || r?.status === "FAILED" ? "indisponible" : "en cours";
+    return { label: NETS[n].name, state: st, when };
+  });
+  stages.push({ label: "Score de viralité", state: "todo", when: "ensuite" }, { label: "Idées à publier", state: "todo", when: "ensuite" });
+  const ext = scan.external;
+  const topics = ext ? [...(ext.xFrance || []).filter((t) => t.rising).slice(0, 4).map((t) => ({ title: t.title, source: "X France ↑" })), ...(ext.googleTrends || []).slice(0, 3).map((t) => ({ title: t.title, source: "Google" }))] : [];
+  $("#scan-body").replaceChildren(
+    el("section", { class: "run card enter", "aria-labelledby": "scan-run-title" },
+      el("div", {},
+        el("h2", { class: "run-title", id: "scan-run-title" }, `Scan de « ${scan.niche} »`),
+        el("p", { class: "run-sub" }, "Amorce relève les posts de la semaine sur chaque réseau. Les plus lents sont arrêtés au bout de 4 minutes : on garde ce qu'ils ont déjà trouvé."),
+        el("ol", { class: "run-stages", "aria-live": "polite" },
+          stages.map((st) =>
+            el("li", { class: "run-stage", "data-state": st.state },
+              el("span", { class: "dot", "aria-hidden": "true" }, st.state === "done" ? svg("check", "") : null),
+              el("span", {}, st.label),
+              el("span", { class: "when" }, st.when),
+            ),
+          ),
+        ),
+      ),
+      el("div", { class: "run-side" },
+        el("span", { class: "label" }, "Temps écoulé"),
+        el("div", { class: "run-clock", "data-scan-clock": "", "aria-hidden": "true" }, scanClock()),
+        el("p", {}, "Tu peux changer de page : le scan continue et ses résultats t'attendront ici."),
+        topics.length ? [el("span", { class: "label" }, "Sujets montants en France"),
+          el("ul", { class: "live-signals" }, topics.map((t, i) => el("li", { class: "live-signal", vars: { "--i": i } }, frontGlyph(), el("b", {}, t.title), el("span", { class: "src" }, t.source))))] : null,
+      ),
+    ),
+  );
+}
+
+function evidenceItem(p) {
+  const metrics = [
+    p.views !== null ? `${fmtCompact(p.views)} vues` : `${fmtCompact(p.likes)} réactions`,
+    p.reach !== null && p.reach >= 1.5 ? `×${fmtRatio(p.reach)} son audience` : null,
+    ageText(p.ageH),
+  ].filter(Boolean).join(" · ");
+  const body = [svg(NETS[p.network].icon, "ico net-ico"), el("span", {}, el("b", {}, `@${p.authorHandle || "?"}`), ` · ${metrics}`)];
+  return el("li", {}, p.url ? el("a", { href: p.url, target: "_blank", rel: "noopener noreferrer" }, body, el("span", { class: "sr-only" }, " (nouvel onglet)")) : el("span", {}, body));
+}
+
+function ideaCard(idea, i, scan) {
+  const byKey = Object.fromEntries((scan.posts || []).map((p) => [p.key, p]));
+  const proofs = (idea.preuves || []).map((k) => byKey[k]).filter(Boolean);
+  const heat = heatOf(idea.potentiel);
+  return el("article", { class: "idea enter", vars: { "--i": i } },
+    el("div", { class: "idea-head" },
+      el("h3", {}, idea.titre),
+      el("span", { class: "idea-score", title: "Potentiel relatif dans ta niche" }, tchip(idea.potentiel, heat)),
+    ),
+    el("p", { class: "idea-meta" }, svg(IDEA_ICON[idea.plateforme], "ico pf-ico"), `${IDEA_TARGET[idea.plateforme]} · ${idea.format}`),
+    el("p", { class: "hook" }, `« ${idea.accroche} »`),
+    el("p", { class: "idea-plan" }, idea.deroule),
+    el("div", { class: "idea-why" },
+      el("span", { class: "label" }, "Pourquoi maintenant"),
+      el("p", {}, idea.pourquoi_maintenant),
+      proofs.length ? el("ul", { class: "evidence", "aria-label": "Posts qui le prouvent" }, proofs.map(evidenceItem)) : null,
+    ),
+    el("div", { class: "idea-foot" },
+      el("span", { class: "idea-window" },
+        el("b", {}, `Fenêtre : ${idea.fenetre}`),
+        ` · effort ${idea.effort}${idea.tendance ? ` · ${idea.tendance}` : ""}`,
+      ),
+      el("button", { type: "button", class: `btn${i === 0 ? " btn-primary" : ""}`, onclick: () => writeIdea(idea, scan) }, "Écrire cette idée", svg("arrow")),
+    ),
+  );
+}
+
+// L'idée part directement en prévision : brief pré-rempli et lancé.
+function writeIdea(idea, scan) {
+  if (state.job) return busyToast();
+  const brief = {
+    idea: idea.titre,
+    niche: scan.niche,
+    audience: scan.audience || $("#f-audience").value.trim(),
+    goal: $("#f-goal").value,
+    platforms: [idea.plateforme],
+    context: `${idea.format}. Accroche envisagée : « ${idea.accroche} ». Pourquoi maintenant : ${idea.pourquoi_maintenant}`,
+  };
+  $("#f-idea").value = brief.idea;
+  $("#f-niche").value = brief.niche;
+  $("#f-audience").value = brief.audience;
+  renderPlatformOptions(brief.platforms);
+  history.pushState(null, "", "#creer");
+  applyRoute();
+  startForecast(brief);
+}
+
+function signalRow(p) {
+  const flags = p.flags.filter((f) => ["reproductible", "sponsorisé", "concours", "polémique"].includes(f));
+  return el("li", { class: "signal" },
+    el("span", { class: "signal-net", title: NETS[p.network].name }, svg(NETS[p.network].icon, "ico net-ico"), el("span", { class: "sr-only" }, NETS[p.network].name)),
+    el("div", { class: "signal-main" },
+      p.url
+        ? el("a", { class: "signal-text", href: p.url, target: "_blank", rel: "noopener noreferrer" }, p.text || "(sans texte)", el("span", { class: "sr-only" }, " (nouvel onglet)"))
+        : el("span", { class: "signal-text" }, p.text || "(sans texte)"),
+      el("span", { class: "signal-meta" },
+        `@${p.authorHandle || "?"}`,
+        p.authorFollowers !== null ? ` · ${fmtCompact(p.authorFollowers)} abonnés` : "",
+        ` · ${ageText(p.ageH)}${p.mediaType ? ` · ${p.mediaType}` : ""}`,
+        flags.map((f) => el("span", { class: `flag flag-${f}` }, f)),
+      ),
+    ),
+    el("div", { class: "signal-metrics" },
+      el("b", {}, p.views !== null ? fmtCompact(p.views) : fmtCompact(p.likes)),
+      el("span", {}, p.views !== null ? "vues" : "réactions"),
+      p.reach !== null && p.reach >= 1.5 ? el("span", { class: "signal-reach" }, `×${fmtRatio(p.reach)} audience`) : p.confidence <= 0.3 ? el("span", { class: "signal-reach" }, `×${fmtRatio(p.ratio)} vs médiane`) : null,
+    ),
+    el("span", { class: "signal-score", title: `${p.label} · score de viralité ${p.score}/100` }, tchip(p.score, heatOf(p.score), true), el("small", {}, p.label)),
+  );
+}
+
+function clusterRow(c) {
+  const heat = STAGE_HEAT[c.stage] || "mild";
+  return el("li", { class: "trend-row" },
+    el("span", { class: "trend-name" }, c.kind === "son" ? ["Son · ", el("b", {}, c.label)] : el("b", {}, c.label)),
+    el("span", { class: "stage" }, el("i", { vars: { "--t": `var(--${heat})` }, "aria-hidden": "true" }), c.stage),
+    el("span", { class: "trend-facts" },
+      `${plural(c.creators, "créateur", "créateurs")} · ${c.networks.map((n) => NETS[n].name).join(", ")} · ${c.hitRate} % des posts à ×3 et plus`,
+      c.external ? " · aussi dans les tendances nationales" : "",
+    ),
+  );
+}
+
+function topicsBlock(ext) {
+  if (!ext) return null;
+  const groups = [
+    ["X France, maintenant", (ext.xFrance || []).slice(0, 12).map((t) => `${t.title}${t.rising ? " ↑" : ""}`)],
+    ["Recherches Google en hausse", (ext.googleTrends || []).slice(0, 8).map((t) => t.title)],
+  ].filter(([, list]) => list.length);
+  const news = (ext.news || []).slice(0, 5);
+  if (!groups.length && !news.length) return null;
+  return el("section", { class: "topics", "aria-labelledby": "topics-title" },
+    el("h2", { class: "scan-h2", id: "topics-title" }, "Sujets montants en France"),
+    el("div", { class: "topic-groups" },
+      groups.map(([label, list]) => el("div", { class: "topic-group" }, el("span", { class: "label" }, label), el("p", {}, list.join(" · ")))),
+      news.length
+        ? el("div", { class: "topic-group" }, el("span", { class: "label" }, "Actualité de ta niche"),
+            el("ul", { class: "topic-news" }, news.map((n) => el("li", {}, n.url ? el("a", { href: n.url, target: "_blank", rel: "noopener noreferrer" }, n.title) : n.title, el("small", {}, ` ${n.signal}`)))))
+        : null,
+    ),
+  );
+}
+
+function renderScan(scan, { reveal = false } = {}) {
+  if (!scan) return renderScanIdle();
+  if (scan.status === "running") return renderScanRunning(scan);
+  const posts = scan.posts || [];
+  // La liste ne montre que ce qui dépasse la norme ; à défaut, les meilleurs posts du relevé.
+  const strong = posts.filter((p) => p.label !== "Dans la norme");
+  const pool = (strong.length >= 3 ? strong : posts).slice().sort((a, b) => b.score - a.score);
+  const filter = state.netFilter && pool.some((p) => p.network === state.netFilter) ? state.netFilter : "all";
+  const shown = pool.filter((p) => filter === "all" || p.network === filter).slice(0, 15);
+  const nets = NET_ORDER.filter((n) => pool.some((p) => p.network === n));
+  const failed = Object.entries(scan.runs || {}).filter(([, r]) => r.status !== "SUCCEEDED" && r.status !== "TIMED-OUT");
+  const meta = [
+    `Relevé ${sinceText(scan.finishedAt || scan.createdAt)}`,
+    plural(posts.length, "post analysé", "posts analysés"),
+    scan.networks.map((n) => NETS[n].name).join(", "),
+    scan.costUsd ? `${scan.costUsd.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $ de crédit` : null,
+  ].filter(Boolean).join(" · ");
+
+  const out = [];
+  out.push(el("header", { class: "scan-summary" },
+    el("div", {},
+      el("h2", { class: "scan-title", id: "scan-result-title", tabindex: "-1", "data-focus": "" }, `Cette semaine en « ${scan.niche} »`),
+      scan.ideas?.synthese ? el("p", { class: "scan-synthese" }, scan.ideas.synthese) : null,
+      el("p", { class: "scan-meta" }, meta),
+    ),
+    el("button", { type: "button", class: "btn btn-quiet", onclick: () => runScan({ force: true }), disabled: scanPolling }, svg("rewrite"), "Rafraîchir"),
+  ));
+  if (failed.length) {
+    out.push(el("p", { class: "sources-missing" }, `Sans réponse : ${failed.map(([n, r]) => `${NETS[n]?.name || n}${r.error ? ` (${r.error})` : ""}`).join(", ")}.`));
+  }
+
+  // Idées
+  if (state.scanStage === "ideas") {
+    out.push(el("section", { class: "ideas-loading card", "aria-busy": "true" },
+      el("h2", { class: "scan-h2" }, "Idées en préparation…"),
+      el("p", {}, "Amorce relit les posts qui sur-performent et en tire des idées pour ta niche. Compte 30 secondes à 2 minutes."),
+      el("div", { class: "ideas-skel", "aria-hidden": "true" }, [0, 1].map(() => el("div", { class: "skeleton sk-idea" }))),
+    ));
+  } else if (scan.ideasError) {
+    out.push(alertBox("Les idées n'ont pas pu être générées.", scan.ideasError, [["Réessayer", () => makeIdeas(), true]]));
+  } else if (scan.ideas?.items?.length) {
+    out.push(el("section", { "aria-labelledby": "ideas-list-title" },
+      el("h2", { class: "scan-h2", id: "ideas-list-title" }, "Idées à publier"),
+      el("div", { class: "ideas" }, scan.ideas.items.map((idea, i) => ideaCard(idea, reveal ? i : 0, scan))),
+    ));
+  }
+
+  // Tendances
+  if (scan.clusters?.length) {
+    out.push(el("section", { class: "trends card", "aria-labelledby": "trends-title" },
+      el("div", { class: "fronts-head" },
+        el("h2", { class: "section-title", id: "trends-title" }, "Tendances détectées"),
+        el("span", { class: "hint" }, "Hashtags et sons repris par plusieurs créateurs ou sur plusieurs réseaux"),
+      ),
+      el("ul", { class: "trend-rows" }, scan.clusters.slice(0, 6).map(clusterRow)),
+    ));
+  }
+
+  // Posts qui sur-performent
+  if (posts.length) {
+    const chips = el("div", { class: "net-filter", role: "group", "aria-label": "Filtrer par réseau" },
+      [["all", "Tous"], ...nets.map((n) => [n, NETS[n].name])].map(([v, label]) =>
+        el("button", { type: "button", class: "chip-btn", "aria-pressed": String(filter === v), onclick: () => { state.netFilter = v === "all" ? null : v; renderScan(state.scan); } }, label),
+      ),
+    );
+    out.push(el("section", { "aria-labelledby": "signals-title" },
+      el("div", { class: "signals-head" }, el("h2", { class: "scan-h2", id: "signals-title" }, strong.length >= 3 ? "Posts qui sur-performent" : "Meilleurs posts du relevé"), chips),
+      el("ol", { class: "signals card" }, shown.map(signalRow)),
+      disclosure("Comment le score est calculé",
+        el("div", { class: "analysis" },
+          el("p", {}, "Le score de viralité (0 à 100) combine trois mesures : de combien le post dépasse l'audience habituelle de son auteur (abonnés, moyenne de ses posts), la qualité de l'engagement (les partages et enregistrements comptent plus que les likes) et la vitesse depuis la publication : un post récent qui monte vite passe devant un post plus ancien."),
+          el("p", {}, "« Reproductible » signale un petit compte (moins de 50 000 abonnés) qui fait au moins 5 fois mieux que d'habitude : son mécanisme ne dépend pas de sa notoriété. Sur LinkedIn, les abonnés ne sont pas publics : le post est comparé aux autres posts du relevé."),
+          scan.queries ? el("p", {}, `Requêtes utilisées — TikTok : ${scan.queries.tiktok.join(", ")} · Instagram : ${scan.queries.instagram} · X : ${scan.queries.x} · LinkedIn : ${scan.queries.linkedin.join(", ")}.`) : null,
+        )),
+    ));
+  } else if (!scan.ideas?.items?.length) {
+    out.push(el("div", { class: "empty card" },
+      el("h2", {}, "Aucun post relevé"),
+      el("p", {}, state.health?.hasApifyToken ? "Les réseaux n'ont rien renvoyé pour cette niche cette semaine. Essaie un terme plus courant." : "Ajoute un jeton Apify pour relever TikTok, Instagram, X et LinkedIn."),
+    ));
+  }
+  out.push(topicsBlock(scan.external));
+  $("#scan-body").replaceChildren(...out.filter(Boolean));
+}
+
+/* =========================================================================
    Radar
    ========================================================================= */
 
@@ -1911,11 +2377,21 @@ function statForm(entry, p) {
 
 async function loadSettingsView() {
   renderEnv();
+  if (state.health?.hasApifyToken && !state.apify) {
+    api("/api/social/account").then((a) => {
+      state.apify = a;
+      if (state.route.view === "reglages") renderEnv();
+    }).catch(() => {});
+  }
   const settings = await loadSettingsData();
   if (state.route.view !== "reglages") return;
   const form = $("#settings-form");
   if (form.contains(document.activeElement) && form.dataset.filled) return;
   $("#s-voice").value = settings.voice || "";
+  $("#s-autoscan").checked = Boolean(settings.autoScan);
+  $("#s-profile-help").textContent = settings.profile?.niche
+    ? `Niche suivie : « ${settings.profile.niche} » (modifiable depuis « Idées »).`
+    : "Niche suivie : définie au premier scan depuis « Idées ».";
   $("#medians-grid").replaceChildren(
     ...PLATFORMS.map((p) =>
       el("label", { class: "median-field" },
@@ -1942,7 +2418,7 @@ function initSettings() {
     const btn = ev.submitter || $("#settings-form button[type=submit]");
     btn.disabled = true;
     try {
-      state.settings = await post("/api/settings", { voice: $("#s-voice").value, medianViews });
+      state.settings = await post("/api/settings", { voice: $("#s-voice").value, medianViews, autoScan: $("#s-autoscan").checked });
       const saved = $("#settings-saved");
       saved.classList.remove("hidden");
       setTimeout(() => saved.classList.add("hidden"), 2400);
@@ -1952,6 +2428,15 @@ function initSettings() {
       btn.disabled = false;
     }
   });
+}
+
+function apifyText(a) {
+  const plan = a.plan ? `offre ${a.plan.toLowerCase()}` : null;
+  const credit = a.remainingUsd !== null && a.remainingUsd !== undefined
+    ? `${a.remainingUsd.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $ de crédit restant ce mois-ci`
+    : null;
+  const xNote = a.free ? "X en mode réduit (sans vues) sur l'offre gratuite" : null;
+  return ["Présent", plan, credit, xNote].filter(Boolean).join(" · ");
 }
 
 function renderEnv() {
@@ -1974,7 +2459,8 @@ function renderEnv() {
   const rows = [
     ["Modèle d'écriture", `${h.model} · effort ${h.effort}`, null],
     ["Clé Anthropic", h.hasAnthropicKey ? "Présente" : `Absente : ajoute ANTHROPIC_API_KEY dans ${where}`, h.hasAnthropicKey ? "good" : "bad"],
-    ["Clé YouTube", h.hasYoutubeKey ? "Présente" : "Absente (facultative : ajoute YOUTUBE_API_KEY pour la source YouTube)", h.hasYoutubeKey ? "good" : null],
+    ["Clé YouTube", h.hasYoutubeKey ? "Présente" : "Absente (facultative : ajoute YOUTUBE_API_KEY pour YouTube et YouTube Shorts)", h.hasYoutubeKey ? "good" : null],
+    ["Jeton Apify", h.hasApifyToken ? (state.apify ? apifyText(state.apify) : "Présent") : `Absent : ajoute APIFY_TOKEN dans ${where} pour scanner TikTok, Instagram, X et LinkedIn`, h.hasApifyToken ? "good" : "bad"],
     ["Historique", storage[0], storage[1]],
     ["Pays des tendances", h.geo, null],
   ];
@@ -2013,6 +2499,10 @@ async function loadHealth() {
     notice.classList.remove("hidden");
   } else notice.classList.add("hidden");
   if (state.route.view === "reglages") renderEnv();
+  if (state.route.view === "idees") {
+    renderScanNotice();
+    renderScanNetworks();
+  }
 }
 
 /* =========================================================================
@@ -2046,6 +2536,7 @@ function initReveal() {
 
 function init() {
   initBrief();
+  initIdeas();
   initSettings();
   initReveal();
   $("#radar-form").addEventListener("submit", (ev) => {
@@ -2062,9 +2553,11 @@ function init() {
   });
   // Horloge des générations longues (texte seul, pas d'annonce lecteur d'écran).
   setInterval(() => {
-    if (!state.job) return;
-    const t = clockText();
-    document.querySelectorAll("[data-clock]").forEach((n) => (n.textContent = t));
+    if (state.job) {
+      const t = clockText();
+      document.querySelectorAll("[data-clock]").forEach((n) => (n.textContent = t));
+    }
+    if (scanPolling || state.scanPending) document.querySelectorAll("[data-scan-clock]").forEach((n) => (n.textContent = scanClock()));
   }, 1000);
 
   applyRoute();

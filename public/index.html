@@ -30,6 +30,10 @@
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>
           <span>Créer</span>
         </a>
+        <a href="#idees" data-nav="idees" class="nav-link">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 18h5M10.5 21h3"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z"/></svg>
+          <span>Idées</span>
+        </a>
         <a href="#radar" data-nav="radar" class="nav-link">
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 12l5.5-5.5"/></svg>
           <span>Radar</span>
@@ -117,13 +121,15 @@
             </div>
           </form>
 
+          <p class="brief-nudge">Pas d'idée en tête ? <a href="#idees">Vois ce qui décolle dans ta niche cette semaine</a>.</p>
+
           <section class="how" aria-labelledby="how-title">
             <h2 id="how-title" class="how-title">Comment Amorce prévoit</h2>
             <ol class="stations">
               <li class="station reveal">
                 <span class="station-dot" aria-hidden="true"></span>
                 <h3>Le relevé des tendances</h3>
-                <p>Google Trends, l'actualité, YouTube, Reddit et Hacker News : ce qui monte autour de ton sujet, aujourd'hui.</p>
+                <p>Google Trends, l'actualité, YouTube, Google Actualités et Hacker News : ce qui monte autour de ton sujet, aujourd'hui.</p>
               </li>
               <li class="station reveal">
                 <span class="station-dot" aria-hidden="true"></span>
@@ -149,6 +155,42 @@
           <header class="flow-head" id="flow-head"></header>
           <div id="flow-body"></div>
         </div>
+      </section>
+
+      <!-- ---------- IDÉES ---------- -->
+      <section id="view-idees" class="view hidden" data-view="idees" aria-labelledby="ideas-title">
+        <header class="page-head">
+          <h1 id="ideas-title">Ce qui décolle dans ta niche</h1>
+          <p class="lede">Amorce relève les posts récents de TikTok, Instagram, X, LinkedIn et YouTube Shorts, repère ceux qui dépassent largement l'audience de leur auteur, et te propose des idées à publier cette semaine.</p>
+        </header>
+
+        <form id="scan-form" class="scan card" novalidate>
+          <div class="scan-grid">
+            <label class="field">
+              <span class="field-label">Ta niche</span>
+              <input id="sc-niche" type="text" autocomplete="off" maxlength="120" placeholder="Ex. : rénovation, coaching sportif, IA pour PME" aria-describedby="sc-niche-error" />
+              <span class="field-error" id="sc-niche-error" hidden>Indique ta niche pour lancer le scan.</span>
+            </label>
+            <label class="field">
+              <span class="field-label">Audience</span>
+              <input id="sc-audience" type="text" autocomplete="off" maxlength="160" placeholder="Ex. : propriétaires 30-50 ans" />
+            </label>
+          </div>
+          <fieldset class="platform-picker">
+            <legend class="field-label">Réseaux à scanner</legend>
+            <div class="platform-options" id="scan-networks"></div>
+          </fieldset>
+          <div class="brief-foot">
+            <p class="hint" id="scan-cost"></p>
+            <button type="submit" class="btn btn-primary btn-lg" id="btn-scan">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 12l5.5-5.5"/></svg>
+              Scanner les réseaux
+            </button>
+          </div>
+        </form>
+
+        <div id="scan-notice"></div>
+        <div id="scan-body" class="scan-body" aria-live="polite"></div>
       </section>
 
       <!-- ---------- RADAR ---------- -->
@@ -191,6 +233,14 @@
           <fieldset class="medians">
             <legend class="field-label">Tes vues habituelles par post (médiane)</legend>
             <div class="medians-grid" id="medians-grid"></div>
+          </fieldset>
+          <fieldset class="auto-scan">
+            <legend class="field-label">Idées tendance</legend>
+            <label class="check-row">
+              <input type="checkbox" id="s-autoscan" />
+              <span><b>Scanner ma niche chaque matin</b> (vers 6 h UTC) pour trouver les idées prêtes à l'ouverture. Compte environ 0,30 $ de crédit Apify par jour.</span>
+            </label>
+            <span class="field-help" id="s-profile-help">Niche suivie : définie au premier scan depuis « Idées ».</span>
           </fieldset>
           <div class="settings-foot">
             <span class="saved hidden" id="settings-saved" role="status">
