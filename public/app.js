@@ -1810,9 +1810,9 @@ function renderScanIdle() {
       el("section", { class: "scan-how", "aria-label": "Comment ça marche" },
         el("ol", { class: "stations stations-3" },
           [
-            ["Le relevé", "Les posts de la semaine sur ta niche, avec leurs vraies vues, partages et enregistrements."],
-            ["Le tri", "Un post compte quand il dépasse l'audience de son auteur, vite et avec des partages\u00a0: c'est le signal qu'il peut se reproduire."],
-            ["Les idées", "6 idées à publier, chacune appuyée sur les posts qui le prouvent, à envoyer en un clic dans la prévision."],
+            ["La veille", "Claude fait la veille de la semaine sur le web et choisit les mots-clés que ta niche emploie en ce moment."],
+            ["Le relevé", "Les posts de la semaine, notés selon de combien ils dépassent l'audience de leur auteur\u00a0; Claude lit les meilleurs, visuels compris, et écarte le hors-sujet."],
+            ["Les idées", "6 idées prêtes à tourner (accroche, plan, hashtags), appuyées sur les posts qui le prouvent et sur ton historique, à envoyer en un clic dans la prévision."],
           ].map(([t, d], i) =>
             el("li", { class: `station${i === 2 ? " station-end" : ""}` },
               el("span", { class: "station-dot", "aria-hidden": "true" }),
@@ -1902,21 +1902,39 @@ async function pollScan() {
 }
 
 // Une seule rédaction d'idées à la fois par scan, même si l'on quitte l'onglet et revient.
+// Deux temps : Claude lit d'abord le relevé (pertinence, mécanismes, visuels), puis écrit les idées.
 let ideasJob = null;
 
 function makeIdeas() {
   const scan = state.scan;
   if (!scan || scan.status !== "done") return Promise.resolve();
   if (ideasJob?.id === scan.id) return ideasJob.promise;
-  const job = { id: scan.id };
+  const needsAnalysis = !scan.analysis && !scan.analysisError && (scan.posts || []).length > 0;
+  const job = { id: scan.id, stage: needsAnalysis ? "analyse" : "idees" };
   ideasJob = job;
-  if (state.route.view === "idees") renderScan(scan);
+  const stillHere = () => state.scan?.id === scan.id && !state.scanPending;
+  const show = (s, opts) => {
+    if (state.route.view === "idees" && stillHere()) renderScan(s, opts);
+  };
+  show(scan);
   job.promise = (async () => {
+    let cur = scan;
+    if (needsAnalysis) {
+      try {
+        cur = await post("/api/scan/analyze", { id: scan.id });
+      } catch (err) {
+        cur = { ...cur, analysisError: err.message };
+      }
+      if (state.scan?.id === scan.id) state.scan = cur;
+      job.stage = "idees";
+      // L'analyse s'affiche (tendances, mécanismes) pendant que Claude écrit les idées.
+      show(cur);
+    }
     let next;
     try {
-      next = await post("/api/ideas", { id: scan.id, force: Boolean(scan.ideas) });
+      next = await post("/api/ideas", { id: scan.id, force: Boolean(cur.ideas) });
     } catch (err) {
-      next = { ...scan, ideasError: err.message };
+      next = { ...cur, ideasError: err.message };
     }
     if (ideasJob === job) ideasJob = null;
     // Un autre scan a pris la place, ou va la prendre : ce résultat ne doit pas l'écraser à l'écran.
@@ -1927,7 +1945,7 @@ function makeIdeas() {
       toast(`${plural(next.ideas.items.length, "idée prête", "idées prêtes")}\u00a0: ${next.ideas.items[0]?.titre || ""}`);
       announceScan(`${plural(next.ideas.items.length, "idée prête", "idées prêtes")}.`);
     }
-    if (state.route.view === "idees") renderScan(state.scan, { reveal: true });
+    show(state.scan, { reveal: true });
   })();
   return job.promise;
 }
@@ -1954,9 +1972,21 @@ function runStage(scan, n) {
   return { state: "active", when: "en cours" };
 }
 
+function researchStage(scan) {
+  if (!scan.id) return { state: "active", when: "recherche sur le web" };
+  if (scan.planReused) return { state: "done", when: scan.research ? "réutilisée (moins de 20 h)" : "requêtes réutilisées" };
+  if (scan.research) return { state: "done", when: plural(scan.research.sources?.length || 0, "source", "sources") };
+  return { state: "done", when: scan.researchError ? "indisponible" : "sans veille" };
+}
+
 function renderScanRunning(scan) {
-  const stages = (scan.networks || []).map((n) => ({ label: NETS[n].name, ...runStage(scan, n) }));
-  stages.push({ label: "Score de viralité", state: "todo", when: "ensuite" }, { label: "Idées à publier", state: "todo", when: "ensuite" });
+  const ai = state.health?.hasAnthropicKey;
+  const stages = [];
+  if (ai && state.health?.ai?.webResearch !== false) stages.push({ label: "Veille web de la semaine (Claude)", ...researchStage(scan) });
+  stages.push(...(scan.networks || []).map((n) => ({ label: NETS[n].name, ...(scan.id ? runStage(scan, n) : { state: "todo", when: "ensuite" }) })));
+  stages.push({ label: "Score de viralité", state: "todo", when: "ensuite" });
+  if (ai) stages.push({ label: "Lecture des posts et des visuels (Claude)", state: "todo", when: "ensuite" });
+  stages.push({ label: "Idées à publier", state: "todo", when: "ensuite" });
   const ext = scan.external;
   const topics = ext ? [...(ext.xFrance || []).filter((t) => t.rising).slice(0, 4).map((t) => ({ title: t.title, source: "X France, en hausse" })), ...(ext.googleTrends || []).slice(0, 3).map((t) => ({ title: t.title, source: "Google" }))] : [];
   // L'entrée animée ne joue qu'au premier affichage, pas à chaque relevé.
@@ -1968,7 +1998,9 @@ function renderScanRunning(scan) {
     el("section", { class: `run card${first ? " enter" : " is-static"}`, "aria-labelledby": "scan-run-title" },
       el("div", {},
         el("h2", { class: "run-title", id: "scan-run-title" }, `Scan de « ${scan.niche} »`),
-        el("p", { class: "run-sub" }, "Amorce relève les posts de la semaine sur chaque réseau. Les plus lents sont arrêtés au bout de 4 minutes\u00a0: on garde ce qu'ils ont déjà trouvé."),
+        el("p", { class: "run-sub" }, state.health?.hasAnthropicKey
+          ? "Claude fait d'abord la veille de la semaine sur le web pour viser les bons mots-clés, puis Amorce relève les posts sur chaque réseau. Les plus lents sont arrêtés au bout de 4 minutes\u00a0: on garde ce qu'ils ont déjà trouvé."
+          : "Amorce relève les posts de la semaine sur chaque réseau. Les plus lents sont arrêtés au bout de 4 minutes\u00a0: on garde ce qu'ils ont déjà trouvé."),
         el("ol", { class: "run-stages" },
           stages.map((st) =>
             el("li", { class: "run-stage", "data-state": st.state },
@@ -2014,12 +2046,15 @@ function ideaCard(idea, i, scan, reveal = false) {
       el("span", { class: "idea-score", title: "Potentiel relatif dans ta niche" }, tchip(idea.potentiel, heat)),
     ),
     el("p", { class: "idea-meta" }, svg(IDEA_ICON[idea.plateforme], "ico pf-ico"), `${IDEA_TARGET[idea.plateforme]} · ${idea.format}`),
-    el("p", { class: "hook" }, `« ${idea.accroche} »`),
+    el("p", { class: "hook" }, `«\u00a0${idea.accroche}\u00a0»`),
     el("p", { class: "idea-plan" }, idea.deroule),
+    ideaDetails(idea),
     el("div", { class: "idea-why" },
       el("span", { class: "label" }, "Pourquoi maintenant"),
       el("p", {}, idea.pourquoi_maintenant),
       proofs.length ? el("ul", { class: "evidence", "aria-label": "Posts qui le prouvent" }, proofs.map(evidenceItem)) : null,
+      idea.pourquoi_toi ? [el("span", { class: "label" }, "Pour toi"), el("p", {}, idea.pourquoi_toi)] : null,
+      idea.risque ? el("p", { class: "idea-risk" }, el("b", {}, "À surveiller\u00a0: "), idea.risque) : null,
     ),
     el("div", { class: "idea-foot" },
       el("span", { class: "idea-window" },
@@ -2031,16 +2066,41 @@ function ideaCard(idea, i, scan, reveal = false) {
   );
 }
 
-// L'idée part directement en prévision : brief pré-rempli et lancé.
+// Plan détaillé, autres accroches, appel à l'action et hashtags : repliés pour garder la carte lisible.
+function ideaDetails(idea) {
+  const plan = idea.plan || [];
+  const variants = idea.variantes_accroche || [];
+  const tags = idea.hashtags || [];
+  if (!plan.length && !variants.length && !idea.cta && !tags.length) return null;
+  return disclosure("Plan, autres accroches et hashtags",
+    el("div", { class: "idea-details" },
+      plan.length ? [el("span", { class: "label" }, "Plan"), el("ol", { class: "idea-steps" }, plan.map((step) => el("li", {}, step)))] : null,
+      variants.length ? [el("span", { class: "label" }, "Autres accroches"), el("ul", { class: "idea-variants" }, variants.map((v) => el("li", {}, `«\u00a0${v}\u00a0»`)))] : null,
+      idea.cta ? [el("span", { class: "label" }, "Appel à l'action"), el("p", {}, idea.cta)] : null,
+      tags.length ? el("p", { class: "idea-tags" }, tags.map((t) => `#${t}`).join(" ")) : null,
+    ),
+    "idea-more",
+  );
+}
+
+// L'idée part directement en prévision : brief pré-rempli et lancé, avec tout ce que Claude a préparé.
 function writeIdea(idea, scan) {
   if (state.job) return busyToast();
+  const context = [
+    `${idea.format}.`,
+    `Accroche envisagée : « ${idea.accroche} »${idea.variantes_accroche?.length ? ` (autres pistes : ${idea.variantes_accroche.map((v) => `« ${v} »`).join(", ")})` : ""}.`,
+    idea.plan?.length ? `Plan : ${idea.plan.join(" / ")}.` : null,
+    idea.cta ? `Appel à l'action : ${idea.cta}` : null,
+    `Pourquoi maintenant : ${idea.pourquoi_maintenant}`,
+    idea.risque ? `À surveiller : ${idea.risque}` : null,
+  ].filter(Boolean).join(" ");
   const brief = {
     idea: idea.titre,
     niche: scan.niche,
     audience: scan.audience || $("#f-audience").value.trim(),
     goal: $("#f-goal").value,
     platforms: [idea.plateforme],
-    context: `${idea.format}. Accroche envisagée : « ${idea.accroche} ». Pourquoi maintenant : ${idea.pourquoi_maintenant}`,
+    context: context.slice(0, 2000),
   };
   $("#f-idea").value = brief.idea;
   $("#f-niche").value = brief.niche;
@@ -2065,6 +2125,11 @@ function signalRow(p) {
         ` · ${ageText(p.ageH)}${p.mediaType ? ` · ${p.mediaType}` : ""}`,
         flags.map((f) => el("span", { class: `flag flag-${f}` }, f)),
       ),
+      p.ai ? el("span", { class: "signal-ai" },
+        el("b", {}, `${p.ai.format} · accroche ${p.ai.accroche_type}`),
+        ` — ${p.ai.mecanisme}`,
+        p.ai.texte_ecran ? el("span", { class: "signal-onscreen" }, ` À l'écran\u00a0: «\u00a0${p.ai.texte_ecran}\u00a0»`) : null,
+      ) : null,
     ),
     el("div", { class: "signal-metrics" },
       el("b", {}, p.views !== null ? fmtCompact(p.views) : fmtCompact(p.likes)),
@@ -2107,10 +2172,55 @@ function topicsBlock(ext) {
   );
 }
 
+const AI_STAGE_HEAT = { "émergent": "warm", "en hausse": "hot", "installé": "mild", "saturé": "cold" };
+const fmtUsd = (n) => n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const eventDate = (d) => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? new Date(`${d}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : d);
+
+// Veille web de la semaine (Claude, recherche web) : faits, dates, mots du moment, sources.
+function researchBlock(scan) {
+  const r = scan.research;
+  if (!r) return scan.researchError ? el("p", { class: "sources-missing" }, `Veille web indisponible pour ce scan\u00a0: ${scan.researchError}`) : null;
+  const sources = (r.sources || []).filter((src) => safeUrl(src.url)).slice(0, 6);
+  return el("section", { class: "veille card", "aria-labelledby": "veille-title" },
+    el("div", { class: "fronts-head" },
+      el("h2", { class: "section-title", id: "veille-title" }, "Veille de la semaine"),
+      el("span", { class: "hint" }, `Recherche web par Claude${r.createdAt ? `, ${sinceText(r.createdAt)}` : ""}`),
+    ),
+    r.synthese ? el("p", { class: "veille-synthese" }, r.synthese) : null,
+    el("div", { class: "veille-grid" },
+      r.a_savoir?.length ? el("div", {}, el("span", { class: "label" }, "À savoir"), el("ul", { class: "veille-list" }, r.a_savoir.map((f) => el("li", {}, f)))) : null,
+      r.dates?.length ? el("div", {}, el("span", { class: "label" }, "Dates à venir"), el("ul", { class: "veille-list veille-dates" }, r.dates.map((d) => el("li", {}, el("b", {}, eventDate(d.date)), ` ${d.evenement}`)))) : null,
+      r.angles?.length ? el("div", {}, el("span", { class: "label" }, "Débats qui circulent"), el("ul", { class: "veille-list" }, r.angles.map((a) => el("li", {}, a)))) : null,
+    ),
+    r.mots_du_moment?.length ? el("div", { class: "veille-words" }, el("span", { class: "label" }, "Mots du moment"), el("p", {}, r.mots_du_moment.map((w) => el("span", { class: "word" }, w)))) : null,
+    sources.length ? el("p", { class: "veille-sources" }, "Sources\u00a0: ", sources.map((src, i) => [i ? " · " : "", el("a", { href: safeUrl(src.url), target: "_blank", rel: "noopener noreferrer" }, src.title)])) : null,
+  );
+}
+
+// Tendance dégagée par Claude (format, accroche, sujet…), avec les posts qui l'illustrent.
+function aiTrendItem(t, scan) {
+  const byKey = Object.fromEntries((scan.posts || []).map((p) => [p.key, p]));
+  const proofs = (t.postKeys || []).map((k) => byKey[k]).filter(Boolean).slice(0, 3);
+  return el("li", { class: "ai-trend" },
+    el("div", { class: "ai-trend-head" },
+      el("b", {}, t.nom),
+      el("span", { class: "trend-type" }, t.type),
+      el("span", { class: "stage" }, el("i", { vars: { "--t": `var(--${AI_STAGE_HEAT[t.stade] || "mild"})` }, "aria-hidden": "true" }), t.stade),
+    ),
+    el("p", {}, t.explication),
+    el("p", { class: "ai-trend-how" }, el("b", {}, "Comment l'utiliser\u00a0: "), t.comment_l_utiliser),
+    proofs.length ? el("ul", { class: "evidence", "aria-label": "Posts qui l'illustrent" }, proofs.map(evidenceItem)) : null,
+  );
+}
+
 function renderScan(scan, { reveal = false } = {}) {
   if (!scan) return renderScanIdle();
   if (scan.status === "running") return renderScanRunning(scan);
-  const posts = scan.posts || [];
+  const allPosts = scan.posts || [];
+  // Les posts que Claude a jugés hors sujet restent dans le relevé, mais pas dans la liste.
+  const posts = allPosts.filter((p) => !p.offTopic);
+  const hidden = allPosts.length - posts.length;
   // La liste ne montre que ce qui dépasse la norme ; à défaut, les meilleurs posts du relevé.
   const strong = posts.filter((p) => p.label !== "Dans la norme");
   const pool = (strong.length >= 3 ? strong : posts).slice().sort((a, b) => b.score - a.score);
@@ -2142,9 +2252,10 @@ function renderScan(scan, { reveal = false } = {}) {
   ].filter(Boolean).join(" ");
   const meta = [
     `Relevé ${sinceText(scan.finishedAt || scan.createdAt)}`,
-    plural(posts.length, "post analysé", "posts analysés"),
+    plural(allPosts.length, "post analysé", "posts analysés"),
     scan.networks.map((n) => NETS[n].name).join(", "),
-    scan.costUsd ? `${scan.costUsd.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} $ de crédit` : null,
+    scan.costUsd ? `${fmtUsd(scan.costUsd)} $ Apify` : null,
+    scan.claude?.costUsd ? `${fmtUsd(scan.claude.costUsd)} $ Claude` : null,
   ].filter(Boolean).join(" · ");
 
   const out = [scanErrorBox()];
@@ -2158,12 +2269,16 @@ function renderScan(scan, { reveal = false } = {}) {
     el("button", { type: "button", class: "btn btn-quiet", onclick: () => runScan({ force: true, niche: scan.niche, audience: scan.audience || "", networks: scan.networks }) }, svg("rewrite"), "Rafraîchir"),
   ));
   if (missing) out.push(el("p", { class: "sources-missing" }, missing));
+  if (scan.analysisError) out.push(el("p", { class: "sources-missing" }, `Lecture des posts par Claude indisponible\u00a0: ${scan.analysisError}`));
 
   // Idées
   if (ideasJob?.id === scan.id) {
+    const reading = ideasJob.stage === "analyse";
     out.push(el("section", { class: "ideas-loading card", "aria-busy": "true" },
-      el("h2", { class: "scan-h2" }, "Idées en préparation…"),
-      el("p", {}, "Amorce relit les posts qui sur-performent et en tire des idées pour ta niche. Compte 30 secondes à 2 minutes."),
+      el("h2", { class: "scan-h2" }, reading ? "Claude lit le relevé…" : "Idées en préparation…"),
+      el("p", {}, reading
+        ? `Claude écarte les posts hors sujet, lit les accroches et le texte à l'écran des meilleurs visuels, puis dégage les tendances. Environ 30 secondes.`
+        : "Claude croise les posts qui sur-performent, leur mécanisme, la veille de la semaine et ton historique pour écrire des idées prêtes à tourner. Compte 30 secondes à 2 minutes."),
       el("div", { class: "ideas-skel", "aria-hidden": "true" }, [0, 1].map(() => el("div", { class: "skeleton sk-idea" }))),
     ));
   } else if (scan.ideasError) {
@@ -2175,14 +2290,22 @@ function renderScan(scan, { reveal = false } = {}) {
     ));
   }
 
-  // Tendances
-  if (scan.clusters?.length) {
+  out.push(researchBlock(scan));
+
+  // Tendances : celles que Claude a dégagées, puis les hashtags et sons repris par plusieurs créateurs.
+  const aiTrends = scan.analysis?.tendances || [];
+  const avoid = scan.analysis?.a_eviter || [];
+  if (aiTrends.length || scan.clusters?.length) {
     out.push(el("section", { class: "trends card", "aria-labelledby": "trends-title" },
       el("div", { class: "fronts-head" },
         el("h2", { class: "section-title", id: "trends-title" }, "Tendances détectées"),
-        el("span", { class: "hint" }, "Hashtags et sons repris par plusieurs créateurs ou sur plusieurs réseaux"),
+        el("span", { class: "hint" }, aiTrends.length ? "Formats, accroches et sujets repérés par Claude dans le relevé" : "Hashtags et sons repris par plusieurs créateurs ou sur plusieurs réseaux"),
       ),
-      el("ul", { class: "trend-rows" }, scan.clusters.slice(0, 6).map(clusterRow)),
+      aiTrends.length ? el("ul", { class: "ai-trends" }, aiTrends.map((t) => aiTrendItem(t, scan))) : null,
+      scan.clusters?.length
+        ? [aiTrends.length ? el("h3", { class: "trends-sub" }, "Hashtags et sons repris") : null, el("ul", { class: "trend-rows" }, scan.clusters.slice(0, 6).map(clusterRow))]
+        : null,
+      avoid.length ? el("div", { class: "avoid" }, el("span", { class: "label" }, "À éviter cette semaine"), el("ul", { class: "veille-list" }, avoid.map((a) => el("li", {}, a)))) : null,
     ));
   }
 
@@ -2197,13 +2320,15 @@ function renderScan(scan, { reveal = false } = {}) {
         el("div", { class: "analysis" },
           el("p", {}, "Le score de viralité (0 à 100) combine trois mesures : de combien le post dépasse l'audience habituelle de son auteur (abonnés, moyenne de ses posts), la qualité de l'engagement (les partages et enregistrements comptent plus que les likes) et la vitesse depuis la publication : un post récent qui monte vite passe devant un post plus ancien."),
           el("p", {}, "« Reproductible » signale un petit compte (moins de 50 000 abonnés) qui fait au moins 5 fois mieux que d'habitude : son mécanisme ne dépend pas de sa notoriété. Sur LinkedIn, les abonnés ne sont pas publics : le post est comparé aux autres posts du relevé."),
-          scan.queries ? el("p", {}, `Requêtes utilisées — TikTok : ${scan.queries.tiktok.join(", ")} · Instagram : ${scan.queries.instagram} · X : ${scan.queries.x} · LinkedIn : ${scan.queries.linkedin.join(", ")}.`) : null,
+          scan.analysis ? el("p", {}, `Claude a ensuite lu les ${scan.analysis.analysed} meilleurs posts${scan.analysis.images ? ` et ${plural(scan.analysis.images, "visuel", "visuels")}` : ""} : format, type d'accroche, texte à l'écran et mécanisme ; ${plural(scan.analysis.horsSujet, "post hors sujet est masqué", "posts hors sujet sont masqués")}${scan.analysis.etrangers ? `, ${plural(scan.analysis.etrangers, "post non francophone retiré", "posts non francophones retirés")}` : ""}.`) : null,
+          scan.queries ? el("p", {}, `Requêtes utilisées${scan.research ? " (préparées par Claude d'après la veille)" : ""} — TikTok : ${scan.queries.tiktok.join(", ")} · Instagram : ${scan.queries.instagram} · X : ${scan.queries.x} · LinkedIn : ${scan.queries.linkedin.join(", ")}.`) : null,
         ));
     help.open = Boolean(state.scoreHelpOpen);
     help.addEventListener("toggle", () => (state.scoreHelpOpen = help.open));
     out.push(el("section", { "aria-labelledby": "signals-title" },
       el("div", { class: "signals-head" }, el("h2", { class: "scan-h2", id: "signals-title" }, strong.length >= 3 ? "Posts qui sur-performent" : "Meilleurs posts du relevé"), chips),
       el("ol", { class: "signals card" }, shown.map(signalRow)),
+      hidden ? el("p", { class: "signals-note" }, `${plural(hidden, "post hors sujet masqué", "posts hors sujet masqués")} par Claude.`) : null,
       help,
     ));
   } else if (!scan.ideas?.items?.length) {
@@ -2570,6 +2695,7 @@ function renderEnv() {
   }[h.storage] || [h.storage, null];
   const rows = [
     ["Modèle d'écriture", `${h.model} · effort ${h.effort}`, null],
+    ...(h.ai ? [["Claude dans « Idées »", `Lecture des posts : ${h.ai.analysisModel} · veille web ${h.ai.webResearch ? "activée" : "désactivée (CLAUDE_WEB_RESEARCH)"}`, null]] : []),
     ["Clé Anthropic", h.hasAnthropicKey ? "Présente" : `Absente : ajoute ANTHROPIC_API_KEY dans ${where}`, h.hasAnthropicKey ? "good" : "bad"],
     ["Clé YouTube", h.hasYoutubeKey ? "Présente" : "Absente (facultative : ajoute YOUTUBE_API_KEY pour YouTube et YouTube Shorts)", h.hasYoutubeKey ? "good" : null],
     ["Jeton Apify", h.hasApifyToken ? (state.apify ? apifyText(state.apify) : "Présent") : `Absent : ajoute APIFY_TOKEN dans ${where} pour scanner TikTok, Instagram, X et LinkedIn`, h.hasApifyToken ? "good" : "bad"],
