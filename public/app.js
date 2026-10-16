@@ -1793,7 +1793,15 @@ async function loadIdeasView() {
 // Échec du dernier scan lancé : reste affiché au-dessus des résultats précédents jusqu'au scan suivant.
 function scanErrorBox() {
   const e = state.scanError;
-  return e ? alertBox(`Le scan de « ${e.niche} » n'a pas abouti.`, e.message, [["Réessayer", () => runScan(e.params), true]]) : null;
+  if (!e) return null;
+  const box = alertBox(`Le scan de « ${e.niche} » n'a pas abouti.`, e.message, [["Réessayer", () => runScan(e.params), true]]);
+  // Annoncée et animée une seule fois ; ensuite elle reste simplement affichée.
+  if (e.shown) {
+    box.removeAttribute("role");
+    box.classList.remove("enter");
+  }
+  e.shown = true;
+  return box;
 }
 
 function renderScanIdle() {
@@ -1856,8 +1864,12 @@ async function runScan(params = {}) {
     }
   } catch (err) {
     state.scanError = { niche, message: err.message, params: { niche, audience, networks, force } };
-    if (state.route.view === "idees") state.scan ? renderScan(state.scan) : renderScanIdle();
-    else toast(`Le scan de « ${niche} » n'a pas abouti\u00a0: ${err.message}`);
+    state.scanFocus = false;
+    if (state.route.view === "idees") {
+      state.scan ? renderScan(state.scan) : renderScanIdle();
+      const lost = !document.activeElement || document.activeElement === document.body || document.activeElement.id === "btn-scan";
+      if (lost) $("#scan-body .alert .btn-primary")?.focus({ preventScroll: true });
+    } else toast(`Le scan de « ${niche} » n'a pas abouti\u00a0: ${err.message}`);
   } finally {
     btn.disabled = false;
     delete btn.dataset.busy;
@@ -1907,9 +1919,10 @@ function makeIdeas() {
       next = { ...scan, ideasError: err.message };
     }
     if (ideasJob === job) ideasJob = null;
-    // Un autre scan a pris la place entre-temps : ce résultat ne doit pas l'écraser à l'écran.
+    // Un autre scan a pris la place, ou va la prendre : ce résultat ne doit pas l'écraser à l'écran.
     if (state.scan?.id !== scan.id) return;
     state.scan = next;
+    if (state.scanPending) return;
     if (next.ideas?.items?.length) {
       toast(`${plural(next.ideas.items.length, "idée prête", "idées prêtes")}\u00a0: ${next.ideas.items[0]?.titre || ""}`);
       announceScan(`${plural(next.ideas.items.length, "idée prête", "idées prêtes")}.`);
@@ -1948,6 +1961,7 @@ function renderScanRunning(scan) {
   const topics = ext ? [...(ext.xFrance || []).filter((t) => t.rising).slice(0, 4).map((t) => ({ title: t.title, source: "X France, en hausse" })), ...(ext.googleTrends || []).slice(0, 3).map((t) => ({ title: t.title, source: "Google" }))] : [];
   // L'entrée animée ne joue qu'au premier affichage, pas à chaque relevé.
   const runKey = scan.id || `pending:${scan.niche}`;
+  if (scan.id && state.scanRunKey === `pending:${scan.niche}`) state.scanRunKey = runKey;
   const first = state.scanRunKey !== runKey;
   state.scanRunKey = runKey;
   $("#scan-body").replaceChildren(
@@ -2106,9 +2120,14 @@ function renderScan(scan, { reveal = false } = {}) {
   // Réseaux sans résultat : en échec (avec la raison), vides, ou non scannés faute de clé.
   const failed = [];
   const empty = [];
+  const filtered = [];
   for (const n of scan.networks || []) {
     const st = scan.stats?.[n];
-    if (st?.fetched > 0) continue;
+    if ((st?.kept ?? st?.fetched) > 0) continue;
+    if (st?.fetched > 0) {
+      filtered.push(NETS[n].name);
+      continue;
+    }
     const r = (scan.runs || {})[n];
     const why = st?.error || r?.error || (n === "youtube" ? ytError(scan)?.error : null);
     if (why || FAILED.includes(r?.status) || FAILED.includes(st?.status)) failed.push(`${NETS[n].name}${why ? ` (${why})` : ""}`);
@@ -2117,7 +2136,8 @@ function renderScan(scan, { reveal = false } = {}) {
   const skipped = (scan.skipped || []).map((n) => NETS[n]?.name || n);
   const missing = [
     failed.length ? `Sans réponse\u00a0: ${failed.join(", ")}.` : null,
-    empty.length ? `Aucun post retenu sur ${empty.join(", ")}.` : null,
+    empty.length ? `Aucun post trouvé sur ${empty.join(", ")}.` : null,
+    filtered.length ? `Posts de ${filtered.join(", ")} tous écartés (autre langue, plus de 14 jours ou audience trop faible).` : null,
     skipped.length ? `Non scannés faute de clé\u00a0: ${skipped.join(", ")}.` : null,
   ].filter(Boolean).join(" ");
   const meta = [
