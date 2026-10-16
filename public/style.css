@@ -792,7 +792,13 @@ a.signal-text:hover { color: var(--act); text-decoration: underline; }
 .acct-stats { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; color: var(--ink-2); font-size: 14px; font-variant-numeric: tabular-nums; }
 .acct-stats b { color: var(--ink); font-weight: 600; }
 .acct-head-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.acct-history-form { display: flex; align-items: center; gap: 8px; }
 .acct-history select { min-width: 230px; padding: 8px 36px 8px 12px; font-size: 14px; }
+.acct-history-form .btn { height: 38px; }
+
+/* Lecture par Claude : son propre emplacement, même rythme que le reste de la page */
+.acct-insights { display: grid; gap: 30px; }
+.acct-insights:empty { display: none; }
 
 /* Les chiffres : une tuile par indicateur, sa base et sa formule */
 .acct-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
@@ -861,7 +867,7 @@ a.ap-main:hover .ap-text { color: var(--act); text-decoration: underline; text-u
 
 /* Moments : volume par créneau, puis sa médiane relative */
 .acct-slots { display: grid; }
-.acct-slots li { display: grid; grid-template-columns: 11.5em minmax(40px, 1fr) 8em 7.5em; gap: 12px; align-items: center; padding: 6px 0; font-size: 13.5px; }
+.acct-slots li { display: grid; grid-template-columns: minmax(0, 11.5em) minmax(40px, 1fr) auto auto; gap: 12px; align-items: center; padding: 6px 0; font-size: 13.5px; }
 .acct-slot-name { color: var(--ink); }
 .acct-slot-bar { height: 8px; border-radius: 4px; background: var(--surface-3); overflow: hidden; }
 .acct-slot-bar i { display: block; width: var(--v); height: 100%; border-radius: 4px; background: var(--act); }
@@ -888,11 +894,19 @@ a.ap-main:hover .ap-text { color: var(--act); text-decoration: underline; text-u
 
 /* Ce qui a été écarté, méthode */
 .acct-more { margin-top: 0; }
+/* Sur papier : le texte secondaire des publications reste lisible (sur le ciel, il ne l'est pas assez). */
+.acct-all { padding: 4px 18px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); }
 .acct-dropped, .acct-method { display: grid; gap: 10px; max-width: 90ch; }
 .acct-dropped li { color: var(--ink-2); font-size: 13.5px; line-height: 1.5; }
 .acct-dropped b { color: var(--ink); font-weight: 600; }
 .acct-method .veille-list { margin-top: 0; }
 
+/* Moments : deux colonnes seulement quand chacune a la place de ses quatre informations */
+@media (max-width: 1320px) {
+  .acct-two-wide { grid-template-columns: 1fr; }
+  .acct-two-wide > .acct-col:first-child { padding-right: 0; }
+  .acct-two-wide > .acct-col + .acct-col { padding: 18px 0 0; margin-top: 18px; border-left: 0; border-top: 1px solid var(--line-2); }
+}
 @media (max-width: 960px) {
   .acct-two, .acct-swot { grid-template-columns: 1fr; }
   .acct-two > .acct-col:first-child { padding-right: 0; }
@@ -909,7 +923,9 @@ a.ap-main:hover .ap-text { color: var(--act); text-decoration: underline; text-u
   .acct-head { grid-template-columns: 52px minmax(0, 1fr); gap: 14px; }
   .acct-avatar-lg { width: 52px; height: 52px; }
   .acct-avatar-lg.acct-avatar-initial { font-size: 22px; }
-  .acct-history, .acct-history select { width: 100%; min-width: 0; }
+  .acct-history-form { width: 100%; }
+  .acct-history { flex: 1; min-width: 0; }
+  .acct-history select { width: 100%; min-width: 0; }
   .acct-row { grid-template-columns: 40px minmax(0, 1fr) 18px; gap: 4px 12px; padding: 12px 16px; }
   .acct-row .acct-avatar { width: 40px; height: 40px; grid-row: span 2; align-self: start; margin-top: 2px; }
   .acct-row-side { grid-column: 2; grid-row: 2; justify-items: start; text-align: left; gap: 1px; }

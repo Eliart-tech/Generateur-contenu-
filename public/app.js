@@ -2819,7 +2819,8 @@ const PERIOD_NAMES = { nuit: "Nuit (0 h – 6 h)", matin: "Matin (6 h – 12 h)"
 const X_KINDS = { original: "Posts originaux", citation: "Citations", fil: "Suites de fil", réponse: "Réponses à d'autres comptes", retweet: "Retweets" };
 const PRIORITY = { haute: "Priorité haute", moyenne: "Priorité moyenne", basse: "Priorité basse" };
 
-state.accounts = { list: null, current: null, polling: false, job: null, t0: 0 };
+// polling : identifiant de l'analyse suivie (une seule boucle par analyse, jamais deux).
+state.accounts = { list: null, current: null, polling: null, job: null };
 
 const nf = (n, d = 0) => (n === null || n === undefined || !Number.isFinite(Number(n)) ? "—" : Number(n).toLocaleString("fr-FR", { maximumFractionDigits: d }));
 const ratioText = (r) => `×${Number(r).toLocaleString("fr-FR", { maximumFractionDigits: r >= 10 ? 0 : r >= 2 ? 1 : 2 })}`;
@@ -2929,27 +2930,42 @@ async function loadAccountsView() {
   renderAccountList(state.accounts.list);
 }
 
-async function runAccount({ platform = accountPlatform(), input = $("#ac-input").value.trim(), force = false } = {}) {
+const AC_INPUT_HINT = "Colle le lien du profil ou son @nom.";
+
+// `trigger` : le bouton cliqué (« Réanalyser », « Réessayer ») quand le formulaire est masqué.
+async function runAccount({ platform = accountPlatform(), input = $("#ac-input").value.trim(), force = false, trigger = null } = {}) {
+  const fromForm = !trigger;
+  const errBox = $("#ac-input-error");
   if (!input) {
-    setFieldError($("#ac-input").closest(".field"), $("#ac-input-error"), true);
+    errBox.textContent = AC_INPUT_HINT;
+    setFieldError($("#ac-input").closest(".field"), errBox, true);
     return $("#ac-input").focus();
   }
   if (!platform) return toast("Aucun réseau disponible : ajoute un jeton Apify ou une clé YouTube.");
-  const btn = $("#btn-account");
+  const btn = trigger || $("#btn-account");
+  if (btn.dataset.busy) return; // double clic : une seule demande
   btn.disabled = true;
   btn.dataset.busy = "true";
   try {
     const a = await post("/api/accounts", { platform, input, force });
     state.accounts.current = a;
-    state.accounts.t0 = Date.parse(a.createdAt);
-    if (a.reused) toast(`Analyse de ${timeOf(a.createdAt)} réutilisée (moins de 6 h) : aucun crédit dépensé.`);
+    if (a.reused) {
+      toast(a.status === "running"
+        ? "Un relevé de ce compte est déjà en cours : il est repris, rien n'est relancé."
+        : `Analyse de ${timeOf(a.createdAt)} réutilisée (moins de 6 h) : aucun crédit dépensé.`);
+    }
     announceAccount(`Analyse de @${a.handle} lancée.`);
     go(`#comptes/${a.id}`);
   } catch (err) {
-    const box = $("#ac-input-error");
-    box.textContent = err.message;
-    setFieldError($("#ac-input").closest(".field"), box, true);
-    $("#ac-input").focus();
+    if (fromForm) {
+      errBox.textContent = err.message;
+      setFieldError($("#ac-input").closest(".field"), errBox, true);
+      $("#ac-input").focus();
+    } else {
+      // Formulaire masqué (page d'une analyse) : l'erreur s'affiche là où l'on a cliqué.
+      toast(err.message);
+      announceAccount(`Relevé impossible : ${err.message}`);
+    }
   } finally {
     btn.disabled = false;
     delete btn.dataset.busy;
@@ -2976,10 +2992,9 @@ async function openAccount(id) {
 }
 
 async function pollAccount() {
-  if (state.accounts.polling) return;
-  state.accounts.polling = true;
-  const id = state.accounts.current.id;
-  state.accounts.t0 = state.accounts.t0 || Date.parse(state.accounts.current.createdAt);
+  const id = state.accounts.current?.id;
+  if (!id || state.accounts.polling === id) return;
+  state.accounts.polling = id;
   try {
     while (state.accounts.current?.id === id && state.accounts.current.status === "running") {
       const t = Date.now();
@@ -2999,7 +3014,7 @@ async function pollAccount() {
       $("#account-body").replaceChildren(alertBox("Le suivi de l'analyse a échoué.", err.message, [["Reprendre", () => pollAccount(), true]]));
     }
   } finally {
-    state.accounts.polling = false;
+    if (state.accounts.polling === id) state.accounts.polling = null;
   }
 }
 
@@ -3021,7 +3036,7 @@ function makeAccountInsights({ force = false } = {}) {
   const job = { id: a.id };
   state.accounts.job = job;
   const show = (x) => {
-    if (state.route.view === "comptes" && state.route.id === x.id && state.accounts.current?.id === x.id) renderAccount(x);
+    if (state.route.view === "comptes" && state.route.id === x.id && state.accounts.current?.id === x.id) refreshAccount(x);
   };
   show(a);
   job.promise = (async () => {
@@ -3029,11 +3044,12 @@ function makeAccountInsights({ force = false } = {}) {
     try {
       next = await post("/api/account/insights", { id: a.id, force });
     } catch (err) {
-      if (leaving || err instanceof TypeError) {
+      if (leaving) {
         if (state.accounts.job === job) state.accounts.job = null;
         return;
       }
-      next = err.status === 409
+      // 409 : une lecture tourne déjà ; réseau coupé (TypeError) : la lecture continue côté serveur.
+      next = err.status === 409 || err instanceof TypeError
         ? await waitAccountInsights(a.id).catch((e) => ({ ...a, insightsError: e.message }))
         : { ...a, insightsError: err.message };
     }
@@ -3114,7 +3130,8 @@ function renderAccountList(list) {
 // ---------- Une analyse ----------
 
 function accountClock() {
-  const s = Math.max(0, Math.floor((Date.now() - (state.accounts.t0 || Date.now())) / 1000));
+  const t0 = Date.parse(state.accounts.current?.createdAt) || Date.now();
+  const s = Math.max(0, Math.floor((Date.now() - t0) / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
@@ -3186,14 +3203,17 @@ function accountHeader(a) {
   const p = a.profile || {};
   const m = a.metrics;
   const url = safeUrl(p.url || a.url);
+  const at = a.scrapedAt || a.finishedAt || a.createdAt;
   const meta = [
-    `Analysé le ${parisDate(a.finishedAt || a.createdAt, { day: "numeric", month: "long", year: "numeric" })} à ${parisClock(a.finishedAt || a.createdAt)}`,
+    `Relevé le ${parisDate(at, { day: "numeric", month: "long", year: "numeric" })} à ${parisClock(at)}`,
     m ? `${plural(m.sample.analysed, "publication analysée", "publications analysées")}` : null,
     a.costUsd ? `${usdText(a.costUsd)} $ Apify` : null,
     a.claude?.costUsd ? `${usdText(a.claude.costUsd)} $ Claude` : null,
   ].filter(Boolean).join(" · ");
   const stats = [
-    p.followers !== null && p.followers !== undefined ? [nf(p.followers), p.followersHidden ? "abonnés (masqués)" : "abonnés"] : p.followersHidden ? ["—", "abonnés masqués"] : null,
+    p.followers !== null && p.followers !== undefined
+      ? [`${p.followersRounded ? "≈ " : ""}${nf(p.followers)}`, p.followersRounded ? "abonnés (arrondis par YouTube)" : "abonnés"]
+      : p.followersHidden ? ["—", "abonnés masqués"] : null,
     p.postsCount ? [nf(p.postsCount), a.platform === "youtube" ? "vidéos publiques" : "publications"] : null,
     p.following !== null && p.following !== undefined ? [nf(p.following), "abonnements"] : null,
     p.connections ? [nf(p.connections), "relations"] : null,
@@ -3203,7 +3223,10 @@ function accountHeader(a) {
   return el("header", { class: "acct-head card" },
     avatarOf(p.name || a.handle, p.avatar, "acct-avatar acct-avatar-lg"),
     el("div", { class: "acct-head-main" },
-      el("h2", { class: "scan-title", id: "acct-title", tabindex: "-1" }, p.name || `@${a.handle}`, p.verified ? el("span", { class: "acct-verified", title: "Compte certifié" }, svg("check", "")) : null),
+      el("h2", { class: "scan-title", id: "acct-title", tabindex: "-1" },
+        p.name || `@${a.handle}`,
+        p.verified ? el("span", { class: "acct-verified", title: "Compte certifié" }, svg("check", ""), el("span", { class: "sr-only" }, " (compte certifié)")) : null,
+      ),
       el("p", { class: "acct-handle" },
         svg(ACCOUNT_NET[a.platform].icon, "ico net-ico"),
         `@${p.handle || a.handle} · ${ACCOUNT_NET[a.platform].name}${p.category ? ` · ${p.category}` : ""}`,
@@ -3214,29 +3237,40 @@ function accountHeader(a) {
       el("p", { class: "scan-meta" }, meta),
     ),
     el("div", { class: "acct-head-actions" },
+      // Choisir une analyse ne navigue qu'au clic sur « Ouvrir » : les flèches du clavier parcourent la liste.
       history.length > 1
-        ? el("label", { class: "acct-history select" },
-            el("span", { class: "sr-only" }, "Choisir une analyse"),
-            el("select", { id: "acct-history", onchange: (ev) => go(`#comptes/${encodeURIComponent(ev.target.value)}`) },
-              history.map((h) => el("option", { value: h.id, selected: h.id === a.id }, `Analyse du ${parisDate(h.createdAt)}${h.id === a.id ? " (affichée)" : ""}`)),
+        ? el("form", { class: "acct-history-form", onsubmit: (ev) => {
+            ev.preventDefault();
+            const id = $("#acct-history").value;
+            if (id !== a.id) go(`#comptes/${encodeURIComponent(id)}`);
+          } },
+            el("label", { class: "acct-history select" },
+              el("span", { class: "sr-only" }, "Choisir une analyse"),
+              el("select", { id: "acct-history" },
+                history.map((h) => el("option", { value: h.id, selected: h.id === a.id }, `Relevé du ${parisDate(h.createdAt)} à ${parisClock(h.createdAt)}${h.id === a.id ? " (affiché)" : ""}`)),
+              ),
             ),
+            el("button", { type: "submit", class: "btn" }, "Ouvrir"),
           )
         : null,
-      el("button", { type: "button", class: "btn btn-quiet", onclick: () => runAccount({ platform: a.platform, input: a.url || a.handle, force: true }) }, svg("rewrite"), "Réanalyser"),
+      el("button", { type: "button", class: "btn btn-quiet", onclick: (ev) => runAccount({ platform: a.platform, input: a.url || a.handle, force: true, trigger: ev.currentTarget }) }, svg("rewrite"), "Réanalyser"),
     ),
   );
 }
 
-// Pourquoi la croissance n'est pas mesurée : on ne compte que les analyses faites jusqu'à celle-ci.
 const daysText = (d) => (d === null || d === undefined ? "—" : d < 1 ? `${Math.max(1, Math.round(d * 24))} h` : `${nf(d, 1)} j`);
 const usdText = (n) => (n < 0.005 ? "moins de 0,01" : fmtUsd(n));
+// Pourcentage lisible même très petit (un très gros compte peut être à 0,0026 %).
+const pctText = (v) => (v === null || v === undefined ? "—" : v !== 0 && Math.abs(v) < 0.1 ? Number(v).toLocaleString("fr-FR", { maximumSignificantDigits: 2 }) : nf(v, 2));
 
+// Pourquoi la croissance n'est pas mesurée : la raison exacte, donnée par les calculs.
 function noGrowthText(a) {
-  if (!Number.isFinite(a.profile?.followers)) return "Nombre d'abonnés inconnu : croissance non mesurable.";
-  const upTo = (a.history || []).filter((h) => h.status === "done" && Date.parse(h.createdAt) <= Date.parse(a.createdAt)).length;
-  return upTo > 1
-    ? "Analyses trop rapprochées (moins de 12 h d'écart) : refais-la dans quelques jours pour mesurer sa croissance réelle."
-    : "Première analyse de ce compte : refais-la dans quelques jours pour mesurer sa croissance réelle.";
+  const n = a.metrics?.growthNote || {};
+  if (n.reason === "no-followers") return "Nombre d'abonnés inconnu : croissance non mesurable.";
+  if (n.reason === "no-history-followers") return "Les analyses précédentes n'ont pas relevé les abonnés : croissance non mesurable pour l'instant.";
+  if (n.reason === "too-close") return "Analyses trop rapprochées (moins de 12 h d'écart) : refais-la dans quelques jours pour mesurer sa croissance réelle.";
+  if (n.reason === "below-precision") return `Variation plus petite que l'arrondi de YouTube (abonnés arrondis à ${nf(n.precision)} près) en ${nf(n.days, 1)} jours : non mesurable.`;
+  return "Première analyse de ce compte : refais-la dans quelques jours pour mesurer sa croissance réelle.";
 }
 
 function indicatorTiles(a) {
@@ -3246,22 +3280,26 @@ function indicatorTiles(a) {
   const tiles = [];
   if (c) {
     tiles.push(tile("Rythme", `${nf(c.perWeek, 1)} / semaine`,
-      `${c.posts} publications du ${parisDate(c.from, { day: "numeric", month: "short" })} au ${parisDate(c.to, { day: "numeric", month: "short" })} · dernière il y a ${daysText(c.lastPostDaysAgo)} · plus long silence ${daysText(c.longestGap?.days)}`,
+      `${c.posts} publications du ${parisDate(c.from, { day: "numeric", month: "short" })} au ${parisDate(c.to, { day: "numeric", month: "short" })} · plus long silence ${daysText(c.longestGap?.days)}`,
       c.regularity ? `Rythme ${c.regularity.label} (écarts : coefficient de variation ${nf(c.regularity.cv, 2)})` : "Régularité : pas assez de publications pour la juger"));
   }
   tiles.push(e.perFollower
-    ? tile("Engagement", `${nf(e.perFollower.median, 2)} %`, `médiane sur ${e.perFollower.n} publications · moyenne ${nf(e.perFollower.mean, 2)} %${e.perView ? ` · ${nf(e.perView.median, 2)} % rapporté aux ${viewWord(a.platform)}` : ""}`, `(${e.formula}) ÷ abonnés`)
+    ? tile("Engagement", `${pctText(e.perFollower.median)} %`, `médiane sur ${e.perFollower.n} publications · moyenne ${pctText(e.perFollower.mean)} %${e.perView ? ` · ${pctText(e.perView.median)} % rapporté aux ${viewWord(a.platform)}` : ""}`, `(${e.formula}) ÷ abonnés`)
     : tile("Engagement", "—", "Nombre d'abonnés inconnu : pas d'engagement par abonné.", `(${e.formula}) ÷ abonnés`));
   for (const g of m.groups) {
     tiles.push(g.median !== null
       ? tile(g.measure === "views" ? `${viewWord(a.platform)} · ${g.label}` : `Engagement · ${g.label}`, fmtCompact(g.median), `médiane de ${g.comparable} publications comparables · maximum ${fmtCompact(g.max)}`, g.measure === "views" ? null : `${e.formula} par publication`)
-      : tile(g.label, "—", `${g.posts} publication(s) : trop peu pour une médiane (4 minimum)`, null));
+      : tile(g.measure === "views" ? `${viewWord(a.platform)} · ${g.label}` : `Engagement · ${g.label}`, "—", `${plural(g.comparable, "publication comparable", "publications comparables")} sur ${g.posts} (les autres sont trop récentes ou sans mesure) : trop peu pour une médiane, il en faut 4.`, null));
   }
   tiles.push(m.trend
-    ? tile("Évolution", `${m.trend.changePct > 0 ? "+" : ""}${nf(m.trend.changePct)} %`, `les ${m.trend.n} plus récentes (${ratioText(m.trend.recentMedianRatio)}) contre les ${m.trend.n} précédentes (${ratioText(m.trend.previousMedianRatio)})`, "médiane des ratios à la médiane de chaque famille")
-    : tile("Évolution", "—", "Moins de 12 publications comparables : pas d'évolution mesurée.", null));
+    ? tile("Évolution", `${m.trend.changePct > 0 ? "+" : ""}${nf(m.trend.changePct)} %`,
+        `les ${m.trend.n} plus récentes (${ratioText(m.trend.recentMedianRatio)}, âge médian ${daysText(m.trend.recentMedianAgeDays)}) contre les ${m.trend.n} précédentes (${ratioText(m.trend.previousMedianRatio)}, âge médian ${daysText(m.trend.previousMedianAgeDays)})`,
+        "médiane des ratios à la médiane de chaque famille ; les plus anciennes ont eu plus de temps pour accumuler")
+    : tile("Évolution", "—", "Moins de 12 publications comparables assez anciennes : pas d'évolution mesurée.", null));
   tiles.push(m.growth
-    ? tile("Croissance", `${m.growth.followersDelta >= 0 ? "+" : ""}${nf(m.growth.followersDelta)} abonnés`, `en ${nf(m.growth.days, 1)} jours (${m.growth.followersPct >= 0 ? "+" : ""}${nf(m.growth.followersPct, 2)} %) · ${m.growth.points.length} analyses`, "abonnés relevés à chaque analyse faite ici")
+    ? tile("Croissance", `${m.growth.approximate ? "≈ " : ""}${m.growth.followersDelta >= 0 ? "+" : ""}${nf(m.growth.followersDelta)} abonnés`,
+        `en ${nf(m.growth.days, 1)} jours (${m.growth.followersPct >= 0 ? "+" : ""}${nf(m.growth.followersPct, 2)} %) · ${m.growth.points.length} analyses`,
+        m.growth.approximate ? `abonnés relevés à chaque analyse faite ici, arrondis par YouTube à ${nf(m.growth.precision)} près` : "abonnés relevés à chaque analyse faite ici")
     : tile("Croissance", "—", noGrowthText(a), null));
   return el("section", { class: "acct-section", "aria-labelledby": "acct-figures-title" },
     el("h2", { class: "scan-h2", id: "acct-figures-title" }, "Les chiffres"),
@@ -3332,14 +3370,14 @@ function insightsBlocks(a) {
   }
   if (I.voix?.resume) out.push(voiceBlock(a));
   if (I.controle?.ecartes) {
-    out.push(disclosure(`Ce que Claude a proposé et qui a été écarté (${I.controle.ecartes})`,
+    out.push(keyed(disclosure(`Ce que Claude a proposé et qui a été écarté (${I.controle.ecartes})`,
       el("ul", { class: "acct-dropped" }, I.controle.details.map((d) => el("li", {},
         el("b", {}, d.where.charAt(0).toUpperCase() + d.where.slice(1)),
         ` · « ${d.texte} » `,
         el("span", { class: "hint" }, `→ ${d.raison.replace(/(\d) (?=\d{3}\b)/g, "$1\u202f")}`),
       ))),
       "acct-more",
-    ));
+    ), "dropped"));
   }
   return out;
 }
@@ -3369,7 +3407,7 @@ function writeAccountIdea(idea, a, proofs) {
     `${idea.format}.`,
     `Accroche envisagée : « ${idea.accroche} ».`,
     `Mécanisme repris de ${who} : ${idea.angle}`,
-    proofs.length ? `Publications qui le prouvent : ${proofs.map((p) => `« ${String(p.text || "").slice(0, 80)} » (${ratioText(p.ratio)} la médiane du compte)`).join(" ; ")}.` : null,
+    proofs.length ? `Publications qui le prouvent : ${proofs.map((p) => `« ${String(p.text || "").slice(0, 80)} » (${ratioText(p.ratio)} la médiane de ses publications du même type)`).join(" ; ")}.` : null,
   ].filter(Boolean).join(" ");
   const brief = {
     idea: idea.titre,
@@ -3491,11 +3529,13 @@ function figuresBlocks(a) {
   const best = [t.bestDay && `le ${t.bestDay.key} (${ratioText(t.bestDay.medianRatio)} contre ${ratioText(t.bestDay.othersMedianRatio)} les autres jours)`, t.bestPeriod && `${PERIOD_NAMES[t.bestPeriod.key].toLowerCase()} (${ratioText(t.bestPeriod.medianRatio)} contre ${ratioText(t.bestPeriod.othersMedianRatio)})`].filter(Boolean);
   out.push(el("section", { class: "acct-section", "aria-labelledby": "acct-time-title" },
     el("h2", { class: "scan-h2", id: "acct-time-title" }, "Moments de publication"),
-    el("div", { class: "acct-two card" },
+    el("div", { class: "acct-two acct-two-wide card" },
       el("div", { class: "acct-col" }, el("h3", {}, "Jours"), slotRows(t.byDay, (k) => k.charAt(0).toUpperCase() + k.slice(1), t.minPerSlot)),
       el("div", { class: "acct-col" }, el("h3", {}, "Moments (heure de Paris)"), slotRows(t.byPeriod, (k) => PERIOD_NAMES[k], t.minPerSlot)),
     ),
-    el("p", { class: "sources-missing" }, best.length ? `Ce qui ressort : ${best.join(" ; ")}.` : `Aucun jour ni moment ne ressort nettement : il faut au moins ${t.minPerSlot} publications comparables par créneau, et une médiane au moins 1,25 fois celle des autres.`),
+    el("p", { class: "sources-missing" }, best.length
+      ? `Ce qui ressort : ${best.join(" ; ")}.`
+      : `Aucun jour ni moment ne ressort nettement : il faut au moins ${t.minBestSlot || 5} publications comparables dans le créneau, au moins trois créneaux mesurés, et une médiane au moins 1,25 fois celle des autres.`),
   ));
   // Textes, hashtags, sons
   const h = m.hashtags;
@@ -3503,8 +3543,8 @@ function figuresBlocks(a) {
     el("h2", { class: "scan-h2", id: "acct-text-title" }, "Légendes, hashtags et sons"),
     el("div", { class: "acct-two card" },
       el("div", { class: "acct-col" },
-        el("h3", {}, "Légendes"),
-        el("p", {}, el("b", {}, `${nf(m.captions.medianLength)} caractères`), " en médiane · ", plural(m.captions.withQuestion, "légende pose une question", "légendes posent une question")),
+        el("h3", {}, m.captions.source === "titre" ? "Titres" : "Légendes"),
+        el("p", {}, el("b", {}, `${nf(m.captions.medianLength)} caractères`), " en médiane, liens retirés · ", `${m.captions.withQuestion} sur ${m.captions.posts ?? m.posts.length} posent une question`),
         el("h3", {}, "Hashtags"),
         el("p", {}, el("b", {}, nf(h.perPostMedian, 1)), " par publication (médiane) · ", plural(h.postsWithout, "publication sans hashtag", "publications sans hashtag")),
         h.top.length ? el("p", { class: "acct-tags" }, h.top.map((x) => el("span", { class: "word" }, `#${x.tag} · ${x.count}${x.medianRatio !== null ? ` · ${ratioText(x.medianRatio)}` : ""}`))) : null,
@@ -3526,53 +3566,52 @@ function figuresBlocks(a) {
       el("div", { class: "card acct-specific" },
         sp.kinds ? el("ul", { class: "acct-kv" }, Object.entries(sp.kinds).filter(([, v]) => v).map(([k, v]) => el("li", {}, el("span", {}, X_KINDS[k] || k), el("b", {}, String(v))))) : null,
         sp.reactions ? el("ul", { class: "acct-kv" }, sp.reactions.map((r) => el("li", {}, el("span", {}, r.type), el("b", {}, `${r.share} %`)))) : null,
-        sp.formats ? el("ul", { class: "acct-kv" }, sp.formats.map((f) => el("li", {}, el("span", {}, f.type === "short" ? "Shorts" : "Vidéos longues"), el("b", {}, `${f.count} · médiane ${f.medianViews !== null ? fmtCompact(f.medianViews) : "—"} vues`)))) : null,
+        sp.formats ? el("ul", { class: "acct-kv" }, sp.formats.map((f) => el("li", {},
+          el("span", {}, f.type === "short" ? "Shorts" : "Vidéos longues"),
+          el("b", {}, `${f.count} · médiane ${f.medianViews !== null ? fmtCompact(f.medianViews) : "—"} vues depuis le 24 août 2026${f.medianViewsBefore !== null && f.medianViewsBefore !== undefined ? ` · ${fmtCompact(f.medianViewsBefore)} avant` : ""}`),
+        ))) : null,
       ),
     ));
   }
   // Toutes les publications
-  out.push(disclosure(`Toutes les publications relevées (${m.posts.length})`,
+  out.push(keyed(disclosure(`Toutes les publications relevées (${m.posts.length})`,
     el("ul", { class: "acct-posts acct-all" }, m.posts.map((p) => postLink(p, a))),
     "acct-more",
-  ));
+  ), "all"));
   return out;
+}
+
+// Un repliable repéré par une clé : son ouverture survit au rafraîchissement de la vue.
+function keyed(node, k) {
+  node.dataset.k = k;
+  return node;
 }
 
 function methodBlock(a) {
   const m = a.metrics;
-  return disclosure("Comment ces chiffres sont calculés",
+  return keyed(disclosure("Comment ces chiffres sont calculés",
     el("div", { class: "acct-method" },
       el("ul", { class: "veille-list" },
-        el("li", {}, `Publications analysées : les ${m.sample.fetched} dernières relevées, moins ${plural(m.sample.pinned, "épinglée", "épinglées")} (remontées en tête du profil, souvent anciennes) et ${m.sample.notOwn} republication(s), retweet(s) ou réponse(s) à d'autres comptes.`),
-        el("li", {}, "Familles : une publication n'est comparée qu'à sa famille (Reels entre eux, photos et carrousels entre eux, Shorts entre eux…), sur la même mesure. « Au-dessus » : au moins ×1,5 la médiane ; « en dessous » : ×0,67 ou moins."),
+        el("li", {}, `Publications analysées : les ${m.sample.fetched} dernières relevées, moins ${plural(m.sample.pinned, "épinglée", "épinglées")} (remontées en tête du profil, souvent anciennes), ${m.sample.notOwn} republication(s), retweet(s) ou réponse(s) à d'autres comptes${m.sample.threadParts ? ` et ${m.sample.threadParts} suite(s) de fil (un fil compte une fois, par son premier post)` : ""}.`),
+        el("li", {}, "Familles : une publication n'est comparée qu'à sa famille (Reels entre eux, photos et carrousels entre eux, Shorts entre eux, posts X avec impressions entre eux…), sur la même mesure, jamais deux compteurs mélangés. Sur YouTube, les vidéos publiées avant le 24 août 2026 (ancien décompte des vues) forment leurs propres familles. « Au-dessus » : au moins ×1,5 la médiane ; « en dessous » : ×0,67 ou moins, lus sur le ratio affiché."),
         el("li", {}, "Trop récent : moins de 3 jours (1 jour sur X, 7 jours pour une vidéo YouTube longue). La publication accumule encore, elle n'est pas jugée."),
         el("li", {}, "Rythme : (publications − 1) ÷ jours entre la première et la dernière × 7. Régularité : écart-type des écarts entre publications ÷ leur moyenne (moins de 0,5 : régulier ; moins de 1 : plutôt régulier)."),
-        el("li", {}, `Engagement : (${a.formula?.engagement}) ÷ abonnés, en médiane sur les publications passées leur période de démarrage.`),
-        el("li", {}, "Moments : heure de Paris. Un jour ou un moment ne « ressort » qu'avec au moins 3 publications comparables par créneau et une médiane au moins 1,25 fois celle des autres."),
-        el("li", {}, "Croissance : seulement entre deux analyses du même compte faites ici, à partir des abonnés relevés à chaque fois. Aucune estimation."),
-        el("li", {}, "Claude lit ces indicateurs et les publications sans écrire de chiffre. Un constat doit citer des publications qui le prouvent, ou un indicateur réellement calculé ; sinon il est écarté, et listé plus haut."),
+        el("li", {}, `Engagement : (${a.formula?.engagement}) ÷ abonnés, en médiane sur les publications passées leur période de démarrage. Un compteur que le relevé ne donne pas n'est compté pour personne ; une publication dont un compteur est masqué n'a pas d'engagement connu.`),
+        el("li", {}, "Moments : heure de Paris. La médiane d'un créneau s'affiche à partir de 3 publications comparables ; un jour ou un moment ne « ressort » qu'avec au moins 5 publications comparables, face à au moins deux autres créneaux mesurés, et une médiane au moins 1,25 fois celle des autres."),
+        el("li", {}, "Évolution : publications d'au moins deux fois leur période de démarrage, la moitié la plus récente contre la précédente (12 au minimum). Les âges médians sont affichés : les plus anciennes ont eu plus de temps pour accumuler."),
+        el("li", {}, "Croissance : seulement entre deux analyses du même compte faites ici, à au moins 12 h d'écart, à partir des abonnés relevés à chaque fois. Sur YouTube, les abonnés sont arrondis à trois chiffres : une variation plus petite que l'arrondi n'est pas affichée. Aucune estimation."),
+        el("li", {}, "Claude lit ces indicateurs et les publications sans écrire aucun nombre (seuls le titre, le format et l'accroche des idées peuvent en contenir). Un constat doit citer des publications au-dessus (ou en dessous) de leur médiane, ou un indicateur réellement calculé ; un jour, un moment, une croissance ou une évolution doivent correspondre à ce que les calculs trouvent. Sinon le texte est écarté, et listé plus haut."),
       ),
       a.notes?.length ? el("ul", { class: "veille-list" }, a.notes.map((n) => el("li", {}, n))) : null,
     ),
     "acct-more",
-  );
+  ), "method");
 }
 
-function renderAccount(a) {
-  const body = $("#account-body");
-  if (!a) return;
-  if (a.status === "running") return body.replaceChildren(renderAccountRunning(a));
-  const back = el("p", { class: "acct-back" }, el("a", { href: "#comptes" }, svg("back"), "Tous les comptes"));
-  if (a.status === "error") {
-    return body.replaceChildren(back, alertBox(`L'analyse de @${a.handle} n'a pas abouti.`, a.error || "Erreur inconnue.", [
-      ["Réessayer", () => runAccount({ platform: a.platform, input: a.url || a.handle, force: true }), true],
-      ["Tous les comptes", () => go("#comptes")],
-    ]));
-  }
-  const m = a.metrics;
-  const out = [back, accountHeader(a)];
-  for (const w of m.warnings || []) out.push(el("p", { class: "sources-missing" }, w));
-  out.push(indicatorTiles(a));
+// La lecture par Claude a son propre emplacement : quand elle arrive, les chiffres autour ne bougent pas
+// (repliables ouverts, focus et position de lecture gardés).
+function insightsSlot(a) {
+  const out = [];
   if (state.accounts.job?.id === a.id) {
     out.push(el("section", { class: "ideas-loading card", "aria-busy": "true" },
       el("h2", { class: "scan-h2" }, "Claude lit le compte…"),
@@ -3580,17 +3619,62 @@ function renderAccount(a) {
       el("div", { class: "ideas-skel", "aria-hidden": "true" }, [0, 1].map(() => el("div", { class: "skeleton sk-idea" }))),
     ));
   } else if (a.insightsError) {
-    out.push(el("p", { class: "sources-missing" }, `Lecture par Claude indisponible : ${a.insightsError} `,
+    out.push(el("p", { class: "sources-missing" }, `Lecture par Claude indisponible : ${a.insightsError} `,
       el("button", { type: "button", class: "btn-inline", onclick: () => makeAccountInsights({ force: true }) }, "Relancer la lecture")));
   } else if (!a.insights && state.health?.hasAnthropicKey === false) {
     out.push(el("p", { class: "sources-missing" }, "Lecture par Claude indisponible : clé Anthropic absente. Les chiffres ci-dessus restent valables."));
   }
   if (a.insights) out.push(...insightsBlocks(a));
+  return out;
+}
+
+const openKeys = (root) => [...root.querySelectorAll("details[data-k][open]")].map((d) => d.dataset.k);
+function reopen(root, keys) {
+  for (const k of keys) root.querySelector(`details[data-k="${k}"]`)?.setAttribute("open", "");
+}
+
+// Met à jour la seule lecture par Claude quand le reste de la page montre déjà cette analyse.
+function refreshAccount(a) {
+  const slot = $("#acct-insights");
+  if (!slot || slot.dataset.id !== a.id || a.status !== "done") return renderAccount(a);
+  const hadFocus = slot.contains(document.activeElement);
+  const open = openKeys(slot);
+  slot.replaceChildren(...insightsSlot(a));
+  reopen(slot, open);
+  if (hadFocus) {
+    const target = slot.querySelector("h2");
+    if (target) {
+      target.setAttribute("tabindex", "-1");
+      target.focus({ preventScroll: true });
+    }
+  }
+}
+
+function renderAccount(a) {
+  const body = $("#account-body");
+  if (!a) return;
+  const open = body.dataset.acct === a.id ? openKeys(body) : [];
+  delete body.dataset.acct;
+  if (a.status === "running") return body.replaceChildren(renderAccountRunning(a));
+  const back = el("p", { class: "acct-back" }, el("a", { href: "#comptes" }, svg("back"), "Tous les comptes"));
+  if (a.status === "error") {
+    return body.replaceChildren(back, alertBox(`L'analyse de @${a.handle} n'a pas abouti.`, a.error || "Erreur inconnue.", [
+      ["Réessayer", (ev) => runAccount({ platform: a.platform, input: a.url || a.handle, force: true, trigger: ev.currentTarget }), true],
+      ["Tous les comptes", () => go("#comptes")],
+    ]));
+  }
+  const m = a.metrics;
+  const out = [back, accountHeader(a)];
+  for (const w of m.warnings || []) out.push(el("p", { class: "sources-missing" }, w));
+  out.push(indicatorTiles(a));
+  out.push(el("div", { class: "acct-insights", id: "acct-insights", "data-id": a.id }, insightsSlot(a)));
   out.push(...figuresBlocks(a));
   out.push(methodBlock(a));
-  // Le focus reste où il était quand la vue se redessine (filtre, lecture terminée).
+  // Le focus reste où il était quand la vue se redessine.
   const keep = document.activeElement?.id;
   body.replaceChildren(...out);
+  body.dataset.acct = a.id;
+  reopen(body, open);
   if (keep && document.getElementById(keep)) document.getElementById(keep).focus({ preventScroll: true });
 }
 
