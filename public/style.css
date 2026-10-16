@@ -594,6 +594,7 @@ a.pending:hover { color: var(--act); border-color: var(--act); }
 .scan-body { margin-top: 30px; display: grid; gap: 30px; }
 .scan-body:empty { display: none; }
 .scan-body > .run { max-width: 920px; grid-template-columns: minmax(0, 1fr) 260px; }
+.run.is-static .live-signal { animation: none; }
 .scan-how { max-width: 1080px; }
 .stations-3 { margin-top: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .scan-summary { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
@@ -837,6 +838,8 @@ a.signal-text:hover { color: var(--act); text-decoration: underline; }
   .station:nth-child(2)::after { display: none; }
   .angles, .ideas, .ideas-skel { grid-template-columns: 1fr; }
   .sk-idea + .sk-idea { display: none; }
+  .stations.stations-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .stations-3 .station:nth-child(2)::after { display: block; }
   .trend-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 4px; }
   .trend-facts { grid-column: 1 / -1; }
   .brief-grid { grid-template-columns: 1fr 1fr; }
@@ -869,6 +872,7 @@ a.signal-text:hover { color: var(--act); text-decoration: underline; }
   .signal-metrics b { font-size: 15px; }
   .signal-score { grid-column: 3; grid-row: 1 / span 2; width: 72px; }
   .stations { grid-template-columns: 1fr; row-gap: 22px; }
+  .stations.stations-3 { grid-template-columns: 1fr; }
   .station { padding: 0 0 0 30px; }
   .station:nth-child(2)::after { display: block; }
   .station:not(:last-child)::after { top: 18px; bottom: -18px; left: 6px; right: auto; width: 2px; height: auto; }

@@ -35,9 +35,9 @@ L'onglet **Idées** part de ta niche, pas d'une idée : il relève les posts de 
 
 Les posts relevés sont aussi injectés dans la prévision classique (onglet Créer) pendant 48 h, pour que les angles et le score s'appuient sur ce qui marche réellement.
 
-**Coût** : environ **0,30 $ de crédit Apify par scan** (TikTok 0,14 · Instagram 0,10 · LinkedIn 0,05 · X 0,02), plafonné réseau par réseau. Un scan est réutilisé pendant 6 h sans rien dépenser. L'offre gratuite d'Apify (5 $/mois) permet ~15 scans par mois ; sur cette offre, X passe par un scraper sans compteur de vues. L'offre Starter (19 $/mois) suffit pour un scan quotidien.
+**Coût** : environ **0,30 $ de crédit Apify par scan** (TikTok 0,14 · Instagram 0,10 · LinkedIn 0,05 · X 0,02), plafonné réseau par réseau. Relancer la même niche (même audience, mêmes réseaux) dans les 6 h réutilise le scan sans rien dépenser ; « Rafraîchir » force un nouveau relevé. L'offre gratuite d'Apify (5 $/mois) permet ~15 scans par mois ; sur cette offre, X passe par un scraper sans compteur de vues. L'offre Starter (19 $/mois) suffit pour un scan quotidien.
 
-**Scan quotidien (optionnel)** : dans Réglages, coche « Scanner ma niche chaque matin ». Sur Vercel, une tâche planifiée (`vercel.json` → `crons`) lance le scan vers 6 h UTC ; les idées sont prêtes à l'ouverture.
+**Scan quotidien (optionnel)** : dans Réglages, coche « Scanner ma niche chaque matin ». Sur Vercel, une tâche planifiée (`vercel.json` → `crons`) lance le scan vers 6 h UTC ; les idées sont prêtes à l'ouverture. Elle ne tourne qu'une fois par jour (même si Vercel livre l'appel deux fois) et pas du tout si ta niche a été scannée depuis moins de 20 h ; un second passage vers 7 h UTC termine le scan et rédige les idées si le temps a manqué.
 
 L'interface suit le thème clair ou sombre de l'appareil et respecte le réglage « réduire les animations ».
 
