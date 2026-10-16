@@ -27,15 +27,21 @@ Prérequis : Node.js ≥ 20 et une clé API Anthropic (console [platform.claude.
 
 L'onglet **Idées** part de ta niche, pas d'une idée : il relève les posts de la semaine sur chaque réseau et te propose directement quoi publier.
 
-1. **Requêtes** : Claude traduit ta niche en mots-clés et hashtags par réseau (mis en cache 7 jours).
-2. **Relevé** : TikTok, Instagram, X et LinkedIn via [Apify](https://apify.com) (scrapers lancés en parallèle, arrêtés au bout de 4 minutes en gardant ce qu'ils ont trouvé), YouTube Shorts via l'API YouTube, plus les sujets montants en France (tendances X, Google Trends, Google Actualités), gratuits.
-3. **Score de viralité (0-100)** : un post compte quand il **dépasse l'audience habituelle de son auteur** (vues ÷ abonnés, ou ÷ sa moyenne), avec un engagement de qualité (partages et enregistrements pèsent plus que les likes) et vite après publication. Les petits comptes à ×5 et plus sont marqués « reproductible » : leur succès vient du format, pas de la notoriété. Les posts non francophones, trop anciens (> 14 jours), sponsorisés ou jeux-concours sont écartés ou signalés.
-4. **Tendances** : hashtags et sons repris par plusieurs créateurs ou sur plusieurs réseaux, avec leur stade (émergent, en explosion, établi, saturé).
-5. **Idées à publier** : 6 idées, chacune avec sa plateforme, son accroche, son déroulé, sa fenêtre (24 h → 2 semaines) et les posts qui la prouvent. « Écrire cette idée » lance directement la prévision (angles → scripts → score).
+Claude intervient à chaque étape où il apporte de la pertinence :
 
-Les posts relevés sont aussi injectés dans la prévision classique (onglet Créer) pendant 48 h, pour que les angles et le score s'appuient sur ce qui marche réellement.
+1. **Veille web (Claude + recherche web)** : avant de chercher, Claude fait la veille de la semaine sur ta niche en France (actualités datées, événements à venir, mots et hashtags du moment, débats), avec les pages qu'il cite. Gardée 20 h par niche ; une veille en échec (réponse tronquée, aucune recherche aboutie, délai) n'est pas gardée et sera retentée au scan suivant.
+2. **Requêtes (Claude)** : il traduit ta niche, éclairée par cette veille, en mots-clés et hashtags par réseau.
+3. **Relevé** : TikTok, Instagram, X et LinkedIn via [Apify](https://apify.com) (scrapers lancés en parallèle, arrêtés au bout de 4 minutes en gardant ce qu'ils ont trouvé), YouTube Shorts via l'API YouTube, plus les sujets montants en France (tendances X, Google Trends, Google Actualités), gratuits.
+4. **Score de viralité (0-100)** : un post compte quand il **dépasse l'audience habituelle de son auteur** (vues ÷ abonnés, ou ÷ sa moyenne), avec un engagement de qualité (partages et enregistrements pèsent plus que les likes) et vite après publication. Les petits comptes à ×5 et plus sont marqués « reproductible » : leur succès vient du format, pas de la notoriété. Les posts non francophones, trop anciens (> 14 jours), sponsorisés ou jeux-concours sont écartés ou signalés.
+5. **Lecture du relevé (Claude, vision comprise)** : Claude lit 40 posts (ceux que la liste affiche en tête, puis les plus chauds du moment) et regarde la couverture des 12 premiers. Il voit aussi les signaux du score (sponsorisé, jeu-concours, chiffres suspects, reproductible) pour ne jamais prendre une pub pour un modèle. Pour chacun : hors-sujet ou non, public francophone ou non, format (avant/après, tuto, storytime…), type d'accroche, texte à l'écran, mécanisme qui le fait marcher. Il en tire 2 à 6 **tendances de format, d'accroche ou de sujet**, avec la manière de les reprendre, et ce qu'il vaut mieux éviter. Les posts hors sujet sont masqués, les non francophones retirés. Si la lecture échoue, « Relancer la lecture » la refait (et réécrit les idées si elles avaient été écrites sans elle) ; le passage planifié de 7 h la retente aussi.
+6. **Tendances de hashtags et de sons** : celles reprises par plusieurs créateurs ou sur plusieurs réseaux, avec leur stade (émergent, en explosion, établi, saturé).
+7. **Idées à publier (Claude)** : 6 idées nourries par tout ce qui précède **et par ton historique** (ce qui a marché pour toi, ce qui a déçu). Chacune avec sa plateforme, son accroche et deux variantes, son plan, son appel à l'action, ses hashtags, sa fenêtre (24 h → 2 semaines), les posts qui la prouvent et ce qu'il faut surveiller. « Écrire cette idée » lance directement la prévision avec tout ce contexte (angles → scripts → score).
+
+Les posts relevés, leur analyse et la veille sont aussi injectés dans la prévision classique (onglet Créer) pendant 48 h, pour que les angles et le score s'appuient sur ce qui marche réellement.
 
 **Coût** : environ **0,30 $ de crédit Apify par scan** (TikTok 0,14 · Instagram 0,10 · LinkedIn 0,05 · X 0,02), plafonné réseau par réseau. Relancer la même niche (même audience, mêmes réseaux) dans les 6 h réutilise le scan sans rien dépenser ; « Rafraîchir » force un nouveau relevé. L'offre gratuite d'Apify (5 $/mois) permet ~15 scans par mois ; sur cette offre, X passe par un scraper sans compteur de vues. L'offre Starter (19 $/mois) suffit pour un scan quotidien.
+
+**Coût Claude d'un scan** (affiché sous les résultats) : de l'ordre de 0,40 à 0,80 $ avec le modèle par défaut — veille web (~0,20 $, refaite au plus une fois par 20 h : ~0,01 $ par recherche, 5 au plus, plus la lecture des pages), lecture des posts et des visuels (~0,20 $), rédaction des idées (~0,25 $). Pour l'alléger : `CLAUDE_ANALYSIS_MODEL=claude-haiku-5-5` (lecture des posts environ 40 fois moins chère, un peu moins fine) ou `CLAUDE_WEB_RESEARCH=off` (pas de veille web).
 
 **Scan quotidien (optionnel)** : dans Réglages, coche « Scanner ma niche chaque matin ». Sur Vercel, une tâche planifiée (`vercel.json` → `crons`) lance le scan vers 6 h UTC ; les idées sont prêtes à l'ouverture. Elle ne tourne qu'une fois par jour (même si Vercel livre l'appel deux fois) et pas du tout si ta niche a été scannée depuis moins de 20 h ; un second passage vers 7 h UTC termine le scan et rédige les idées si le temps a manqué.
 
@@ -51,6 +57,8 @@ Le score est un **potentiel relatif, jamais une promesse de vues** : la viralit�
 | `YOUTUBE_API_KEY` | source YouTube du radar et YouTube Shorts dans « Idées » (optionnelle) | désactivée |
 | `APIFY_TOKEN` | relevé TikTok, Instagram, X et LinkedIn dans « Idées » (optionnel, payant à l'usage) | désactivé |
 | `CRON_SECRET` | protège le scan quotidien sur Vercel (optionnel, recommandé) | — |
+| `CLAUDE_ANALYSIS_MODEL` | modèle qui lit les posts dans « Idées » | le modèle principal |
+| `CLAUDE_WEB_RESEARCH` | `off` pour couper la veille web de Claude | activée |
 | `CLAUDE_MODEL` | modèle utilisé | `claude-opus-5-5` |
 | `CLAUDE_EFFORT` | profondeur de raisonnement (`low`→`max`) | `high` en local, `medium` sur Vercel |
 | `TREND_GEO` / `TREND_LANG` | pays / langue des tendances | `FR` / `fr` |
@@ -82,7 +90,8 @@ server.mjs            serveur HTTP local (node:http, zéro framework)
 api/index.js          fonction Vercel : sert toute l'API en ligne
 vercel.json           config Vercel (public/ en statique, /api/* → api/index.js)
 lib/app.mjs           routes de l'API, partagées par le local et Vercel
-lib/claude.mjs        appels Claude : angles, scripts, juge, réécriture
+lib/claude.mjs        appels Claude : angles, scripts, juge, réécriture ; veille web,
+                      requêtes, lecture des posts (vision) et idées pour « Idées »
                       (sorties structurées validées par zod, fallback anti-refus)
 lib/sources.mjs       radar de tendances (Google Trends, GDELT, YouTube, Google Actualités, HN)
 lib/social.mjs        scan des réseaux : adaptateurs Apify, YouTube Shorts, sujets montants FR

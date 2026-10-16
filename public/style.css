@@ -31,6 +31,7 @@
   --act-hover: #174A97;
   --act-ink: #FFFFFF;
   --act-soft: #E3ECF9;
+  --act-on-soft: #1C57B0; /* texte sur --act-soft, au moins 4,5:1 */
 
   /* Échelle thermique — code de tout potentiel */
   --cold: #7FAAE6;
@@ -95,6 +96,7 @@
     --act-hover: #6698EC;
     --act-ink: #06101F;
     --act-soft: #16325A;
+    --act-on-soft: #9EC1FF;
 
     --cold: #86AFEA;
     --mild: #F2CD55;
@@ -404,6 +406,12 @@ kbd { font: 600 11.5px/1 var(--font-cond); padding: 3px 6px; border-radius: 5px;
 .source li a:hover { color: var(--act); text-decoration: underline; }
 .source li .sig { flex: none; color: var(--ink-3); font-size: 12px; font-variant-numeric: tabular-nums; }
 .sources-missing { margin-top: 14px; color: var(--ink-3); font-size: 13px; }
+/* Action dans une ligne de texte (« Relancer la lecture ») */
+.btn-inline {
+  display: inline-flex; align-items: center; min-height: 24px; padding: 0; border: 0; background: none;
+  color: var(--act); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.btn-inline:hover { color: var(--act-hover); }
 
 .angles-title { margin: 32px 0 14px; font: 600 19px/1.3 var(--font); }
 .angles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
@@ -415,7 +423,7 @@ kbd { font: 600 11.5px/1 var(--font-cond); padding: 3px 6px; border-radius: 5px;
 }
 .angle-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .angle-head .cur-tag { flex: none; margin-top: 3px; white-space: nowrap; }
-.cur-tag { font: 600 11px/1 var(--font-cond); letter-spacing: 0.06em; text-transform: uppercase; color: var(--act); background: var(--act-soft); border-radius: 4px; padding: 4px 7px; }
+.cur-tag { font: 600 11px/1 var(--font-cond); letter-spacing: 0.06em; text-transform: uppercase; color: var(--act-on-soft); background: var(--act-soft); border-radius: 4px; padding: 4px 7px; }
 .angles-note { margin: -6px 0 14px; color: var(--ink-2); font-size: 13.5px; }
 .angle-type { color: var(--ink-2); font-weight: 500; }
 .angle h3 { font: 600 18px/1.3 var(--font); text-wrap: balance; }
@@ -678,6 +686,51 @@ a.signal-text:hover { color: var(--act); text-decoration: underline; }
 .signal-score { display: grid; justify-items: center; gap: 5px; }
 .signal-score small { color: var(--ink-2); font-size: 12px; line-height: 1.2; text-align: center; }
 
+/* Veille de la semaine (Claude, recherche web) */
+.veille { padding: 20px 24px; }
+.veille-synthese { margin-top: 10px; max-width: 76ch; font-size: 15.5px; line-height: 1.55; color: var(--ink); text-wrap: pretty; }
+.veille-grid { margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px 32px; }
+.veille-list { margin-top: 8px; display: grid; gap: 8px; }
+.veille-list li { position: relative; padding-left: 14px; color: var(--ink-2); font-size: 14px; line-height: 1.5; }
+.veille-list li::before { content: ""; position: absolute; left: 0; top: 9px; width: 5px; height: 5px; border-radius: 50%; background: var(--line-strong); }
+.veille-dates b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.veille-words { margin-top: 16px; }
+.veille-words p { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.word { padding: 4px 10px; border-radius: 999px; background: var(--surface-3); color: var(--ink-2); font-size: 13px; }
+.veille-sources { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line-2); color: var(--ink-3); font-size: 12.5px; line-height: 1.6; }
+.veille-sources a { color: var(--ink-2); }
+.veille-sources a:hover { color: var(--act); }
+
+/* Tendances dégagées par Claude */
+.ai-trends { margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 32px; }
+.ai-trend { padding: 14px 0; border-top: 1px solid var(--line-2); display: grid; gap: 6px; align-content: start; }
+.ai-trend-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
+.ai-trend-head b { font-size: 15px; font-weight: 600; color: var(--ink); }
+.trend-type { font: 600 11.5px/1 var(--font-cond); letter-spacing: 0.05em; text-transform: uppercase; color: var(--act-on-soft); background: var(--act-soft); border-radius: 4px; padding: 4px 7px; }
+.ai-trend p { color: var(--ink-2); font-size: 14px; line-height: 1.5; }
+.ai-trend .ai-trend-how { color: var(--ink); }
+.ai-trend-how b { font-weight: 600; }
+.trends-sub { margin: 18px 0 2px; font: 600 15px/1.3 var(--font); color: var(--ink); }
+.avoid { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line-2); }
+
+/* Mécanisme d'un post, lu par Claude */
+.signal-ai { color: var(--ink-2); font-size: 13px; line-height: 1.45; }
+.signal-ai b { color: var(--ink); font-weight: 600; }
+.signal-onscreen { color: var(--ink-2); font-style: italic; }
+.signals-note { margin-top: 10px; color: var(--ink-2); font-size: 13px; }
+
+/* Détails d'une idée : plan, autres accroches, hashtags */
+.idea-more { margin-top: 0; }
+.idea-details { display: grid; gap: 6px; }
+.idea-details .label { margin-top: 6px; }
+.idea-details p { color: var(--ink-2); font-size: 14px; line-height: 1.5; }
+.idea-steps { padding-left: 20px; list-style: decimal; display: grid; gap: 4px; color: var(--ink-2); font-size: 14px; line-height: 1.45; }
+.idea-steps li::marker { color: var(--act); font-weight: 600; }
+.idea-variants { display: grid; gap: 4px; color: var(--ink); font-style: italic; font-size: 14px; }
+.idea-details .idea-tags { color: var(--act); font-weight: 500; }
+.idea-why .idea-risk { color: var(--warn-ink); font-size: 13.5px; line-height: 1.5; }
+.idea-risk b { font-weight: 600; }
+
 /* Sujets montants */
 .topics { padding-top: 22px; border-top: 1px solid var(--line); }
 .topics .label { color: var(--ink-2); }
@@ -864,7 +917,8 @@ a.signal-text:hover { color: var(--act); text-decoration: underline; }
   .scan-title { font-size: 22px; }
   .scan-synthese { font-size: 15.5px; }
   .idea { padding: 18px; }
-  .trends { padding: 16px 18px; }
+  .trends, .veille { padding: 16px 18px; }
+  .ai-trends { grid-template-columns: 1fr; }
   .signals { padding: 2px 16px; }
   .signal { grid-template-columns: 20px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 6px; align-items: start; }
   .signal-net { padding-top: 2px; }
