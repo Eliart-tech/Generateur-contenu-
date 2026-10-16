@@ -1,6 +1,6 @@
 # Amorce — générateur de contenu (outil personnel)
 
-Repère ce qui décolle cette semaine sur **TikTok, Instagram, X, LinkedIn et YouTube Shorts** dans ta niche, te propose des idées à publier, puis transforme une idée en scripts prêts à publier pour **LinkedIn, Instagram Reels, X et YouTube**, guidés par les **tendances du moment**, puis notés **avant publication** par un score de performance explicable. Après publication, saisis tes stats réelles : l'outil compare la prédiction au réalisé.
+Repère ce qui décolle cette semaine sur **TikTok, Instagram, X, LinkedIn et YouTube Shorts** dans ta niche, te propose des idées à publier, fait le portrait chiffré d'un compte (le tien ou un modèle), puis transforme une idée en scripts prêts à publier pour **LinkedIn, Instagram Reels, X et YouTube**, guidés par les **tendances du moment**, puis notés **avant publication** par un score de performance explicable. Après publication, saisis tes stats réelles : l'outil compare la prédiction au réalisé.
 
 Outil local, mono-utilisateur : pas de compte, pas d'abonnement, tes données restent dans le dossier `data/`.
 
@@ -45,6 +45,25 @@ Les posts relevés, leur analyse et la veille sont aussi injectés dans la prév
 
 **Scan quotidien (optionnel)** : dans Réglages, coche « Scanner ma niche chaque matin ». Sur Vercel, une tâche planifiée (`vercel.json` → `crons`) lance le scan vers 6 h UTC ; les idées sont prêtes à l'ouverture. Elle ne tourne qu'une fois par jour (même si Vercel livre l'appel deux fois) et pas du tout si ta niche a été scannée depuis moins de 20 h ; un second passage vers 7 h UTC termine le scan et rédige les idées si le temps a manqué.
 
+### Analyse de compte (Instagram, TikTok, X, LinkedIn, YouTube)
+
+L'onglet **Comptes** fait le portrait chiffré d'un compte, le tien ou un modèle : colle le lien du profil (ou son @nom), choisis le réseau. L'outil relève le profil et ses **40 dernières publications**, calcule les indicateurs, puis Claude les lit. Chaque chiffre affiche sa formule et le nombre de publications qui le fondent.
+
+**Ce qui est mesuré, et comment** (tout est recalculable à la main depuis « Toutes les publications relevées ») :
+
+- **Échantillon** : les publications **épinglées** sont mises de côté (souvent anciennes, remontées en tête du profil, elles fausseraient le rythme et les comparaisons), ainsi que les republications, retweets et réponses à d'autres comptes.
+- **Familles** : une publication n'est comparée qu'à sa famille, **sur la même mesure** — Reels et vidéos entre eux sur les lectures, photos et carrousels entre eux sur l'engagement (Instagram ne donne pas de vues publiques pour les photos), Shorts et vidéos longues séparément. Jamais deux compteurs mélangés.
+- **Statut de chaque publication** : ratio à la **médiane** de sa famille. « Au-dessus » à ×1,5 ou plus, « en dessous » à ×0,67 ou moins. Les publications de moins de 3 jours (1 jour sur X, 7 jours pour une vidéo YouTube longue) sont « trop récentes » : elles accumulent encore et ne sont pas jugées.
+- **Rythme** : (publications − 1) ÷ jours entre la première et la dernière × 7. **Régularité** : coefficient de variation des écarts entre publications, à partir de 6 publications.
+- **Engagement** : interactions publiques ÷ abonnés, en **médiane** — Instagram et YouTube : j'aime + commentaires ; TikTok : + partages et enregistrements ; X : j'aime + réponses + reposts et citations + signets ; LinkedIn : réactions + commentaires + republications. La formule exacte est affichée sous la tuile.
+- **Moments** : en **heure de Paris**. Un jour ou un moment ne « ressort » qu'avec au moins 3 publications comparables par créneau et une médiane au moins 1,25 fois celle des autres ; sinon l'outil le dit.
+- **Évolution** : médiane des ratios des publications récentes contre les précédentes, à partir de 12 publications comparables.
+- **Croissance** : seulement entre deux analyses du même compte faites ici, à au moins 12 h d'écart, à partir des abonnés relevés à chaque fois. Aucune estimation, aucun score global.
+
+**La lecture par Claude** (portrait, thèmes, ce qui marche, ce qui marche moins, accroches, forces / faiblesses / opportunités / menaces, recommandations, idées, style d'écriture) ne contient **aucun chiffre écrit par Claude**. Chaque constat doit citer des publications qui le prouvent (au-dessus de leur médiane pour « ce qui marche », en dessous pour « ce qui marche moins ») ou un indicateur réellement calculé. Sinon il est écarté et listé dans « Ce que Claude a proposé et qui a été écarté », avec la raison (aucune publication ne l'appuie, indicateur non calculable, chiffre absent des données…). Les expressions du style d'écriture doivent figurer mot pour mot dans les légendes. « Reprendre ce style comme ma voix » l'enregistre dans Réglages ; « Écrire cette idée » lance la prévision avec le mécanisme repris et les publications qui le prouvent.
+
+**Coût** : Instagram ≈ 0,11 $, TikTok ≈ 0,12 $, LinkedIn ≈ 0,09 $, X ≈ 0,02 $ de crédit Apify par analyse ; YouTube gratuit avec la clé YouTube. La lecture par Claude coûte de l'ordre de quelques dizaines de centimes (affichée sur l'analyse). Le même compte réanalysé dans les 6 h est réutilisé sans frais ; « Réanalyser » force un nouveau relevé et alimente la courbe de croissance.
+
 L'interface suit le thème clair ou sombre de l'appareil et respecte le réglage « réduire les animations ».
 
 Le score est un **potentiel relatif, jamais une promesse de vues** : la viralité reste largement imprévisible, l'outil t'aide à comprendre et améliorer, et il affiche sa propre fiabilité au fil de tes posts mesurés.
@@ -54,8 +73,8 @@ Le score est un **potentiel relatif, jamais une promesse de vues** : la viralit�
 | Variable | Rôle | Défaut |
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | clé API Claude (obligatoire) | — |
-| `YOUTUBE_API_KEY` | source YouTube du radar et YouTube Shorts dans « Idées » (optionnelle) | désactivée |
-| `APIFY_TOKEN` | relevé TikTok, Instagram, X et LinkedIn dans « Idées » (optionnel, payant à l'usage) | désactivé |
+| `YOUTUBE_API_KEY` | source YouTube du radar, YouTube Shorts dans « Idées », analyse des chaînes dans « Comptes » (optionnelle) | désactivée |
+| `APIFY_TOKEN` | relevé TikTok, Instagram, X et LinkedIn dans « Idées » et « Comptes » (optionnel, payant à l'usage) | désactivé |
 | `CRON_SECRET` | protège le scan quotidien sur Vercel (optionnel, recommandé) | — |
 | `CLAUDE_ANALYSIS_MODEL` | modèle qui lit les posts dans « Idées » | le modèle principal |
 | `CLAUDE_WEB_RESEARCH` | `off` pour couper la veille web de Claude | activée |
@@ -96,6 +115,8 @@ lib/claude.mjs        appels Claude : angles, scripts, juge, réécriture ; veil
 lib/sources.mjs       radar de tendances (Google Trends, GDELT, YouTube, Google Actualités, HN)
 lib/social.mjs        scan des réseaux : adaptateurs Apify, YouTube Shorts, sujets montants FR
 lib/virality.mjs      score de viralité des posts et détection des tendances (hashtags, sons)
+lib/accounts.mjs      analyse de compte : relevé (Apify, API YouTube), suivi, historique, contrôle de la lecture par Claude
+lib/account-metrics.mjs indicateurs d'un compte (familles, médianes, rythme, moments en heure de Paris, croissance)
 lib/apify.mjs         client minimal de l'API Apify (runs asynchrones, plafonds de dépense)
 lib/heuristics.mjs    conformité aux codes de chaque format (règles locales)
 lib/store.mjs         persistance : fichiers JSON en local, Redis (Upstash) en ligne
