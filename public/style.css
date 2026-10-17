@@ -867,7 +867,8 @@ a.ap-main:hover .ap-text { color: var(--act); text-decoration: underline; text-u
 
 /* Moments : volume par créneau, puis sa médiane relative */
 .acct-slots { display: grid; }
-.acct-slots li { display: grid; grid-template-columns: minmax(0, 11.5em) minmax(40px, 1fr) auto auto; gap: 12px; align-items: center; padding: 6px 0; font-size: 13.5px; }
+/* Colonnes de texte de largeur fixe : toutes les barres ont la même piste, donc des longueurs comparables. */
+.acct-slots li { display: grid; grid-template-columns: minmax(0, 11.5em) minmax(40px, 1fr) 8.5em 8em; gap: 12px; align-items: center; padding: 6px 0; font-size: 13.5px; }
 .acct-slot-name { color: var(--ink); }
 .acct-slot-bar { height: 8px; border-radius: 4px; background: var(--surface-3); overflow: hidden; }
 .acct-slot-bar i { display: block; width: var(--v); height: 100%; border-radius: 4px; background: var(--act); }
@@ -932,7 +933,7 @@ a.ap-main:hover .ap-text { color: var(--act); text-decoration: underline; text-u
   .acct-stats { gap: 4px 14px; }
   .acct-stats .meta-sep { display: none; }
   .acct-row-chev { grid-column: 3; grid-row: 1 / span 2; }
-  .acct-slots li { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name n" "bar r"; gap: 4px 12px; padding: 8px 0; }
+  .acct-slots li { grid-template-columns: minmax(0, 1fr) 8em; grid-template-areas: "name n" "bar r"; gap: 4px 12px; padding: 8px 0; }
   .acct-slot-name { grid-area: name; }
   .acct-slot-bar { grid-area: bar; }
   .acct-slot-n { grid-area: n; text-align: right; }

@@ -3057,6 +3057,7 @@ function makeAccountInsights({ force = false } = {}) {
     if (state.accounts.current?.id !== a.id) return;
     state.accounts.current = next;
     if (next.insights) announceAccount("Lecture du compte par Claude terminée.");
+    else if (next.insightsError) announceAccount(`Lecture par Claude indisponible : ${next.insightsError}`);
     show(next);
   })();
   return job.promise;
@@ -3163,22 +3164,25 @@ function ratioChip(p) {
   return el("span", { class: `acct-st ${cls}`, title: STATUS_TEXT[p.status] || null }, text);
 }
 
-function measureOf(p, a) {
+// exact : chiffres entiers et heure de Paris (la liste complète doit permettre de tout recalculer).
+function measureOf(p, a, exact = false) {
+  const n = exact ? (v) => nf(v) : fmtCompact;
   const parts = [];
-  if (p.views !== null) parts.push(`${fmtCompact(p.views)} ${viewWord(a.platform)}`);
-  if (p.likes !== null) parts.push(`${fmtCompact(p.likes)} ${a.platform === "linkedin" ? "réactions" : "j'aime"}`);
-  if (p.comments !== null) parts.push(`${fmtCompact(p.comments)} comm.`);
-  if (p.shares) parts.push(`${fmtCompact(p.shares)} partages`);
-  if (p.saves) parts.push(`${fmtCompact(p.saves)} enreg.`);
+  if (p.views !== null) parts.push(`${n(p.views)} ${viewWord(a.platform)}`);
+  if (p.likes !== null) parts.push(`${n(p.likes)} ${a.platform === "linkedin" ? "réactions" : "j'aime"}`);
+  if (p.comments !== null) parts.push(`${n(p.comments)} comm.`);
+  if (p.shares) parts.push(`${n(p.shares)} partages`);
+  if (p.saves) parts.push(`${n(p.saves)} enreg.`);
   return parts.join(" · ");
 }
 
-function postLink(p, a, { showText = true } = {}) {
+function postLink(p, a, { showText = true, exact = false } = {}) {
   const url = safeUrl(p.url);
+  const when = exact ? `${parisDate(p.createdAt)} à ${parisClock(p.createdAt)}` : parisDate(p.createdAt);
   const inner = [
     el("span", { class: "ap-type" }, POST_TYPES[p.type] || p.type || "Publication", p.duration ? ` · ${Math.round(p.duration)} s` : ""),
     showText ? el("span", { class: "ap-text" }, p.text ? p.text.slice(0, 140) : "(sans texte)") : null,
-    el("span", { class: "ap-meta" }, `${parisDate(p.createdAt)} · ${measureOf(p, a) || "mesures indisponibles"}`),
+    el("span", { class: "ap-meta" }, `${when} · ${measureOf(p, a, exact) || "mesures indisponibles"}`),
   ];
   return el("li", { class: "ap" },
     url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", class: "ap-main" }, inner, el("span", { class: "sr-only" }, " (nouvel onglet)")) : el("span", { class: "ap-main" }, inner),
@@ -3199,17 +3203,21 @@ function tile(label, value, sub, formula) {
   );
 }
 
+function accountMeta(a) {
+  const at = a.scrapedAt || a.finishedAt || a.createdAt;
+  return [
+    `Relevé le ${parisDate(at, { day: "numeric", month: "long", year: "numeric" })} à ${parisClock(at)}`,
+    a.metrics ? `${plural(a.metrics.sample.analysed, "publication analysée", "publications analysées")}` : null,
+    a.costUsd ? `${usdText(a.costUsd)} $ Apify` : null,
+    a.claude?.costUsd ? `${usdText(a.claude.costUsd)} $ Claude` : null,
+  ].filter(Boolean).join(" · ");
+}
+
 function accountHeader(a) {
   const p = a.profile || {};
   const m = a.metrics;
   const url = safeUrl(p.url || a.url);
-  const at = a.scrapedAt || a.finishedAt || a.createdAt;
-  const meta = [
-    `Relevé le ${parisDate(at, { day: "numeric", month: "long", year: "numeric" })} à ${parisClock(at)}`,
-    m ? `${plural(m.sample.analysed, "publication analysée", "publications analysées")}` : null,
-    a.costUsd ? `${usdText(a.costUsd)} $ Apify` : null,
-    a.claude?.costUsd ? `${usdText(a.claude.costUsd)} $ Claude` : null,
-  ].filter(Boolean).join(" · ");
+  const meta = accountMeta(a);
   const stats = [
     p.followers !== null && p.followers !== undefined
       ? [`${p.followersRounded ? "≈ " : ""}${nf(p.followers)}`, p.followersRounded ? "abonnés (arrondis par YouTube)" : "abonnés"]
@@ -3234,7 +3242,7 @@ function accountHeader(a) {
       ),
       p.bio ? el("p", { class: "acct-bio" }, p.bio) : null,
       stats.length ? el("p", { class: "acct-stats" }, stats.map(([v, l], i) => [i ? el("span", { class: "meta-sep", "aria-hidden": "true" }) : null, el("span", {}, el("b", {}, v), ` ${l}`)])) : null,
-      el("p", { class: "scan-meta" }, meta),
+      el("p", { class: "scan-meta", id: "acct-meta" }, meta),
     ),
     el("div", { class: "acct-head-actions" },
       // Choisir une analyse ne navigue qu'au clic sur « Ouvrir » : les flèches du clavier parcourent la liste.
@@ -3247,7 +3255,7 @@ function accountHeader(a) {
             el("label", { class: "acct-history select" },
               el("span", { class: "sr-only" }, "Choisir une analyse"),
               el("select", { id: "acct-history" },
-                history.map((h) => el("option", { value: h.id, selected: h.id === a.id }, `Relevé du ${parisDate(h.createdAt)} à ${parisClock(h.createdAt)}${h.id === a.id ? " (affiché)" : ""}`)),
+                history.map((h) => el("option", { value: h.id, selected: h.id === a.id }, `Relevé du ${parisDate(h.scrapedAt || h.createdAt)} à ${parisClock(h.scrapedAt || h.createdAt)}${h.id === a.id ? " (affiché)" : ""}`)),
               ),
             ),
             el("button", { type: "submit", class: "btn" }, "Ouvrir"),
@@ -3263,9 +3271,24 @@ const usdText = (n) => (n < 0.005 ? "moins de 0,01" : fmtUsd(n));
 // Pourcentage lisible même très petit (un très gros compte peut être à 0,0026 %).
 const pctText = (v) => (v === null || v === undefined ? "—" : v !== 0 && Math.abs(v) < 0.1 ? Number(v).toLocaleString("fr-FR", { maximumSignificantDigits: 2 }) : nf(v, 2));
 
+const ENGAGEMENT_REASON = {
+  "no-followers": "nombre d'abonnés inconnu",
+  "zero-followers": "le compte n'a aucun abonné",
+  "no-mature": "aucune publication assez ancienne pour être jugée",
+  hidden: "engagement masqué ou incomplet sur toutes les publications jugées",
+};
+
 // Pourquoi la croissance n'est pas mesurée : la raison exacte, donnée par les calculs.
 function noGrowthText(a) {
+  // Analyse d'avant l'ajout de la raison : on la déduit comme alors.
+  if (a.metrics && !("growthNote" in a.metrics)) {
+    if (!Number.isFinite(a.profile?.followers)) return "Nombre d'abonnés inconnu : croissance non mesurable.";
+    const upTo = (a.history || []).filter((h) => h.status === "done" && Date.parse(h.createdAt) <= Date.parse(a.createdAt)).length;
+    if (upTo > 1) return "Analyses trop rapprochées, ou abonnés non relevés : croissance non mesurée.";
+    return "Première analyse de ce compte : refais-la dans quelques jours pour mesurer sa croissance réelle.";
+  }
   const n = a.metrics?.growthNote || {};
+  if (n.reason === "history-unavailable") return "Historique des analyses illisible pour l'instant : croissance non mesurée cette fois.";
   if (n.reason === "no-followers") return "Nombre d'abonnés inconnu : croissance non mesurable.";
   if (n.reason === "no-history-followers") return "Les analyses précédentes n'ont pas relevé les abonnés : croissance non mesurable pour l'instant.";
   if (n.reason === "too-close") return "Analyses trop rapprochées (moins de 12 h d'écart) : refais-la dans quelques jours pour mesurer sa croissance réelle.";
@@ -3279,13 +3302,21 @@ function indicatorTiles(a) {
   const e = m.engagement;
   const tiles = [];
   if (c) {
+    // L'année s'affiche dès que la période n'est pas toute dans l'année en cours.
+    const year = (iso) => new Date(iso).getFullYear();
+    const withYear = year(c.from) !== year(c.to) || year(c.to) !== new Date().getFullYear();
+    const d = (iso) => parisDate(iso, withYear ? { day: "numeric", month: "short", year: "numeric" } : { day: "numeric", month: "short" });
     tiles.push(tile("Rythme", `${nf(c.perWeek, 1)} / semaine`,
-      `${c.posts} publications du ${parisDate(c.from, { day: "numeric", month: "short" })} au ${parisDate(c.to, { day: "numeric", month: "short" })} · plus long silence ${daysText(c.longestGap?.days)}`,
-      c.regularity ? `Rythme ${c.regularity.label} (écarts : coefficient de variation ${nf(c.regularity.cv, 2)})` : "Régularité : pas assez de publications pour la juger"));
+      `${c.posts} publications du ${d(c.from)} au ${d(c.to)} (${nf(c.spanDays)} jours) · plus long silence ${daysText(c.longestGap?.days)}${c.dormant ? ` · à l'arrêt : aucune publication depuis ${daysText(c.lastPostDaysAgo)} au relevé` : ""}`,
+      c.dormant
+        ? "Ce rythme décrit la période d'activité, pas le présent."
+        : c.regularity ? `Rythme ${c.regularity.label} (écarts : coefficient de variation ${nf(c.regularity.cv, 2)})` : "Régularité : pas assez de publications pour la juger"));
   }
+  const perView = Array.isArray(e.perView) ? e.perView : e.perView ? [{ ...e.perView, label: null }] : [];
+  const viewsPart = perView.map((v) => ` · ${pctText(v.median)} % rapporté aux ${viewWord(a.platform)}${v.label && perView.length > 1 ? ` (${v.label})` : ""}`).join("");
   tiles.push(e.perFollower
-    ? tile("Engagement", `${pctText(e.perFollower.median)} %`, `médiane sur ${e.perFollower.n} publications · moyenne ${pctText(e.perFollower.mean)} %${e.perView ? ` · ${pctText(e.perView.median)} % rapporté aux ${viewWord(a.platform)}` : ""}`, `(${e.formula}) ÷ abonnés`)
-    : tile("Engagement", "—", "Nombre d'abonnés inconnu : pas d'engagement par abonné.", `(${e.formula}) ÷ abonnés`));
+    ? tile("Engagement", `${pctText(e.perFollower.median)} %`, `médiane sur ${e.perFollower.n} publications · moyenne ${pctText(e.perFollower.mean)} %${viewsPart}`, `(${e.formula}) ÷ abonnés`)
+    : tile("Engagement", "—", `Pas d'engagement par abonné : ${ENGAGEMENT_REASON[e.reason] || (Number.isFinite(a.profile?.followers) ? "aucune publication jugée avec un engagement connu" : "nombre d'abonnés inconnu")}.`, `(${e.formula}) ÷ abonnés`));
   for (const g of m.groups) {
     tiles.push(g.median !== null
       ? tile(g.measure === "views" ? `${viewWord(a.platform)} · ${g.label}` : `Engagement · ${g.label}`, fmtCompact(g.median), `médiane de ${g.comparable} publications comparables · maximum ${fmtCompact(g.max)}`, g.measure === "views" ? null : `${e.formula} par publication`)
@@ -3400,6 +3431,8 @@ function accountIdeaCard(idea, i, a, byId) {
   );
 }
 
+const familyLabel = (a, p) => (a.metrics?.groups || []).find((g) => g.key === p.group)?.label || "publications";
+
 function writeAccountIdea(idea, a, proofs) {
   if (state.job) return busyToast();
   const who = `@${a.profile?.handle || a.handle} sur ${ACCOUNT_NET[a.platform].name}`;
@@ -3407,7 +3440,7 @@ function writeAccountIdea(idea, a, proofs) {
     `${idea.format}.`,
     `Accroche envisagée : « ${idea.accroche} ».`,
     `Mécanisme repris de ${who} : ${idea.angle}`,
-    proofs.length ? `Publications qui le prouvent : ${proofs.map((p) => `« ${String(p.text || "").slice(0, 80)} » (${ratioText(p.ratio)} la médiane de ses publications du même type)`).join(" ; ")}.` : null,
+    proofs.length ? `Publications qui le prouvent : ${proofs.map((p) => `« ${String(p.text || "").slice(0, 80)} » (${ratioText(p.ratio)} la médiane des ${familyLabel(a, p)} du compte)`).join(" ; ")}.` : null,
   ].filter(Boolean).join(" ");
   const brief = {
     idea: idea.titre,
@@ -3544,7 +3577,7 @@ function figuresBlocks(a) {
     el("div", { class: "acct-two card" },
       el("div", { class: "acct-col" },
         el("h3", {}, m.captions.source === "titre" ? "Titres" : "Légendes"),
-        el("p", {}, el("b", {}, `${nf(m.captions.medianLength)} caractères`), " en médiane, liens retirés · ", `${m.captions.withQuestion} sur ${m.captions.posts ?? m.posts.length} posent une question`),
+        el("p", {}, el("b", {}, `${nf(m.captions.medianLength)} caractères`), " en médiane, liens retirés · ", `${m.captions.withQuestion} sur ${m.captions.posts ?? m.sample.analysed} ${m.captions.withQuestion > 1 ? "posent" : "pose"} une question`),
         el("h3", {}, "Hashtags"),
         el("p", {}, el("b", {}, nf(h.perPostMedian, 1)), " par publication (médiane) · ", plural(h.postsWithout, "publication sans hashtag", "publications sans hashtag")),
         h.top.length ? el("p", { class: "acct-tags" }, h.top.map((x) => el("span", { class: "word" }, `#${x.tag} · ${x.count}${x.medianRatio !== null ? ` · ${ratioText(x.medianRatio)}` : ""}`))) : null,
@@ -3566,16 +3599,19 @@ function figuresBlocks(a) {
       el("div", { class: "card acct-specific" },
         sp.kinds ? el("ul", { class: "acct-kv" }, Object.entries(sp.kinds).filter(([, v]) => v).map(([k, v]) => el("li", {}, el("span", {}, X_KINDS[k] || k), el("b", {}, String(v))))) : null,
         sp.reactions ? el("ul", { class: "acct-kv" }, sp.reactions.map((r) => el("li", {}, el("span", {}, r.type), el("b", {}, `${r.share} %`)))) : null,
-        sp.formats ? el("ul", { class: "acct-kv" }, sp.formats.map((f) => el("li", {},
-          el("span", {}, f.type === "short" ? "Shorts" : "Vidéos longues"),
-          el("b", {}, `${f.count} · médiane ${f.medianViews !== null ? fmtCompact(f.medianViews) : "—"} vues depuis le 24 août 2026${f.medianViewsBefore !== null && f.medianViewsBefore !== undefined ? ` · ${fmtCompact(f.medianViewsBefore)} avant` : ""}`),
-        ))) : null,
+        sp.formats ? el("ul", { class: "acct-kv" }, sp.formats.filter((f) => f.count).map((f) => {
+          const period = (n, med, when) => (n ? `${n} publiés ${when} : médiane ${med !== null && med !== undefined ? `${fmtCompact(med)} vues` : "trop peu pour la calculer"}` : null);
+          const parts = "countAfter" in f
+            ? [period(f.countAfter, f.medianViews, "depuis le 24 août 2026"), period(f.countBefore, f.medianViewsBefore, "avant")].filter(Boolean)
+            : [`${f.count} · médiane ${f.medianViews !== null ? `${fmtCompact(f.medianViews)} vues` : "—"}`];
+          return el("li", {}, el("span", {}, f.type === "short" ? "Shorts" : "Vidéos longues"), el("b", {}, parts.join(" · ")));
+        })) : null,
       ),
     ));
   }
   // Toutes les publications
   out.push(keyed(disclosure(`Toutes les publications relevées (${m.posts.length})`,
-    el("ul", { class: "acct-posts acct-all" }, m.posts.map((p) => postLink(p, a))),
+    el("ul", { class: "acct-posts acct-all" }, m.posts.map((p) => postLink(p, a, { exact: true }))),
     "acct-more",
   ), "all"));
   return out;
@@ -3597,10 +3633,10 @@ function methodBlock(a) {
         el("li", {}, "Trop récent : moins de 3 jours (1 jour sur X, 7 jours pour une vidéo YouTube longue). La publication accumule encore, elle n'est pas jugée."),
         el("li", {}, "Rythme : (publications − 1) ÷ jours entre la première et la dernière × 7. Régularité : écart-type des écarts entre publications ÷ leur moyenne (moins de 0,5 : régulier ; moins de 1 : plutôt régulier)."),
         el("li", {}, `Engagement : (${a.formula?.engagement}) ÷ abonnés, en médiane sur les publications passées leur période de démarrage. Un compteur que le relevé ne donne pas n'est compté pour personne ; une publication dont un compteur est masqué n'a pas d'engagement connu.`),
-        el("li", {}, "Moments : heure de Paris. La médiane d'un créneau s'affiche à partir de 3 publications comparables ; un jour ou un moment ne « ressort » qu'avec au moins 5 publications comparables, face à au moins deux autres créneaux mesurés, et une médiane au moins 1,25 fois celle des autres."),
-        el("li", {}, "Évolution : publications d'au moins deux fois leur période de démarrage, la moitié la plus récente contre la précédente (12 au minimum). Les âges médians sont affichés : les plus anciennes ont eu plus de temps pour accumuler."),
+        el("li", {}, "Moments : heure de Paris. La médiane d'un créneau s'affiche à partir de 3 publications comparables ; un jour ou un moment ne « ressort » qu'avec au moins 5 publications comparables, face à au moins deux autres créneaux mesurés, une médiane au-dessus de la normale du compte et au moins 1,25 fois celle des autres créneaux comme celle du deuxième."),
+        el("li", {}, "Évolution : à l'intérieur de chaque famille (6 publications au moins), la moitié la plus récente contre la précédente, sur les publications d'au moins deux fois leur période de démarrage (12 au minimum au total). Les âges médians sont affichés : les plus anciennes ont eu plus de temps pour accumuler."),
         el("li", {}, "Croissance : seulement entre deux analyses du même compte faites ici, à au moins 12 h d'écart, à partir des abonnés relevés à chaque fois. Sur YouTube, les abonnés sont arrondis à trois chiffres : une variation plus petite que l'arrondi n'est pas affichée. Aucune estimation."),
-        el("li", {}, "Claude lit ces indicateurs et les publications sans écrire aucun nombre (seuls le titre, le format et l'accroche des idées peuvent en contenir). Un constat doit citer des publications au-dessus (ou en dessous) de leur médiane, ou un indicateur réellement calculé ; un jour, un moment, une croissance ou une évolution doivent correspondre à ce que les calculs trouvent. Sinon le texte est écarté, et listé plus haut."),
+        el("li", {}, "Claude lit ces indicateurs et les publications sans écrire aucun nombre (seuls le titre, le format et l'accroche des idées peuvent en contenir). Un constat doit citer des publications au-dessus (ou en dessous) de leur médiane, ou un indicateur réellement calculé ; un jour, un moment, une croissance, une évolution (et son sens), un format ou un hashtag présenté comme meilleur doivent correspondre à ce que les calculs trouvent. Sinon le texte est écarté, et listé plus haut."),
       ),
       a.notes?.length ? el("ul", { class: "veille-list" }, a.notes.map((n) => el("li", {}, n))) : null,
     ),
@@ -3641,10 +3677,13 @@ function refreshAccount(a) {
   const open = openKeys(slot);
   slot.replaceChildren(...insightsSlot(a));
   reopen(slot, open);
+  // Le coût de la lecture s'ajoute à l'en-tête sans le redessiner.
+  const meta = $("#acct-meta");
+  if (meta) meta.textContent = accountMeta(a);
   if (hadFocus) {
-    const target = slot.querySelector("h2");
+    const target = slot.querySelector("h2") || slot.querySelector("button") || slot.firstElementChild;
     if (target) {
-      target.setAttribute("tabindex", "-1");
+      if (!/^(BUTTON|A)$/.test(target.tagName)) target.setAttribute("tabindex", "-1");
       target.focus({ preventScroll: true });
     }
   }
