@@ -39,7 +39,7 @@ const TYPE_LABELS = {
   reaction: "Réaction",
   etude_de_cas: "Étude de cas",
 };
-const VIEW_TITLES = { creer: "Créer", idees: "Idées", radar: "Radar", historique: "Historique", reglages: "Réglages" };
+const VIEW_TITLES = { creer: "Créer", idees: "Idées", comptes: "Comptes", radar: "Radar", historique: "Historique", reglages: "Réglages" };
 const RADAR_IDEAS = ["intelligence artificielle", "reconversion", "marketing local", "productivité"];
 
 const ICONS = {
@@ -224,7 +224,7 @@ async function api(path, options = {}) {
     if (data?.error) throw Object.assign(new Error(data.error), { status: res.status });
     // Réponse non JSON : coupure par l'hébergeur (Vercel renvoie 504 au-delà de 5 min).
     if (res.status === 504) {
-      throw new Error("Délai dépassé (limite de 5 min par requête sur Vercel). Mets CLAUDE_EFFORT à « low » dans les variables Vercel, puis réessaie.");
+      throw Object.assign(new Error("Délai dépassé (limite de 5 min par requête sur Vercel). Mets CLAUDE_EFFORT à « low » dans les variables Vercel, puis réessaie."), { status: 504 });
     }
     throw new Error(`Erreur serveur (HTTP ${res.status}). Réessaie dans un instant.`);
   }
@@ -316,6 +316,7 @@ async function loadSettingsData() {
 function parseHash() {
   const [view, id] = location.hash.replace(/^#/, "").split("/");
   if (view === "prevision" && id) return { view: "prevision", id: decodeURIComponent(id) };
+  if (view === "comptes") return { view, id: id ? decodeURIComponent(id) : null };
   if (VIEW_TITLES[view]) return { view, id: null };
   return { view: "creer", id: null };
 }
@@ -351,6 +352,9 @@ function applyRoute({ focus = false } = {}) {
   } else if (name === "idees") {
     loadIdeasView();
     target = $("#ideas-title");
+  } else if (name === "comptes") {
+    loadAccountsView();
+    target = $("#accounts-title");
   } else if (name === "radar") {
     renderRadarIdle();
     target = $("#radar-title");
@@ -2784,6 +2788,944 @@ async function loadHealth() {
     renderScanNotice();
     renderScanNetworks();
   }
+  if (state.route.view === "comptes" && !state.route.id) {
+    renderAccountNotice();
+    renderAccountNetworks();
+  }
+}
+
+/* =========================================================================
+   Comptes : analyse d'un compte (le sien ou un modèle)
+   ========================================================================= */
+
+const ACCOUNT_NETS = ["instagram", "tiktok", "x", "linkedin", "youtube"];
+const ACCOUNT_NET = {
+  instagram: { name: "Instagram", icon: "instagram", placeholder: "Ex. : instagram.com/nom ou @nom" },
+  tiktok: { name: "TikTok", icon: "tiktok", placeholder: "Ex. : tiktok.com/@nom ou @nom" },
+  x: { name: "X", icon: "x", placeholder: "Ex. : x.com/nom ou @nom" },
+  linkedin: { name: "LinkedIn", icon: "linkedin", placeholder: "Ex. : linkedin.com/in/nom ou linkedin.com/company/nom" },
+  youtube: { name: "YouTube", icon: "youtube", placeholder: "Ex. : youtube.com/@nom ou @nom" },
+};
+const ACCOUNT_NET_KEY = "amorce.account.net";
+const POST_TYPES = { reel: "Reel", vidéo: "Vidéo", carrousel: "Carrousel", image: "Photo", short: "Short", long: "Vidéo longue", texte: "Texte", document: "Document", article: "Article" };
+const STATUS_TEXT = { "au-dessus": "Au-dessus", "dans la norme": "Dans la norme", "en dessous": "En dessous", "trop récent": "Trop récent", "non comparable": "Non comparable", "épinglé": "Épinglé" };
+const STATUS_CLASS = { "au-dessus": "is-up", "dans la norme": "is-norm", "en dessous": "is-down", "trop récent": "is-wait", "non comparable": "is-wait", "épinglé": "is-wait" };
+const PERIOD_NAMES = { nuit: "Nuit (0 h – 6 h)", matin: "Matin (6 h – 12 h)", "après-midi": "Après-midi (12 h – 18 h)", soir: "Soir (18 h – 24 h)" };
+const X_KINDS = { original: "Posts originaux", citation: "Citations", fil: "Suites de fil", réponse: "Réponses à d'autres comptes", retweet: "Retweets" };
+const PRIORITY = { haute: "Priorité haute", moyenne: "Priorité moyenne", basse: "Priorité basse" };
+
+// polling : identifiant de l'analyse suivie (une seule boucle par analyse, jamais deux).
+state.accounts = { list: null, current: null, polling: null, job: null };
+
+const nf = (n, d = 0) => (n === null || n === undefined || !Number.isFinite(Number(n)) ? "—" : Number(n).toLocaleString("fr-FR", { maximumFractionDigits: d }));
+const ratioText = (r) => `×${Number(r).toLocaleString("fr-FR", { maximumFractionDigits: r >= 10 ? 0 : r >= 2 ? 1 : 2 })}`;
+const parisDate = (iso, opts = { day: "numeric", month: "short", year: "numeric" }) => new Date(iso).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", ...opts });
+const parisClock = (iso) => new Date(iso).toLocaleTimeString("fr-FR", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit" });
+const viewWord = (platform) => (state.accounts.current?.formula?.views || { instagram: "lectures", tiktok: "vues", youtube: "vues", x: "impressions" }[platform] || "vues");
+
+function accountPlatform() {
+  return document.querySelector('input[name="acct-net"]:checked')?.value || null;
+}
+
+function renderAccountNetworks() {
+  const box = $("#account-networks");
+  const avail = state.health?.accounts || {};
+  let chosen = null;
+  try {
+    chosen = localStorage.getItem(ACCOUNT_NET_KEY);
+  } catch {
+    chosen = null;
+  }
+  const current = accountPlatform() || chosen;
+  const first = ACCOUNT_NETS.find((n) => avail[n] !== false);
+  const pick = current && avail[current] !== false ? current : first;
+  box.replaceChildren(
+    ...ACCOUNT_NETS.map((n) => {
+      const usable = avail[n] !== false;
+      return el("label", { class: `pf-toggle${usable ? "" : " is-off"}`, title: usable ? null : n === "youtube" ? "Clé YouTube requise" : "Jeton Apify requis" },
+        el("input", { type: "radio", name: "acct-net", value: n, checked: n === pick, disabled: !usable }),
+        el("span", {},
+          el("span", { class: "check", "aria-hidden": "true" }, svg("check", "")),
+          svg(ACCOUNT_NET[n].icon, "ico pf-ico"),
+          ACCOUNT_NET[n].name,
+          usable ? null : el("small", {}, n === "youtube" ? "clé requise" : "jeton requis"),
+        ),
+      );
+    }),
+  );
+  updateAccountForm();
+}
+
+function updateAccountForm() {
+  const pf = accountPlatform();
+  $("#ac-input").placeholder = ACCOUNT_NET[pf]?.placeholder || "Ex. : lien du profil ou @nom";
+  const cost = state.health?.accountCostUsd?.[pf];
+  $("#ac-cost").textContent = !pf
+    ? "Aucun réseau disponible : ajoute un jeton Apify ou une clé YouTube."
+    : pf === "youtube"
+      ? "Gratuit avec la clé YouTube · 40 dernières vidéos · quelques secondes"
+      : `≈ ${(cost || 0).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $ de crédit Apify · profil et 40 dernières publications · 1 à 3 minutes`;
+}
+
+function renderAccountNotice() {
+  const box = $("#account-notice");
+  const a = state.health?.accounts;
+  if (!a || Object.values(a).some(Boolean)) return box.replaceChildren();
+  box.replaceChildren(
+    el("div", { class: "notice-card" },
+      el("strong", {}, "Aucun réseau n'est branché pour l'analyse de compte."),
+      el("p", {},
+        "Ajoute un jeton Apify (APIFY_TOKEN) pour Instagram, TikTok, X et LinkedIn, ou une clé YouTube (YOUTUBE_API_KEY) pour les chaînes, dans ",
+        state.health?.deployed ? "les variables d'environnement Vercel, puis redéploie" : "le fichier .env, puis relance",
+        ". ",
+        el("a", { href: "#reglages" }, "Voir l'état du système"),
+      ),
+    ),
+  );
+}
+
+function initAccounts() {
+  $("#account-networks").addEventListener("change", () => {
+    try {
+      localStorage.setItem(ACCOUNT_NET_KEY, accountPlatform() || "");
+    } catch {
+      /* confort seulement */
+    }
+    updateAccountForm();
+  });
+  $("#ac-input").addEventListener("input", () => setFieldError($("#ac-input").closest(".field"), $("#ac-input-error"), false));
+  $("#account-form").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    runAccount();
+  });
+}
+
+function announceAccount(text) {
+  const box = $("#account-status");
+  if (box) box.textContent = text;
+}
+
+async function loadAccountsView() {
+  renderAccountNotice();
+  if (!state.settings) loadSettingsData();
+  renderAccountNetworks();
+  const id = state.route.id;
+  $("#account-form").classList.toggle("hidden", Boolean(id));
+  $("#accounts-title").textContent = id ? "Analyse de compte" : "Analyser un compte";
+  if (id) return openAccount(id);
+  $("#account-body").replaceChildren(el("div", { class: "card loading-card", "aria-busy": "true" }, el("div", { class: "skeleton sk-line" }), el("div", { class: "skeleton sk-line" })));
+  try {
+    state.accounts.list = (await api("/api/accounts")).items || [];
+  } catch (err) {
+    state.accounts.list = null;
+    if (state.route.view !== "comptes" || state.route.id) return;
+    return $("#account-body").replaceChildren(alertBox("La liste des comptes n'a pas pu être chargée.", err.message, [["Réessayer", () => loadAccountsView(), true]]));
+  }
+  if (state.route.view !== "comptes" || state.route.id) return;
+  renderAccountList(state.accounts.list);
+}
+
+const AC_INPUT_HINT = "Colle le lien du profil ou son @nom.";
+
+// `trigger` : le bouton cliqué (« Réanalyser », « Réessayer ») quand le formulaire est masqué.
+async function runAccount({ platform = accountPlatform(), input = $("#ac-input").value.trim(), force = false, trigger = null } = {}) {
+  const fromForm = !trigger;
+  const errBox = $("#ac-input-error");
+  if (!input) {
+    errBox.textContent = AC_INPUT_HINT;
+    setFieldError($("#ac-input").closest(".field"), errBox, true);
+    return $("#ac-input").focus();
+  }
+  if (!platform) return toast("Aucun réseau disponible : ajoute un jeton Apify ou une clé YouTube.");
+  const btn = trigger || $("#btn-account");
+  if (btn.dataset.busy) return; // double clic : une seule demande
+  btn.disabled = true;
+  btn.dataset.busy = "true";
+  try {
+    const a = await post("/api/accounts", { platform, input, force });
+    state.accounts.current = a;
+    if (a.reused) {
+      toast(a.status === "running"
+        ? "Un relevé de ce compte est déjà en cours : il est repris, rien n'est relancé."
+        : `Analyse de ${timeOf(a.createdAt)} réutilisée (moins de 6 h) : aucun crédit dépensé.`);
+    }
+    announceAccount(`Analyse de @${a.handle} lancée.`);
+    go(`#comptes/${a.id}`);
+  } catch (err) {
+    if (fromForm) {
+      errBox.textContent = err.message;
+      setFieldError($("#ac-input").closest(".field"), errBox, true);
+      $("#ac-input").focus();
+    } else {
+      // Formulaire masqué (page d'une analyse) : l'erreur s'affiche là où l'on a cliqué.
+      toast(err.message);
+      announceAccount(`Relevé impossible : ${err.message}`);
+    }
+  } finally {
+    btn.disabled = false;
+    delete btn.dataset.busy;
+  }
+}
+
+async function openAccount(id) {
+  const body = $("#account-body");
+  let a = state.accounts.current?.id === id ? state.accounts.current : null;
+  if (!a) {
+    body.replaceChildren(el("div", { class: "card loading-card", "aria-busy": "true" }, el("div", { class: "skeleton sk-title" }), el("div", { class: "skeleton sk-line" }), el("div", { class: "skeleton sk-line" })));
+    try {
+      a = await api(`/api/account?id=${encodeURIComponent(id)}`);
+    } catch (err) {
+      if (state.route.id !== id) return;
+      return body.replaceChildren(alertBox("Cette analyse est introuvable.", err.message, [["Tous les comptes", () => go("#comptes"), true]]));
+    }
+    if (state.route.id !== id) return;
+    state.accounts.current = a;
+  }
+  renderAccount(a);
+  if (a.status === "running") pollAccount();
+  else if (a.status === "done" && !a.insights && !a.insightsError && state.health?.hasAnthropicKey !== false) makeAccountInsights();
+}
+
+async function pollAccount() {
+  const id = state.accounts.current?.id;
+  if (!id || state.accounts.polling === id) return;
+  state.accounts.polling = id;
+  try {
+    while (state.accounts.current?.id === id && state.accounts.current.status === "running") {
+      const t = Date.now();
+      const a = await api(`/api/account?id=${encodeURIComponent(id)}`);
+      if (state.accounts.current?.id !== id) return;
+      state.accounts.current = a;
+      if (state.route.view === "comptes" && state.route.id === id) renderAccount(a);
+      const spent = Date.now() - t;
+      if (a.status === "running" && spent < 2500) await new Promise((r) => setTimeout(r, 2500 - spent));
+    }
+    const a = state.accounts.current;
+    if (a?.id !== id) return;
+    announceAccount(a.status === "done" ? `Relevé terminé : ${plural(a.metrics?.sample?.analysed || 0, "publication analysée", "publications analysées")}.` : `L'analyse n'a pas abouti : ${a.error || ""}`);
+    if (a.status === "done" && !a.insights && state.health?.hasAnthropicKey !== false) makeAccountInsights();
+  } catch (err) {
+    if (state.route.view === "comptes" && state.route.id === id) {
+      $("#account-body").replaceChildren(alertBox("Le suivi de l'analyse a échoué.", err.message, [["Reprendre", () => pollAccount(), true]]));
+    }
+  } finally {
+    if (state.accounts.polling === id) state.accounts.polling = null;
+  }
+}
+
+// La lecture par Claude tourne côté serveur ; un rechargement de page ne la relance pas.
+async function waitAccountInsights(id, maxMs = 240000) {
+  const until = Date.now() + maxMs;
+  while (Date.now() < until) {
+    await new Promise((r) => setTimeout(r, 4000));
+    const a = await api(`/api/account?id=${encodeURIComponent(id)}`);
+    if (a.insights || a.insightsError) return a;
+  }
+  throw new Error("La lecture prend plus de temps que prévu. Recharge la page dans un instant.");
+}
+
+function makeAccountInsights({ force = false } = {}) {
+  const a = state.accounts.current;
+  if (!a || a.status !== "done") return Promise.resolve();
+  if (state.accounts.job?.id === a.id) return state.accounts.job.promise;
+  const job = { id: a.id };
+  state.accounts.job = job;
+  const show = (x) => {
+    if (state.route.view === "comptes" && state.route.id === x.id && state.accounts.current?.id === x.id) refreshAccount(x);
+  };
+  show(a);
+  job.promise = (async () => {
+    let next;
+    try {
+      next = await post("/api/account/insights", { id: a.id, force });
+    } catch (err) {
+      if (leaving) {
+        if (state.accounts.job === job) state.accounts.job = null;
+        return;
+      }
+      // 409 : une lecture tourne déjà ; réseau coupé (TypeError) : la lecture continue côté serveur.
+      // 504 : l'hébergeur a coupé la requête ; l'effort de cette lecture est fixe, CLAUDE_EFFORT n'y peut rien.
+      const msg = err.status === 504 ? "La lecture a dépassé la limite de 5 min par requête sur Vercel. Relance-la : les chiffres sont gardés, seule la lecture par Claude est refaite." : err.message;
+      next = err.status === 409 || err instanceof TypeError
+        ? await waitAccountInsights(a.id).catch((e) => ({ ...a, insightsError: e.message }))
+        : await api(`/api/account?id=${encodeURIComponent(a.id)}`).then((x) => ({ ...x, insightsError: x.insightsError || msg }), () => ({ ...a, insightsError: msg }));
+    }
+    if (state.accounts.job === job) state.accounts.job = null;
+    if (state.accounts.current?.id !== a.id) return;
+    state.accounts.current = next;
+    if (next.insights) announceAccount("Lecture du compte par Claude terminée.");
+    else if (next.insightsError) announceAccount(`Lecture par Claude indisponible : ${next.insightsError}`);
+    show(next);
+  })();
+  return job.promise;
+}
+
+// ---------- Liste des comptes analysés ----------
+
+function avatarOf(name, url, cls = "acct-avatar") {
+  const initial = el("span", { class: `${cls} acct-avatar-initial`, "aria-hidden": "true" }, String(name || "?").trim().charAt(0).toUpperCase() || "?");
+  const u = safeUrl(url);
+  if (!u) return initial;
+  // Les liens d'avatar expirent (Instagram, TikTok) : on retombe sur l'initiale.
+  return el("img", { class: cls, src: u, alt: "", loading: "lazy", referrerpolicy: "no-referrer", onerror: (ev) => ev.currentTarget.replaceWith(initial) });
+}
+
+function renderAccountIdle() {
+  return el("section", { class: "scan-how", "aria-label": "Comment ça marche" },
+    el("ol", { class: "stations stations-3" },
+      [
+        ["Le relevé", "Le profil et ses 40 dernières publications, via Apify (ou l'API YouTube). Les publications épinglées et les republications sont mises de côté."],
+        ["Les calculs", "Rythme, engagement, formats, durées, moments en heure de Paris : chaque publication est comparée à la médiane de sa propre famille, sur la même mesure."],
+        ["La lecture par Claude", "Ce qui marche, ce qui marche moins, l'analyse SWOT, des idées et le style d'écriture. Tout constat sans preuve dans les données est écarté."],
+      ].map(([t, d], i) =>
+        el("li", { class: `station${i === 2 ? " station-end" : ""}` }, el("span", { class: "station-dot", "aria-hidden": "true" }), el("h3", {}, t), el("p", {}, d)),
+      ),
+    ),
+  );
+}
+
+function renderAccountList(list) {
+  const body = $("#account-body");
+  if (!list?.length) return body.replaceChildren(renderAccountIdle());
+  // Une ligne par compte : sa dernière analyse aboutie (ou en cours), et le nombre d'analyses abouties.
+  // Un compte qui n'a jamais abouti (privé, introuvable) n'est pas listé : l'erreur a été montrée sur le moment.
+  const byKey = new Map();
+  for (const r of list) {
+    if (r.status === "error") continue;
+    const k = `${r.platform}:${r.key}`;
+    if (!byKey.has(k)) byKey.set(k, { last: r, count: 0 });
+    if (r.status === "done") byKey.get(k).count += 1;
+  }
+  if (!byKey.size) return body.replaceChildren(renderAccountIdle());
+  body.replaceChildren(
+    el("section", { "aria-labelledby": "acct-list-title" },
+      el("h2", { class: "scan-h2", id: "acct-list-title" }, "Comptes analysés"),
+      el("ol", { class: "acct-list card" },
+        [...byKey.values()].map(({ last: r, count }) =>
+          el("li", {},
+            el("a", { class: "acct-row", href: `#comptes/${encodeURIComponent(r.id)}` },
+              avatarOf(r.name, r.avatar),
+              el("span", { class: "acct-row-main" },
+                el("b", {}, r.name || `@${r.handle}`),
+                el("span", { class: "acct-row-meta" }, svg(ACCOUNT_NET[r.platform]?.icon || "x", "ico net-ico"), `@${r.handle} · ${ACCOUNT_NET[r.platform]?.name || r.platform}`),
+              ),
+              el("span", { class: "acct-row-side" },
+                r.followers !== null && r.followers !== undefined ? el("span", {}, el("b", {}, fmtCompact(r.followers)), " abonnés") : null,
+                el("span", { class: "acct-row-when" },
+                  r.status === "running" ? "analyse en cours" : `analysé ${sinceText(r.createdAt)}`,
+                  count > 1 ? ` · ${count} analyses` : "",
+                ),
+              ),
+              svg("chev", "ico acct-row-chev"),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+// ---------- Une analyse ----------
+
+function accountClock() {
+  const t0 = Date.parse(state.accounts.current?.createdAt) || Date.now();
+  const s = Math.max(0, Math.floor((Date.now() - t0) / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function renderAccountRunning(a) {
+  const runs = Object.values(a.runs || {});
+  const done = runs.length && runs.every((r) => ["SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT", "ERROR"].includes(r.status));
+  const stages = [
+    [`Relevé du profil et des dernières publications (${a.platform === "youtube" ? "API YouTube" : "Apify"})`, done ? "done" : "active"],
+    ["Calculs : rythme, engagement, formats, moments", done ? "active" : "todo"],
+    ["Lecture par Claude", "todo"],
+  ];
+  return el("section", { class: "run card" },
+    el("div", { class: "run-main" },
+      el("h2", { class: "run-title" }, `Analyse de @${a.handle}`),
+      el("p", { class: "run-sub" }, "Le relevé prend 1 à 3 minutes. Tu peux changer d'onglet : il continue."),
+      el("ol", { class: "run-stages" },
+        stages.map(([label, st]) =>
+          el("li", { class: "run-stage", "data-state": st }, el("span", { class: "dot", "aria-hidden": "true" }, st === "done" ? svg("check", "") : null), el("span", {}, label)),
+        ),
+      ),
+    ),
+    el("div", { class: "run-side" }, el("span", { class: "label" }, "Temps écoulé"), el("div", { class: "run-clock", "data-account-clock": "", "aria-hidden": "true" }, accountClock())),
+  );
+}
+
+function ratioChip(p) {
+  const cls = STATUS_CLASS[p.status] || "is-wait";
+  const text = p.ratio !== null && p.ratio !== undefined ? `${ratioText(p.ratio)} la médiane` : STATUS_TEXT[p.status] || p.status;
+  return el("span", { class: `acct-st ${cls}`, title: STATUS_TEXT[p.status] || null }, text);
+}
+
+// exact : chiffres entiers et heure de Paris (la liste complète doit permettre de tout recalculer).
+function measureOf(p, a, exact = false) {
+  const n = exact ? (v) => nf(v) : fmtCompact;
+  const parts = [];
+  if (p.views !== null) parts.push(`${n(p.views)} ${viewWord(a.platform)}`);
+  if (p.likes !== null) parts.push(`${n(p.likes)} ${a.platform === "linkedin" ? "réactions" : "j'aime"}`);
+  if (p.comments !== null) parts.push(`${n(p.comments)} comm.`);
+  if (p.shares) parts.push(`${n(p.shares)} partages`);
+  if (p.saves) parts.push(`${n(p.saves)} enreg.`);
+  return parts.join(" · ");
+}
+
+function postLink(p, a, { showText = true, exact = false } = {}) {
+  const url = safeUrl(p.url);
+  const when = exact ? `${parisDate(p.createdAt)} à ${parisClock(p.createdAt)}` : parisDate(p.createdAt);
+  const inner = [
+    el("span", { class: "ap-type" }, POST_TYPES[p.type] || p.type || "Publication", p.duration ? ` · ${Math.round(p.duration)} s` : ""),
+    showText ? el("span", { class: "ap-text" }, p.text ? p.text.slice(0, 140) : "(sans texte)") : null,
+    el("span", { class: "ap-meta" }, `${when} · ${measureOf(p, a, exact) || "mesures indisponibles"}`),
+  ];
+  return el("li", { class: "ap" },
+    url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", class: "ap-main" }, inner, el("span", { class: "sr-only" }, " (nouvel onglet)")) : el("span", { class: "ap-main" }, inner),
+    ratioChip(p),
+  );
+}
+
+function postsById(a) {
+  return Object.fromEntries((a.metrics?.posts || []).map((p) => [p.id, p]));
+}
+
+function tile(label, value, sub, formula) {
+  return el("div", { class: "acct-tile" },
+    el("span", { class: "label" }, label),
+    el("b", { class: "acct-tile-value" }, value),
+    sub ? el("span", { class: "acct-tile-sub" }, sub) : null,
+    formula ? el("span", { class: "acct-tile-formula" }, formula) : null,
+  );
+}
+
+function accountMeta(a) {
+  const at = a.scrapedAt || a.finishedAt || a.createdAt;
+  return [
+    `Relevé le ${parisDate(at, { day: "numeric", month: "long", year: "numeric" })} à ${parisClock(at)}`,
+    a.metrics ? `${plural(a.metrics.sample.analysed, "publication analysée", "publications analysées")}` : null,
+    a.costUsd ? `${usdText(a.costUsd)} $ Apify` : null,
+    a.claude?.costUsd ? `${usdText(a.claude.costUsd)} $ Claude` : null,
+  ].filter(Boolean).join(" · ");
+}
+
+function accountHeader(a) {
+  const p = a.profile || {};
+  const m = a.metrics;
+  const url = safeUrl(p.url || a.url);
+  const meta = accountMeta(a);
+  const stats = [
+    p.followers !== null && p.followers !== undefined
+      ? [`${p.followersRounded ? "≈ " : ""}${nf(p.followers)}`, p.followersRounded ? "abonnés (arrondis par YouTube)" : "abonnés"]
+      : p.followersHidden ? ["—", "abonnés masqués"] : null,
+    p.postsCount ? [nf(p.postsCount), a.platform === "youtube" ? "vidéos publiques" : "publications"] : null,
+    p.following !== null && p.following !== undefined ? [nf(p.following), "abonnements"] : null,
+    p.connections ? [nf(p.connections), "relations"] : null,
+    p.totalLikes ? [fmtCompact(p.totalLikes), "j'aime au total"] : null,
+  ].filter(Boolean);
+  const history = (a.history || []).filter((h) => h.status === "done");
+  return el("header", { class: "acct-head card" },
+    avatarOf(p.name || a.handle, p.avatar, "acct-avatar acct-avatar-lg"),
+    el("div", { class: "acct-head-main" },
+      el("h2", { class: "scan-title", id: "acct-title", tabindex: "-1" },
+        p.name || `@${a.handle}`,
+        p.verified ? el("span", { class: "acct-verified", title: "Compte certifié" }, svg("check", ""), el("span", { class: "sr-only" }, " (compte certifié)")) : null,
+      ),
+      el("p", { class: "acct-handle" },
+        svg(ACCOUNT_NET[a.platform].icon, "ico net-ico"),
+        `@${p.handle || a.handle} · ${ACCOUNT_NET[a.platform].name}${p.category ? ` · ${p.category}` : ""}`,
+        url ? [" · ", el("a", { href: url, target: "_blank", rel: "noopener noreferrer" }, "Voir le profil", el("span", { class: "sr-only" }, " (nouvel onglet)"))] : null,
+      ),
+      p.bio ? el("p", { class: "acct-bio" }, p.bio) : null,
+      stats.length ? el("p", { class: "acct-stats" }, stats.map(([v, l], i) => [i ? el("span", { class: "meta-sep", "aria-hidden": "true" }) : null, el("span", {}, el("b", {}, v), ` ${l}`)])) : null,
+      el("p", { class: "scan-meta", id: "acct-meta" }, meta),
+    ),
+    el("div", { class: "acct-head-actions" },
+      // Choisir une analyse ne navigue qu'au clic sur « Ouvrir » : les flèches du clavier parcourent la liste.
+      history.length > 1
+        ? el("form", { class: "acct-history-form", onsubmit: (ev) => {
+            ev.preventDefault();
+            const id = $("#acct-history").value;
+            if (id !== a.id) go(`#comptes/${encodeURIComponent(id)}`);
+          } },
+            el("label", { class: "acct-history select" },
+              el("span", { class: "sr-only" }, "Choisir une analyse"),
+              el("select", { id: "acct-history" },
+                history.map((h) => el("option", { value: h.id, selected: h.id === a.id }, `Relevé du ${parisDate(h.scrapedAt || h.createdAt)} à ${parisClock(h.scrapedAt || h.createdAt)}${h.id === a.id ? " (affiché)" : ""}`)),
+              ),
+            ),
+            el("button", { type: "submit", class: "btn" }, "Ouvrir"),
+          )
+        : null,
+      el("button", { type: "button", class: "btn btn-quiet", onclick: (ev) => runAccount({ platform: a.platform, input: a.url || a.handle, force: true, trigger: ev.currentTarget }) }, svg("rewrite"), "Réanalyser"),
+    ),
+  );
+}
+
+const daysText = (d) => (d === null || d === undefined ? "—" : d < 1 ? `${Math.max(1, Math.round(d * 24))} h` : `${nf(d, 1)} j`);
+const usdText = (n) => (n < 0.005 ? "moins de 0,01" : fmtUsd(n));
+// Pourcentage lisible même très petit (un très gros compte peut être à 0,0026 %).
+const pctText = (v) => (v === null || v === undefined ? "—" : v !== 0 && Math.abs(v) < 0.1 ? Number(v).toLocaleString("fr-FR", { maximumSignificantDigits: 2 }) : nf(v, 2));
+
+const ENGAGEMENT_REASON = {
+  "no-posts": "aucune publication du compte dans le relevé",
+  "no-followers": "nombre d'abonnés inconnu",
+  "zero-followers": "le compte n'a aucun abonné",
+  "no-mature": "aucune publication assez ancienne pour être jugée",
+  hidden: "engagement masqué ou incomplet sur toutes les publications jugées",
+};
+
+// Pourquoi la croissance n'est pas mesurée : la raison exacte, donnée par les calculs.
+function noGrowthText(a) {
+  // Analyse d'avant l'ajout de la raison : on la déduit comme alors.
+  if (a.metrics && !("growthNote" in a.metrics)) {
+    if (!Number.isFinite(a.profile?.followers)) return "Nombre d'abonnés inconnu : croissance non mesurable.";
+    const upTo = (a.history || []).filter((h) => h.status === "done" && Date.parse(h.createdAt) <= Date.parse(a.createdAt)).length;
+    if (upTo > 1) return "Analyses trop rapprochées, ou abonnés non relevés : croissance non mesurée.";
+    return "Première analyse de ce compte : refais-la dans quelques jours pour mesurer sa croissance réelle.";
+  }
+  const n = a.metrics?.growthNote || {};
+  if (n.reason === "history-unavailable") return "Historique des analyses illisible pour l'instant : croissance non mesurée cette fois.";
+  if (n.reason === "no-followers") return "Nombre d'abonnés inconnu : croissance non mesurable.";
+  if (n.reason === "no-history-followers") return "Les analyses précédentes n'ont pas relevé les abonnés : croissance non mesurable pour l'instant.";
+  if (n.reason === "too-close") return "Analyses trop rapprochées (moins de 12 h d'écart) : refais-la dans quelques jours pour mesurer sa croissance réelle.";
+  if (n.reason === "below-precision") return `Variation de moins de deux pas d'arrondi de YouTube (abonnés arrondis à ${nf(n.precision)} près) en ${nf(n.days, 1)} jours : elle peut venir d'un seul abonné, non mesurable.`;
+  return "Première analyse de ce compte : refais-la dans quelques jours pour mesurer sa croissance réelle.";
+}
+
+function indicatorTiles(a) {
+  const m = a.metrics;
+  const c = m.cadence;
+  const e = m.engagement;
+  const tiles = [];
+  if (c) {
+    // L'année s'affiche dès que la période n'est pas toute dans l'année en cours.
+    const year = (iso) => new Date(iso).getFullYear();
+    const withYear = year(c.from) !== year(c.to) || year(c.to) !== new Date().getFullYear();
+    const d = (iso) => parisDate(iso, withYear ? { day: "numeric", month: "short", year: "numeric" } : { day: "numeric", month: "short" });
+    tiles.push(tile("Rythme", c.perWeek !== null && c.perWeek !== undefined ? `${nf(c.perWeek, 1)} / semaine` : "—",
+      `${c.posts} publications du ${d(c.from)} au ${d(c.to)} (${daysText(c.spanDays)})${c.perWeek === null ? " : moins d'une semaine d'historique, pas de rythme hebdomadaire" : ""} · plus long écart entre deux publications ${daysText(c.longestGap?.days)}${c.longestGap?.pinned ? " (avant une publication épinglée)" : ""}${c.dormant ? ` · à l'arrêt : aucune publication depuis ${daysText(c.lastPostDaysAgo)} au relevé` : Number.isFinite(c.lastPostDaysAgo) ? ` · dernière publication ${daysText(c.lastPostDaysAgo)} avant le relevé` : ""}`,
+      c.dormant
+        ? "Ce rythme décrit la période d'activité, pas le présent."
+        : c.pauseBeforePinned
+          ? `Ce rythme décrit la période du ${d(c.from)} au ${d(c.to)}, avant une pause de ${daysText(c.pauseBeforePinned)} puis une publication épinglée.`
+          : c.regularity ? `Rythme ${c.regularity.label} (écarts : coefficient de variation ${nf(c.regularity.cv, 2)})` : "Régularité : pas assez de publications pour la juger"));
+  }
+  const perView = Array.isArray(e.perView) ? e.perView : e.perView ? [{ ...e.perView, label: null }] : [];
+  // Rapporté aux vues : sa famille et son nombre de publications, qui ne sont pas celles de la médiane par abonné.
+  const viewsPart = perView.map((v) => ` · ${pctText(v.median)} % rapporté aux ${viewWord(a.platform)}${v.label || Number.isFinite(v.n) ? ` (${[v.label, Number.isFinite(v.n) ? `médiane sur ${plural(v.n, "publication", "publications")}` : null].filter(Boolean).join(", ")})` : ""}`).join("");
+  tiles.push(e.perFollower
+    ? tile("Engagement", `${pctText(e.perFollower.median)} %`, `médiane sur ${e.perFollower.n} publications · moyenne ${pctText(e.perFollower.mean)} %${viewsPart}`, `(${e.formula}) ÷ abonnés`)
+    : tile("Engagement", "—", `Pas d'engagement par abonné : ${ENGAGEMENT_REASON[e.reason] || (a.profile?.followers === 0 ? ENGAGEMENT_REASON["zero-followers"] : Number.isFinite(a.profile?.followers) ? "aucune publication jugée avec un engagement connu" : "nombre d'abonnés inconnu")}.${viewsPart ? ` Rapporté aux ${viewWord(a.platform)} :${viewsPart.replace(/^ ·/, "")}.` : ""}`, `(${e.formula}) ÷ abonnés`));
+  for (const g of m.groups) {
+    tiles.push(g.median !== null
+      ? tile(g.measure === "views" ? `${viewWord(a.platform)} · ${g.label}` : `Engagement · ${g.label}`, fmtCompact(g.median), `médiane de ${g.comparable} publications comparables · maximum ${fmtCompact(g.max)}`, g.measure === "views" ? null : `${e.formula} par publication`)
+      : tile(g.measure === "views" ? `${viewWord(a.platform)} · ${g.label}` : `Engagement · ${g.label}`, "—", `${plural(g.comparable, "publication comparable", "publications comparables")} sur ${g.posts} (les autres sont trop récentes ou sans mesure) : trop peu pour une médiane, il en faut 4.`, null));
+  }
+  tiles.push(m.trend
+    ? tile(m.trend.familyLabel ? `Évolution · ${m.trend.familyLabel}` : "Évolution", `${m.trend.changePct > 0 ? "+" : ""}${nf(m.trend.changePct)} %`,
+        `${m.trend.familyLabel ? `${m.trend.familyLabel} : ` : ""}les ${m.trend.n} plus récentes (${ratioText(m.trend.recentMedianRatio)}, âge médian ${daysText(m.trend.recentMedianAgeDays)}) contre les ${m.trend.n} précédentes (${ratioText(m.trend.previousMedianRatio)}, âge médian ${daysText(m.trend.previousMedianAgeDays)})`,
+        "médiane des ratios à la médiane de la famille ; les plus anciennes ont eu plus de temps pour accumuler")
+    : tile("Évolution", "—", m.trendNote?.reason === "previous-zero"
+        ? `Les publications précédentes${m.trendNote.familyLabel ? ` (${m.trendNote.familyLabel})` : ""} ont une médiane nulle : pas d'évolution en pourcentage.`
+        : "Aucune famille de publications n'a 12 publications comparables assez anciennes : pas d'évolution mesurée.", null));
+  tiles.push(m.growth
+    ? tile("Croissance", `${m.growth.approximate ? "≈ " : ""}${m.growth.followersDelta >= 0 ? "+" : ""}${nf(m.growth.followersDelta)} abonnés`,
+        `en ${nf(m.growth.days, 1)} jours (${m.growth.approximate ? "≈ " : ""}${m.growth.followersPct >= 0 ? "+" : ""}${nf(m.growth.followersPct, m.growth.approximate ? 1 : 2)} %) · ${m.growth.points.length} analyses`,
+        m.growth.approximate ? `abonnés relevés à chaque analyse faite ici, arrondis par YouTube à ${nf(m.growth.precision)} près : la variation réelle est dans le même sens, à un pas d'arrondi près` : "abonnés relevés à chaque analyse faite ici")
+    : tile("Croissance", "—", noGrowthText(a), null));
+  return el("section", { class: "acct-section", "aria-labelledby": "acct-figures-title" },
+    el("h2", { class: "scan-h2", id: "acct-figures-title" }, "Les chiffres"),
+    el("div", { class: "acct-tiles" }, tiles),
+  );
+}
+
+// Un constat montre les publications qui le prouvent ; une piste sans exemple n'affiche rien de plus.
+function claimItem(c, a, byId) {
+  const posts = (c.posts || []).map((id) => byId[id]).filter(Boolean);
+  return el("li", { class: "acct-claim" },
+    el("p", {}, c.priorite ? el("span", { class: `prio prio-${c.priorite}` }, PRIORITY[c.priorite]) : null, c.texte),
+    posts.length ? el("p", { class: "acct-claim-basis" }, el("span", { class: "basis" }, "Appui"), ` · ${plural(posts.length, "publication", "publications")}`) : null,
+    posts.length ? el("ul", { class: "acct-posts", "aria-label": "Publications qui l'appuient" }, posts.map((p) => postLink(p, a))) : null,
+  );
+}
+
+function insightsBlocks(a) {
+  const I = a.insights;
+  const byId = postsById(a);
+  const out = [];
+  out.push(el("section", { class: "acct-section card acct-portrait", "aria-labelledby": "acct-portrait-title" },
+    el("div", { class: "fronts-head" }, el("h2", { class: "section-title", id: "acct-portrait-title" }, "Le portrait"), el("span", { class: "hint" }, "Lecture par Claude")),
+    el("p", { class: "acct-positioning" }, I.positionnement),
+    // Thèmes : les publications citées pour l'illustrer (ce n'est pas la taille du thème).
+    I.themes?.length ? el("ul", { class: "acct-themes" }, I.themes.map((t) => {
+      const posts = (t.posts || []).map((id) => byId[id]).filter(Boolean);
+      return el("li", {}, el("b", {}, t.nom), posts.length ? el("ul", { class: "acct-posts", "aria-label": `Publications qui illustrent « ${t.nom} »` }, posts.map((p) => postLink(p, a))) : null);
+    })) : null,
+  ));
+  const col = (title, items, empty) => el("div", { class: "acct-col" },
+    el("h3", {}, title),
+    items.length ? el("ol", { class: "acct-claims" }, items.map((c) => claimItem(c, a, byId))) : el("p", { class: "hint" }, empty),
+  );
+  out.push(el("section", { class: "acct-section", "aria-labelledby": "acct-works-title" },
+    el("h2", { class: "scan-h2", id: "acct-works-title" }, "Ce qui marche, ce qui marche moins"),
+    el("div", { class: "acct-two card" },
+      col("Ce qui marche", I.marche || [], "Aucun constat assez appuyé par les publications."),
+      col("Ce qui marche moins", I.marcheMoins || [], "Aucun constat assez appuyé par les publications."),
+    ),
+  ));
+  if (I.accroches?.length) {
+    out.push(el("section", { class: "acct-section", "aria-labelledby": "acct-hooks-title" },
+      el("h2", { class: "scan-h2", id: "acct-hooks-title" }, "Ses accroches"),
+      el("ol", { class: "acct-claims card" }, I.accroches.map((h) => el("li", { class: "acct-claim" },
+        el("p", {}, el("b", {}, h.type), ` · ${h.pourquoi}`),
+        byId[h.post] ? el("ul", { class: "acct-posts" }, postLink(byId[h.post], a)) : null,
+      ))),
+    ));
+  }
+  const S = I.swot || {};
+  out.push(el("section", { class: "acct-section", "aria-labelledby": "acct-swot-title" },
+    el("h2", { class: "scan-h2", id: "acct-swot-title" }, "Forces, faiblesses, opportunités, menaces"),
+    el("div", { class: "acct-swot card" },
+      col("Forces", S.forces || [], "—"),
+      col("Faiblesses", S.faiblesses || [], "—"),
+      col("Opportunités", S.opportunites || [], "—"),
+      col("Menaces", S.menaces || [], "—"),
+    ),
+  ));
+  if (I.recommandations?.length) {
+    const order = { haute: 0, moyenne: 1, basse: 2 };
+    out.push(el("section", { class: "acct-section", "aria-labelledby": "acct-reco-title" },
+      el("h2", { class: "scan-h2", id: "acct-reco-title" }, "Ce que tu peux en retenir"),
+      el("ol", { class: "acct-claims card" }, [...I.recommandations].sort((x, y) => (order[x.priorite] ?? 1) - (order[y.priorite] ?? 1)).map((c) => claimItem(c, a, byId))),
+    ));
+  }
+  if (I.idees?.length) {
+    out.push(el("section", { class: "acct-section", "aria-labelledby": "acct-ideas-title" },
+      el("h2", { class: "scan-h2", id: "acct-ideas-title" }, "Idées inspirées de ce compte"),
+      el("div", { class: "ideas" }, I.idees.map((idea, i) => accountIdeaCard(idea, i, a, byId))),
+    ));
+  }
+  if (I.voix?.resume) out.push(voiceBlock(a));
+  if (I.controle?.ecartes) {
+    out.push(keyed(disclosure(`Ce que Claude a proposé et qui a été écarté (${I.controle.ecartes})`,
+      el("ul", { class: "acct-dropped" }, I.controle.details.map((d) => el("li", {},
+        el("b", {}, d.where.charAt(0).toUpperCase() + d.where.slice(1)),
+        ` · « ${d.texte} » `,
+        el("span", { class: "hint" }, `→ ${d.raison.replace(/(\d) (?=\d{3}\b)/g, "$1\u202f")}`),
+      ))),
+      "acct-more",
+    ), "dropped"));
+  }
+  return out;
+}
+
+function accountIdeaCard(idea, i, a, byId) {
+  const proofs = (idea.inspiree_de || []).map((id) => byId[id]).filter(Boolean);
+  return el("article", { class: "idea" },
+    el("div", { class: "idea-head" }, el("h3", {}, idea.titre)),
+    el("p", { class: "idea-meta" }, svg(IDEA_ICON[idea.plateforme] || "reels", "ico pf-ico"), `${IDEA_TARGET[idea.plateforme] || idea.plateforme} · ${idea.format}`),
+    el("p", { class: "hook" }, `« ${idea.accroche} »`),
+    el("p", { class: "idea-plan" }, idea.angle),
+    el("div", { class: "idea-why" },
+      el("span", { class: "label" }, "Inspirée de"),
+      proofs.length ? el("ul", { class: "acct-posts" }, proofs.map((p) => postLink(p, a))) : el("p", {}, "Aucune publication au-dessus de la médiane ne la fonde directement."),
+    ),
+    el("div", { class: "idea-foot" },
+      el("span", { class: "idea-window" }, `D'après @${a.profile?.handle || a.handle}`),
+      el("button", { type: "button", class: `btn${i === 0 ? " btn-primary" : ""}`, onclick: () => writeAccountIdea(idea, a, proofs) }, "Écrire cette idée", svg("arrow")),
+    ),
+  );
+}
+
+const familyLabel = (a, p) => (a.metrics?.groups || []).find((g) => g.key === p.group)?.label || "publications";
+
+function writeAccountIdea(idea, a, proofs) {
+  if (state.job) return busyToast();
+  const who = `@${a.profile?.handle || a.handle} sur ${ACCOUNT_NET[a.platform].name}`;
+  const context = [
+    `${idea.format}.`,
+    `Accroche envisagée : « ${idea.accroche} ».`,
+    `Mécanisme repris de ${who} : ${idea.angle}`,
+    proofs.length ? `Publications qui le prouvent : ${proofs.map((p) => `« ${String(p.text || "").slice(0, 80)} » (${ratioText(p.ratio)} la médiane des ${familyLabel(a, p)} du compte)`).join(" ; ")}.` : null,
+  ].filter(Boolean).join(" ");
+  const brief = {
+    idea: idea.titre,
+    niche: state.settings?.profile?.niche || $("#f-niche").value.trim(),
+    audience: state.settings?.profile?.audience || $("#f-audience").value.trim(),
+    goal: $("#f-goal").value,
+    platforms: [idea.plateforme],
+    context: context.slice(0, 2000),
+  };
+  $("#f-idea").value = brief.idea;
+  $("#f-niche").value = brief.niche;
+  $("#f-audience").value = brief.audience;
+  renderPlatformOptions(brief.platforms);
+  history.pushState(null, "", "#creer");
+  applyRoute();
+  startForecast(brief);
+}
+
+function voiceBlock(a) {
+  const v = a.insights.voix;
+  const proposed = [v.resume, v.expressions.length ? `Expressions : ${v.expressions.map((x) => `« ${x} »`).join(", ")}.` : null].filter(Boolean).join(" ");
+  const box = el("div", { class: "acct-voice-edit hidden" });
+  const open = () => {
+    const current = state.settings?.voice || "";
+    const area = el("textarea", { id: "acct-voice-text", rows: "4" });
+    area.value = proposed;
+    const save = async (mode) => {
+      const voice = mode === "add" && current ? `${current}\n${area.value}` : area.value;
+      try {
+        state.settings = await post("/api/settings", { voice });
+        toast("Voix enregistrée : elle guidera tes prochaines prévisions.");
+        box.classList.add("hidden");
+      } catch (err) {
+        toast(`Enregistrement impossible : ${err.message}`);
+      }
+    };
+    box.replaceChildren(
+      el("div", { class: "acct-voice-cols" },
+        el("div", {}, el("span", { class: "label" }, "Ta voix actuelle"), el("p", { class: "acct-voice-current" }, current || "Aucune voix enregistrée.")),
+        el("label", { class: "field" }, el("span", { class: "label" }, "Proposée (modifiable)"), area),
+      ),
+      el("div", { class: "alert-actions" },
+        el("button", { type: "button", class: "btn btn-primary", onclick: () => save("replace") }, "Remplacer ma voix"),
+        current ? el("button", { type: "button", class: "btn", onclick: () => save("add") }, "Ajouter à ma voix") : null,
+        el("button", { type: "button", class: "btn btn-quiet", onclick: () => box.classList.add("hidden") }, "Annuler"),
+      ),
+    );
+    box.classList.remove("hidden");
+    area.focus();
+  };
+  return el("section", { class: "acct-section card", "aria-labelledby": "acct-voice-title" },
+    el("div", { class: "fronts-head" }, el("h2", { class: "section-title", id: "acct-voice-title" }, "Son style d'écriture"), el("span", { class: "hint" }, "Lecture par Claude")),
+    el("p", { class: "acct-positioning" }, v.resume),
+    v.expressions.length ? el("p", { class: "acct-expr" }, el("span", { class: "label" }, "Expressions relevées dans ses légendes"), " ", v.expressions.map((x) => el("span", { class: "word" }, x))) : null,
+    el("div", { class: "acct-voice-actions" },
+      el("button", { type: "button", class: "btn", onclick: open }, "Reprendre ce style comme ma voix"),
+      el("span", { class: "hint" }, "Ta voix guide l'écriture des prévisions (Réglages)."),
+    ),
+    box,
+  );
+}
+
+function slotRows(list, label, minPerSlot) {
+  const max = Math.max(1, ...list.map((s) => s.count));
+  return el("ol", { class: "acct-slots" }, list.map((s) =>
+    el("li", {},
+      el("span", { class: "acct-slot-name" }, label(s.key)),
+      el("span", { class: "acct-slot-bar", "aria-hidden": "true" }, el("i", { vars: { "--v": `${(s.count / max) * 100}%` } })),
+      el("span", { class: "acct-slot-n" }, plural(s.count, "publication", "publications")),
+      el("span", { class: "acct-slot-r", title: s.medianRatio !== null ? null : `Moins de ${minPerSlot} publications comparables` }, s.medianRatio !== null ? `médiane ${ratioText(s.medianRatio)} sur ${s.comparable}` : "trop peu"),
+    ),
+  ));
+}
+
+function figuresBlocks(a) {
+  const m = a.metrics;
+  const byId = postsById(a);
+  const out = [];
+  const tops = (m.top || []).map((id) => byId[id]).filter(Boolean);
+  const flops = (m.flop || []).map((id) => byId[id]).filter(Boolean);
+  if (tops.length || flops.length) {
+    out.push(el("section", { class: "acct-section", "aria-labelledby": "acct-topflop-title" },
+      el("h2", { class: "scan-h2", id: "acct-topflop-title" }, "Les publications qui se détachent"),
+      el("div", { class: "acct-two card" },
+        el("div", { class: "acct-col" },
+          el("h3", {}, "Les plus hautes par rapport à leur médiane"),
+          tops.length ? el("ul", { class: "acct-posts" }, tops.map((p) => postLink(p, a))) : el("p", { class: "hint" }, "Aucune au-dessus de sa médiane."),
+          tops.length && !tops.some((p) => p.status === "au-dessus") ? el("p", { class: "hint" }, "Aucune n'atteint ×1,5 : ce sont simplement les plus hautes.") : null,
+        ),
+        el("div", { class: "acct-col" },
+          el("h3", {}, "Les plus basses"),
+          flops.length ? el("ul", { class: "acct-posts" }, flops.map((p) => postLink(p, a))) : el("p", { class: "hint" }, "Aucune en dessous de sa médiane."),
+          flops.length && !flops.some((p) => p.status === "en dessous") ? el("p", { class: "hint" }, "Aucune ne tombe à ×0,67 ou moins : elles restent dans la norme du compte.") : null,
+        ),
+      ),
+      el("p", { class: "sources-missing" }, "Chaque publication est comparée à la médiane de sa famille (Reels entre eux, photos et carrousels entre eux…), une fois passée sa période de démarrage. Les plus récentes ne sont pas encore jugées."),
+    ));
+  }
+  // Formats, durées
+  const fmtRows = m.formats.map((f) => [POST_TYPES[f.type] || f.type, `${f.count} (${f.share} %)`, f.medianRatio !== null ? ratioText(f.medianRatio) : `—`, f.comparable]);
+  const durRows = (m.durations?.buckets || []).map((b) => [b.bucket, String(b.count), b.medianRatio !== null ? ratioText(b.medianRatio) : "—", b.comparable]);
+  const table = (caption, head, rows) => el("div", { class: "table-wrap" },
+    el("table", { class: "acct-table" },
+      el("caption", { class: "sr-only" }, caption),
+      el("thead", {}, el("tr", {}, head.map((h) => el("th", { scope: "col" }, h)))),
+      el("tbody", {}, rows.map((r) => el("tr", {}, r.map((v, i) => el(i ? "td" : "th", i ? { class: "num" } : { scope: "row" }, String(v)))))),
+    ),
+  );
+  out.push(el("section", { class: "acct-section", "aria-labelledby": "acct-formats-title" },
+    el("h2", { class: "scan-h2", id: "acct-formats-title" }, "Formats et durées"),
+    el("div", { class: "acct-two card" },
+      el("div", { class: "acct-col" }, el("h3", {}, "Formats"), table("Formats", ["Format", "Publications", "Médiane relative", "Comparables"], fmtRows)),
+      m.durations ? el("div", { class: "acct-col" }, el("h3", {}, `Durées · médiane ${nf(m.durations.medianSeconds)} s`), table("Durées", ["Durée", "Publications", "Médiane relative", "Comparables"], durRows)) : null,
+    ),
+    el("p", { class: "sources-missing" }, "« Médiane relative » : médiane des ratios à la médiane de leur famille. ×1 = comme d'habitude ; calculée à partir de 3 publications comparables."),
+  ));
+  // Moments
+  const t = m.timing;
+  const best = [t.bestDay && `le ${t.bestDay.key} (${ratioText(t.bestDay.medianRatio)} contre ${ratioText(t.bestDay.othersMedianRatio)} les autres jours)`, t.bestPeriod && `${PERIOD_NAMES[t.bestPeriod.key].toLowerCase()} (${ratioText(t.bestPeriod.medianRatio)} contre ${ratioText(t.bestPeriod.othersMedianRatio)})`].filter(Boolean);
+  out.push(el("section", { class: "acct-section", "aria-labelledby": "acct-time-title" },
+    el("h2", { class: "scan-h2", id: "acct-time-title" }, "Moments de publication"),
+    el("div", { class: "acct-two acct-two-wide card" },
+      el("div", { class: "acct-col" }, el("h3", {}, "Jours"), slotRows(t.byDay, (k) => k.charAt(0).toUpperCase() + k.slice(1), t.minPerSlot)),
+      el("div", { class: "acct-col" }, el("h3", {}, "Moments (heure de Paris)"), slotRows(t.byPeriod, (k) => PERIOD_NAMES[k], t.minPerSlot)),
+    ),
+    el("p", { class: "sources-missing" }, best.length
+      ? `Ce qui ressort : ${best.join(" ; ")}.`
+      : `Aucun jour ni moment ne ressort nettement : il faut au moins ${t.minBestSlot || 5} publications comparables dans le créneau, au moins trois créneaux mesurés, une médiane au-dessus de la normale du compte, et au moins 1,25 fois celle des autres créneaux comme celle du deuxième.`),
+  ));
+  // Textes, hashtags, sons
+  const h = m.hashtags;
+  out.push(el("section", { class: "acct-section", "aria-labelledby": "acct-text-title" },
+    el("h2", { class: "scan-h2", id: "acct-text-title" }, "Légendes, hashtags et sons"),
+    el("div", { class: "acct-two card" },
+      el("div", { class: "acct-col" },
+        el("h3", {}, m.captions.source === "titre" ? "Titres" : "Légendes"),
+        el("p", {}, el("b", {}, `${nf(m.captions.medianLength)} caractères`), m.captions.source ? " en médiane, liens retirés · " : " en médiane · ", `${m.captions.withQuestion} sur ${m.captions.posts ?? m.sample.analysed} ${m.captions.withQuestion > 1 ? "posent" : "pose"} une question`),
+        el("h3", {}, "Hashtags"),
+        el("p", {}, el("b", {}, nf(h.perPostMedian, 1)), " par publication (médiane) · ", plural(h.postsWithout, "publication sans hashtag", "publications sans hashtag")),
+        h.top.length ? el("p", { class: "acct-tags" }, h.top.map((x) => el("span", { class: "word" }, `#${x.tag} · ${x.count}${x.medianRatio !== null ? ` · ${ratioText(x.medianRatio)}${Number.isFinite(x.comparable) ? ` sur ${x.comparable}` : ""}` : ""}`))) : null,
+      ),
+      m.sounds
+        ? el("div", { class: "acct-col" },
+            el("h3", {}, "Sons"),
+            el("p", {}, el("b", {}, plural(m.sounds.original, "son original", "sons originaux")), " · ", plural(m.sounds.reused, "son repris", "sons repris")),
+            m.sounds.top.length ? el("ul", { class: "veille-list" }, m.sounds.top.map((s) => el("li", {}, `${s.name} · ${plural(s.count, "fois", "fois")}`))) : el("p", { class: "hint" }, "Aucun son repris plusieurs fois."),
+          )
+        : null,
+    ),
+  ));
+  // Spécifique au réseau
+  const sp = m.specific || {};
+  if (sp.kinds || sp.reactions || sp.formats) {
+    out.push(el("section", { class: "acct-section", "aria-labelledby": "acct-specific-title" },
+      el("h2", { class: "scan-h2", id: "acct-specific-title" }, `Propre à ${ACCOUNT_NET[a.platform].name}`),
+      el("div", { class: "card acct-specific" },
+        sp.kinds ? el("ul", { class: "acct-kv" }, Object.entries(sp.kinds).filter(([, v]) => v).map(([k, v]) => el("li", {}, el("span", {}, X_KINDS[k] || k), el("b", {}, String(v))))) : null,
+        sp.reactions ? el("ul", { class: "acct-kv" }, sp.reactions.map((r) => el("li", {}, el("span", {}, r.type), el("b", {}, `${r.share} %`)))) : null,
+        sp.formats ? el("ul", { class: "acct-kv" }, sp.formats.filter((f) => f.count).map((f) => {
+          const period = (n, med, when, comp) => (n ? `${n} publiés ${when} : médiane ${med !== null && med !== undefined ? `${fmtCompact(med)} vues${Number.isFinite(comp) ? ` sur ${comp} assez anciennes` : ""}` : "trop peu pour la calculer"}` : null);
+          const med = (v) => (v !== null && v !== undefined ? `${fmtCompact(v)} vues` : "—");
+          const parts = "countAfter" in f
+            ? [period(f.countAfter, f.medianViews, "depuis le 24 août 2026", f.comparableAfter), period(f.countBefore, f.medianViewsBefore, "avant", f.comparableBefore)].filter(Boolean)
+            : "medianViewsBefore" in f
+              ? [`${f.count} · médiane des publiées depuis le 24 août 2026 : ${med(f.medianViews)} · avant : ${med(f.medianViewsBefore)}`]
+              : [`${f.count} · médiane ${med(f.medianViews)}`];
+          return el("li", {}, el("span", {}, f.type === "short" ? "Shorts" : "Vidéos longues"), el("b", {}, parts.join(" · ")));
+        })) : null,
+      ),
+    ));
+  }
+  // Toutes les publications
+  out.push(keyed(disclosure(`Toutes les publications relevées (${m.posts.length})`,
+    el("ul", { class: "acct-posts acct-all" }, m.posts.map((p) => postLink(p, a, { exact: true }))),
+    "acct-more",
+  ), "all"));
+  return out;
+}
+
+// Un repliable repéré par une clé : son ouverture survit au rafraîchissement de la vue.
+function keyed(node, k) {
+  node.dataset.k = k;
+  return node;
+}
+
+function methodBlock(a) {
+  const m = a.metrics;
+  return keyed(disclosure("Comment ces chiffres sont calculés",
+    el("div", { class: "acct-method" },
+      el("ul", { class: "veille-list" },
+        el("li", {}, `Publications analysées : les ${m.sample.fetched} dernières relevées, moins ${plural(m.sample.pinned, "épinglée", "épinglées")} (remontées en tête du profil, souvent anciennes), ${m.sample.notOwn} republication(s), retweet(s) ou réponse(s) à d'autres comptes${m.sample.threadParts ? ` et ${m.sample.threadParts} suite(s) de fil (un fil compte une fois, par son premier post)` : ""}.`),
+        el("li", {}, "Familles : une publication n'est comparée qu'à sa famille (Reels entre eux, photos et carrousels entre eux, Shorts entre eux, posts X avec impressions entre eux…), sur la même mesure, jamais deux compteurs mélangés. Sur YouTube, les vidéos publiées avant le 24 août 2026 (ancien décompte des vues) forment leurs propres familles. « Au-dessus » : au moins ×1,5 la médiane ; « en dessous » : ×0,67 ou moins, lus sur le ratio affiché."),
+        el("li", {}, "Trop récent : moins de 3 jours (1 jour sur X, 7 jours pour une vidéo YouTube longue). La publication accumule encore, elle n'est pas jugée."),
+        el("li", {}, "Rythme : (publications − 1) ÷ jours entre la première et la dernière × 7, calculé à partir d'une semaine d'écart entre elles. Un compte sans publication depuis plus de 14 jours, plus de 3 fois son écart médian comme 1,5 fois sa plus longue pause, est signalé « à l'arrêt » : le rythme décrit alors sa période d'activité. Une publication épinglée plus récente que les autres compte dans le plus long écart. Régularité : écart-type des écarts entre publications ÷ leur moyenne (moins de 0,5 : régulier ; moins de 1 : plutôt régulier)."),
+        el("li", {}, `Engagement : (${a.formula?.engagement}) ÷ abonnés, en médiane sur les publications passées leur période de démarrage. Un compteur que le relevé ne donne pas n'est compté pour personne ; une publication dont un compteur est masqué n'a pas d'engagement connu.`),
+        el("li", {}, "Moments : heure de Paris. La médiane d'un créneau s'affiche à partir de 3 publications comparables ; un jour ou un moment ne « ressort » qu'avec au moins 5 publications comparables, face à au moins deux autres créneaux mesurés, une médiane au-dessus de la normale du compte et au moins 1,25 fois celle des autres créneaux comme celle du deuxième."),
+        el("li", {}, "Évolution : sur une seule famille, la plus fournie (son nom est affiché), et seulement si elle compte au moins 12 publications d'au moins deux fois leur période de démarrage : la moitié la plus récente contre la précédente, en médiane de leurs ratios. Si la moitié précédente a une médiane nulle, rien n'est calculé (aucune autre famille ne la remplace). Les familles ne sont jamais mélangées. Les âges médians sont affichés : les plus anciennes ont eu plus de temps pour accumuler."),
+        el("li", {}, "Croissance : seulement entre deux analyses du même compte faites ici, à au moins 12 h d'écart, à partir des abonnés relevés à chaque fois. Sur YouTube, les abonnés sont arrondis à trois chiffres : une variation de moins de deux pas d'arrondi n'est pas affichée (elle peut venir d'un seul abonné) ; une variation affichée est dans le bon sens, à un pas d'arrondi près. Aucune estimation."),
+        el("li", {}, "Claude lit le contenu des publications, pas les chiffres : il ne parle ni de nombres, ni de jours ou d'heures, ni de rythme, ni de croissance, ni d'évolution, ni de comparaison de formats, de durées ou de hashtags, ni de comparaison avec d'autres comptes. Ces sujets sont montrés ici, par les calculs. Seuls le titre, le format et l'accroche de ses idées peuvent contenir des nombres : ce sont des propositions, leurs nombres ne viennent pas des calculs et ne disent rien des résultats du compte. Chaque constat sur ce qui marche (ou moins) et chaque force (ou faiblesse) cite des publications au-dessus (ou en dessous) de leur médiane. Une citation entre guillemets doit figurer telle quelle dans une légende du compte, et rien de ce qui décrit le compte ne généralise à toutes ses publications (« chaque », « toujours », « jamais »). Tout texte qui aborde un sujet réservé ou n'est pas prouvé est écarté, puis une seconde lecture par Claude, avec les légendes sous les yeux, contrôle chaque phrase restante : sujet réservé abordé autrement, ou description que les légendes des publications citées ne soutiennent pas. Ce qui est écarté est listé plus haut."),
+      ),
+      a.notes?.length ? el("ul", { class: "veille-list" }, a.notes.map((n) => el("li", {}, n))) : null,
+    ),
+    "acct-more",
+  ), "method");
+}
+
+// La lecture par Claude a son propre emplacement : quand elle arrive, les chiffres autour ne bougent pas
+// (repliables ouverts, focus et position de lecture gardés).
+function insightsSlot(a) {
+  const out = [];
+  if (state.accounts.job?.id === a.id) {
+    out.push(el("section", { class: "ideas-loading card", "aria-busy": "true" },
+      el("h2", { class: "scan-h2" }, "Claude lit le compte…"),
+      el("p", {}, "Il lit les indicateurs, les publications et les couvertures des plus marquantes, puis chaque constat est vérifié contre les données. Compte 30 secondes à 2 minutes."),
+      el("div", { class: "ideas-skel", "aria-hidden": "true" }, [0, 1].map(() => el("div", { class: "skeleton sk-idea" }))),
+    ));
+  } else if (a.insightsError) {
+    out.push(el("p", { class: "sources-missing" }, `Lecture par Claude indisponible : ${a.insightsError} `,
+      el("button", { type: "button", class: "btn-inline", onclick: () => makeAccountInsights({ force: true }) }, "Relancer la lecture")));
+  } else if (!a.insights && state.health?.hasAnthropicKey === false) {
+    out.push(el("p", { class: "sources-missing" }, "Lecture par Claude indisponible : clé Anthropic absente. Les chiffres ci-dessus restent valables."));
+  }
+  if (a.insights) out.push(...insightsBlocks(a));
+  return out;
+}
+
+const openKeys = (root) => [...root.querySelectorAll("details[data-k][open]")].map((d) => d.dataset.k);
+function reopen(root, keys) {
+  for (const k of keys) root.querySelector(`details[data-k="${k}"]`)?.setAttribute("open", "");
+}
+
+// Met à jour la seule lecture par Claude quand le reste de la page montre déjà cette analyse.
+function refreshAccount(a) {
+  const slot = $("#acct-insights");
+  if (!slot || slot.dataset.id !== a.id || a.status !== "done") return renderAccount(a);
+  const hadFocus = slot.contains(document.activeElement);
+  const open = openKeys(slot);
+  slot.replaceChildren(...insightsSlot(a));
+  reopen(slot, open);
+  // Le coût de la lecture s'ajoute à l'en-tête sans le redessiner.
+  const meta = $("#acct-meta");
+  if (meta) meta.textContent = accountMeta(a);
+  if (hadFocus) {
+    const target = slot.querySelector("h2") || slot.querySelector("button") || slot.firstElementChild;
+    if (target) {
+      if (!/^(BUTTON|A)$/.test(target.tagName)) target.setAttribute("tabindex", "-1");
+      target.focus({ preventScroll: true });
+    }
+  }
+}
+
+function renderAccount(a) {
+  const body = $("#account-body");
+  if (!a) return;
+  const open = body.dataset.acct === a.id ? openKeys(body) : [];
+  delete body.dataset.acct;
+  if (a.status === "running") return body.replaceChildren(renderAccountRunning(a));
+  const back = el("p", { class: "acct-back" }, el("a", { href: "#comptes" }, svg("back"), "Tous les comptes"));
+  if (a.status === "error") {
+    return body.replaceChildren(back, alertBox(`L'analyse de @${a.handle} n'a pas abouti.`, a.error || "Erreur inconnue.", [
+      ["Réessayer", (ev) => runAccount({ platform: a.platform, input: a.url || a.handle, force: true, trigger: ev.currentTarget }), true],
+      ["Tous les comptes", () => go("#comptes")],
+    ]));
+  }
+  const m = a.metrics;
+  const out = [back, accountHeader(a)];
+  for (const w of m.warnings || []) out.push(el("p", { class: "sources-missing" }, w));
+  out.push(indicatorTiles(a));
+  out.push(el("div", { class: "acct-insights", id: "acct-insights", "data-id": a.id }, insightsSlot(a)));
+  out.push(...figuresBlocks(a));
+  out.push(methodBlock(a));
+  // Le focus reste où il était quand la vue se redessine.
+  const keep = document.activeElement?.id;
+  body.replaceChildren(...out);
+  body.dataset.acct = a.id;
+  reopen(body, open);
+  if (keep && document.getElementById(keep)) document.getElementById(keep).focus({ preventScroll: true });
 }
 
 /* =========================================================================
@@ -2818,6 +3760,7 @@ function initReveal() {
 function init() {
   initBrief();
   initIdeas();
+  initAccounts();
   initSettings();
   initReveal();
   $("#radar-form").addEventListener("submit", (ev) => {
@@ -2839,6 +3782,7 @@ function init() {
       document.querySelectorAll("[data-clock]").forEach((n) => (n.textContent = t));
     }
     if (scanPolling || state.scanPending) document.querySelectorAll("[data-scan-clock]").forEach((n) => (n.textContent = scanClock()));
+    if (state.accounts.polling) document.querySelectorAll("[data-account-clock]").forEach((n) => (n.textContent = accountClock()));
   }, 1000);
 
   applyRoute();
