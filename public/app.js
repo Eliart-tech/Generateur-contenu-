@@ -2810,11 +2810,6 @@ const ACCOUNT_NET_KEY = "amorce.account.net";
 const POST_TYPES = { reel: "Reel", vidéo: "Vidéo", carrousel: "Carrousel", image: "Photo", short: "Short", long: "Vidéo longue", texte: "Texte", document: "Document", article: "Article" };
 const STATUS_TEXT = { "au-dessus": "Au-dessus", "dans la norme": "Dans la norme", "en dessous": "En dessous", "trop récent": "Trop récent", "non comparable": "Non comparable", "épinglé": "Épinglé" };
 const STATUS_CLASS = { "au-dessus": "is-up", "dans la norme": "is-norm", "en dessous": "is-down", "trop récent": "is-wait", "non comparable": "is-wait", "épinglé": "is-wait" };
-const SUPPORT_LABEL = {
-  frequence: "Rythme", regularite: "Régularité", engagement: "Engagement", mesures: "Mesures", formats: "Formats", durees: "Durées",
-  hashtags: "Hashtags", legendes: "Légendes", sons: "Sons", moments: "Moments", evolution: "Évolution", croissance: "Croissance",
-  reactions: "Réactions", types_x: "Types de posts", publications: "Publications",
-};
 const PERIOD_NAMES = { nuit: "Nuit (0 h – 6 h)", matin: "Matin (6 h – 12 h)", "après-midi": "Après-midi (12 h – 18 h)", soir: "Soir (18 h – 24 h)" };
 const X_KINDS = { original: "Posts originaux", citation: "Citations", fil: "Suites de fil", réponse: "Réponses à d'autres comptes", retweet: "Retweets" };
 const PRIORITY = { haute: "Priorité haute", moyenne: "Priorité moyenne", basse: "Priorité basse" };
@@ -3051,7 +3046,7 @@ function makeAccountInsights({ force = false } = {}) {
       // 409 : une lecture tourne déjà ; réseau coupé (TypeError) : la lecture continue côté serveur.
       next = err.status === 409 || err instanceof TypeError
         ? await waitAccountInsights(a.id).catch((e) => ({ ...a, insightsError: e.message }))
-        : { ...a, insightsError: err.message };
+        : await api(`/api/account?id=${encodeURIComponent(a.id)}`).then((x) => ({ ...x, insightsError: x.insightsError || err.message }), () => ({ ...a, insightsError: err.message }));
     }
     if (state.accounts.job === job) state.accounts.job = null;
     if (state.accounts.current?.id !== a.id) return;
@@ -3272,6 +3267,7 @@ const usdText = (n) => (n < 0.005 ? "moins de 0,01" : fmtUsd(n));
 const pctText = (v) => (v === null || v === undefined ? "—" : v !== 0 && Math.abs(v) < 0.1 ? Number(v).toLocaleString("fr-FR", { maximumSignificantDigits: 2 }) : nf(v, 2));
 
 const ENGAGEMENT_REASON = {
+  "no-posts": "aucune publication du compte dans le relevé",
   "no-followers": "nombre d'abonnés inconnu",
   "zero-followers": "le compte n'a aucun abonné",
   "no-mature": "aucune publication assez ancienne pour être jugée",
@@ -3306,8 +3302,8 @@ function indicatorTiles(a) {
     const year = (iso) => new Date(iso).getFullYear();
     const withYear = year(c.from) !== year(c.to) || year(c.to) !== new Date().getFullYear();
     const d = (iso) => parisDate(iso, withYear ? { day: "numeric", month: "short", year: "numeric" } : { day: "numeric", month: "short" });
-    tiles.push(tile("Rythme", `${nf(c.perWeek, 1)} / semaine`,
-      `${c.posts} publications du ${d(c.from)} au ${d(c.to)} (${nf(c.spanDays)} jours) · plus long silence ${daysText(c.longestGap?.days)}${c.dormant ? ` · à l'arrêt : aucune publication depuis ${daysText(c.lastPostDaysAgo)} au relevé` : ""}`,
+    tiles.push(tile("Rythme", c.perWeek !== null && c.perWeek !== undefined ? `${nf(c.perWeek, 1)} / semaine` : "—",
+      `${c.posts} publications du ${d(c.from)} au ${d(c.to)} (${daysText(c.spanDays)})${c.perWeek === null ? " : moins d'une semaine d'historique, pas de rythme hebdomadaire" : ""} · plus long silence ${daysText(c.longestGap?.days)}${c.dormant ? ` · à l'arrêt : aucune publication depuis ${daysText(c.lastPostDaysAgo)} au relevé` : ""}`,
       c.dormant
         ? "Ce rythme décrit la période d'activité, pas le présent."
         : c.regularity ? `Rythme ${c.regularity.label} (écarts : coefficient de variation ${nf(c.regularity.cv, 2)})` : "Régularité : pas assez de publications pour la juger"));
@@ -3316,17 +3312,17 @@ function indicatorTiles(a) {
   const viewsPart = perView.map((v) => ` · ${pctText(v.median)} % rapporté aux ${viewWord(a.platform)}${v.label && perView.length > 1 ? ` (${v.label})` : ""}`).join("");
   tiles.push(e.perFollower
     ? tile("Engagement", `${pctText(e.perFollower.median)} %`, `médiane sur ${e.perFollower.n} publications · moyenne ${pctText(e.perFollower.mean)} %${viewsPart}`, `(${e.formula}) ÷ abonnés`)
-    : tile("Engagement", "—", `Pas d'engagement par abonné : ${ENGAGEMENT_REASON[e.reason] || (Number.isFinite(a.profile?.followers) ? "aucune publication jugée avec un engagement connu" : "nombre d'abonnés inconnu")}.`, `(${e.formula}) ÷ abonnés`));
+    : tile("Engagement", "—", `Pas d'engagement par abonné : ${ENGAGEMENT_REASON[e.reason] || (a.profile?.followers === 0 ? ENGAGEMENT_REASON["zero-followers"] : Number.isFinite(a.profile?.followers) ? "aucune publication jugée avec un engagement connu" : "nombre d'abonnés inconnu")}.${viewsPart ? ` Rapporté aux ${viewWord(a.platform)} :${viewsPart.replace(/^ ·/, "")}.` : ""}`, `(${e.formula}) ÷ abonnés`));
   for (const g of m.groups) {
     tiles.push(g.median !== null
       ? tile(g.measure === "views" ? `${viewWord(a.platform)} · ${g.label}` : `Engagement · ${g.label}`, fmtCompact(g.median), `médiane de ${g.comparable} publications comparables · maximum ${fmtCompact(g.max)}`, g.measure === "views" ? null : `${e.formula} par publication`)
       : tile(g.measure === "views" ? `${viewWord(a.platform)} · ${g.label}` : `Engagement · ${g.label}`, "—", `${plural(g.comparable, "publication comparable", "publications comparables")} sur ${g.posts} (les autres sont trop récentes ou sans mesure) : trop peu pour une médiane, il en faut 4.`, null));
   }
   tiles.push(m.trend
-    ? tile("Évolution", `${m.trend.changePct > 0 ? "+" : ""}${nf(m.trend.changePct)} %`,
-        `les ${m.trend.n} plus récentes (${ratioText(m.trend.recentMedianRatio)}, âge médian ${daysText(m.trend.recentMedianAgeDays)}) contre les ${m.trend.n} précédentes (${ratioText(m.trend.previousMedianRatio)}, âge médian ${daysText(m.trend.previousMedianAgeDays)})`,
-        "médiane des ratios à la médiane de chaque famille ; les plus anciennes ont eu plus de temps pour accumuler")
-    : tile("Évolution", "—", "Moins de 12 publications comparables assez anciennes : pas d'évolution mesurée.", null));
+    ? tile(m.trend.familyLabel ? `Évolution · ${m.trend.familyLabel}` : "Évolution", `${m.trend.changePct > 0 ? "+" : ""}${nf(m.trend.changePct)} %`,
+        `${m.trend.familyLabel ? `${m.trend.familyLabel} : ` : ""}les ${m.trend.n} plus récentes (${ratioText(m.trend.recentMedianRatio)}, âge médian ${daysText(m.trend.recentMedianAgeDays)}) contre les ${m.trend.n} précédentes (${ratioText(m.trend.previousMedianRatio)}, âge médian ${daysText(m.trend.previousMedianAgeDays)})`,
+        "médiane des ratios à la médiane de la famille ; les plus anciennes ont eu plus de temps pour accumuler")
+    : tile("Évolution", "—", "Aucune famille de publications n'a 12 publications comparables assez anciennes : pas d'évolution mesurée.", null));
   tiles.push(m.growth
     ? tile("Croissance", `${m.growth.approximate ? "≈ " : ""}${m.growth.followersDelta >= 0 ? "+" : ""}${nf(m.growth.followersDelta)} abonnés`,
         `en ${nf(m.growth.days, 1)} jours (${m.growth.followersPct >= 0 ? "+" : ""}${nf(m.growth.followersPct, 2)} %) · ${m.growth.points.length} analyses`,
@@ -3338,11 +3334,12 @@ function indicatorTiles(a) {
   );
 }
 
+// Un constat montre les publications qui le prouvent ; une piste sans exemple n'affiche rien de plus.
 function claimItem(c, a, byId) {
   const posts = (c.posts || []).map((id) => byId[id]).filter(Boolean);
   return el("li", { class: "acct-claim" },
     el("p", {}, c.priorite ? el("span", { class: `prio prio-${c.priorite}` }, PRIORITY[c.priorite]) : null, c.texte),
-    el("p", { class: "acct-claim-basis" }, el("span", { class: "basis" }, "Appui : ", SUPPORT_LABEL[c.appui] || c.appui), posts.length ? ` · ${plural(posts.length, "publication", "publications")}` : ""),
+    posts.length ? el("p", { class: "acct-claim-basis" }, el("span", { class: "basis" }, "Appui"), ` · ${plural(posts.length, "publication", "publications")}`) : null,
     posts.length ? el("ul", { class: "acct-posts", "aria-label": "Publications qui l'appuient" }, posts.map((p) => postLink(p, a))) : null,
   );
 }
@@ -3568,7 +3565,7 @@ function figuresBlocks(a) {
     ),
     el("p", { class: "sources-missing" }, best.length
       ? `Ce qui ressort : ${best.join(" ; ")}.`
-      : `Aucun jour ni moment ne ressort nettement : il faut au moins ${t.minBestSlot || 5} publications comparables dans le créneau, au moins trois créneaux mesurés, et une médiane au moins 1,25 fois celle des autres.`),
+      : `Aucun jour ni moment ne ressort nettement : il faut au moins ${t.minBestSlot || 5} publications comparables dans le créneau, au moins trois créneaux mesurés, une médiane au-dessus de la normale du compte, et au moins 1,25 fois celle des autres créneaux comme celle du deuxième.`),
   ));
   // Textes, hashtags, sons
   const h = m.hashtags;
@@ -3577,7 +3574,7 @@ function figuresBlocks(a) {
     el("div", { class: "acct-two card" },
       el("div", { class: "acct-col" },
         el("h3", {}, m.captions.source === "titre" ? "Titres" : "Légendes"),
-        el("p", {}, el("b", {}, `${nf(m.captions.medianLength)} caractères`), " en médiane, liens retirés · ", `${m.captions.withQuestion} sur ${m.captions.posts ?? m.sample.analysed} ${m.captions.withQuestion > 1 ? "posent" : "pose"} une question`),
+        el("p", {}, el("b", {}, `${nf(m.captions.medianLength)} caractères`), m.captions.source ? " en médiane, liens retirés · " : " en médiane · ", `${m.captions.withQuestion} sur ${m.captions.posts ?? m.sample.analysed} ${m.captions.withQuestion > 1 ? "posent" : "pose"} une question`),
         el("h3", {}, "Hashtags"),
         el("p", {}, el("b", {}, nf(h.perPostMedian, 1)), " par publication (médiane) · ", plural(h.postsWithout, "publication sans hashtag", "publications sans hashtag")),
         h.top.length ? el("p", { class: "acct-tags" }, h.top.map((x) => el("span", { class: "word" }, `#${x.tag} · ${x.count}${x.medianRatio !== null ? ` · ${ratioText(x.medianRatio)}` : ""}`))) : null,
@@ -3601,9 +3598,12 @@ function figuresBlocks(a) {
         sp.reactions ? el("ul", { class: "acct-kv" }, sp.reactions.map((r) => el("li", {}, el("span", {}, r.type), el("b", {}, `${r.share} %`)))) : null,
         sp.formats ? el("ul", { class: "acct-kv" }, sp.formats.filter((f) => f.count).map((f) => {
           const period = (n, med, when) => (n ? `${n} publiés ${when} : médiane ${med !== null && med !== undefined ? `${fmtCompact(med)} vues` : "trop peu pour la calculer"}` : null);
+          const med = (v) => (v !== null && v !== undefined ? `${fmtCompact(v)} vues` : "—");
           const parts = "countAfter" in f
             ? [period(f.countAfter, f.medianViews, "depuis le 24 août 2026"), period(f.countBefore, f.medianViewsBefore, "avant")].filter(Boolean)
-            : [`${f.count} · médiane ${f.medianViews !== null ? `${fmtCompact(f.medianViews)} vues` : "—"}`];
+            : "medianViewsBefore" in f
+              ? [`${f.count} · médiane des publiées depuis le 24 août 2026 : ${med(f.medianViews)} · avant : ${med(f.medianViewsBefore)}`]
+              : [`${f.count} · médiane ${med(f.medianViews)}`];
           return el("li", {}, el("span", {}, f.type === "short" ? "Shorts" : "Vidéos longues"), el("b", {}, parts.join(" · ")));
         })) : null,
       ),
@@ -3636,7 +3636,7 @@ function methodBlock(a) {
         el("li", {}, "Moments : heure de Paris. La médiane d'un créneau s'affiche à partir de 3 publications comparables ; un jour ou un moment ne « ressort » qu'avec au moins 5 publications comparables, face à au moins deux autres créneaux mesurés, une médiane au-dessus de la normale du compte et au moins 1,25 fois celle des autres créneaux comme celle du deuxième."),
         el("li", {}, "Évolution : à l'intérieur de chaque famille (6 publications au moins), la moitié la plus récente contre la précédente, sur les publications d'au moins deux fois leur période de démarrage (12 au minimum au total). Les âges médians sont affichés : les plus anciennes ont eu plus de temps pour accumuler."),
         el("li", {}, "Croissance : seulement entre deux analyses du même compte faites ici, à au moins 12 h d'écart, à partir des abonnés relevés à chaque fois. Sur YouTube, les abonnés sont arrondis à trois chiffres : une variation plus petite que l'arrondi n'est pas affichée. Aucune estimation."),
-        el("li", {}, "Claude lit ces indicateurs et les publications sans écrire aucun nombre (seuls le titre, le format et l'accroche des idées peuvent en contenir). Un constat doit citer des publications au-dessus (ou en dessous) de leur médiane, ou un indicateur réellement calculé ; un jour, un moment, une croissance, une évolution (et son sens), un format ou un hashtag présenté comme meilleur doivent correspondre à ce que les calculs trouvent. Sinon le texte est écarté, et listé plus haut."),
+        el("li", {}, "Claude lit le contenu des publications, pas les chiffres : il ne parle ni de nombres, ni de jours ou d'heures, ni de rythme, ni de croissance, ni d'évolution, ni de comparaison de formats, de durées ou de hashtags, ni de comparaison avec d'autres comptes. Ces sujets sont montrés ici, par les calculs. Chaque constat sur ce qui marche (ou moins) et chaque force (ou faiblesse) cite des publications au-dessus (ou en dessous) de leur médiane. Tout texte qui aborde un sujet réservé ou n'est pas prouvé est écarté, puis une seconde lecture par Claude contrôle chaque phrase restante ; ce qui est écarté est listé plus haut."),
       ),
       a.notes?.length ? el("ul", { class: "veille-list" }, a.notes.map((n) => el("li", {}, n))) : null,
     ),
