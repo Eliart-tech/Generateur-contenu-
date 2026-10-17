@@ -3290,7 +3290,7 @@ function noGrowthText(a) {
   if (n.reason === "no-followers") return "Nombre d'abonnés inconnu : croissance non mesurable.";
   if (n.reason === "no-history-followers") return "Les analyses précédentes n'ont pas relevé les abonnés : croissance non mesurable pour l'instant.";
   if (n.reason === "too-close") return "Analyses trop rapprochées (moins de 12 h d'écart) : refais-la dans quelques jours pour mesurer sa croissance réelle.";
-  if (n.reason === "below-precision") return `Variation plus petite que l'arrondi de YouTube (abonnés arrondis à ${nf(n.precision)} près) en ${nf(n.days, 1)} jours : non mesurable.`;
+  if (n.reason === "below-precision") return `Variation de moins de deux pas d'arrondi de YouTube (abonnés arrondis à ${nf(n.precision)} près) en ${nf(n.days, 1)} jours : elle peut venir d'un seul abonné, non mesurable.`;
   return "Première analyse de ce compte : refais-la dans quelques jours pour mesurer sa croissance réelle.";
 }
 
@@ -3305,7 +3305,7 @@ function indicatorTiles(a) {
     const withYear = year(c.from) !== year(c.to) || year(c.to) !== new Date().getFullYear();
     const d = (iso) => parisDate(iso, withYear ? { day: "numeric", month: "short", year: "numeric" } : { day: "numeric", month: "short" });
     tiles.push(tile("Rythme", c.perWeek !== null && c.perWeek !== undefined ? `${nf(c.perWeek, 1)} / semaine` : "—",
-      `${c.posts} publications du ${d(c.from)} au ${d(c.to)} (${daysText(c.spanDays)})${c.perWeek === null ? " : moins d'une semaine d'historique, pas de rythme hebdomadaire" : ""} · plus long écart entre deux publications ${daysText(c.longestGap?.days)}${c.dormant ? ` · à l'arrêt : aucune publication depuis ${daysText(c.lastPostDaysAgo)} au relevé` : Number.isFinite(c.lastPostDaysAgo) ? ` · dernière publication ${daysText(c.lastPostDaysAgo)} avant le relevé` : ""}`,
+      `${c.posts} publications du ${d(c.from)} au ${d(c.to)} (${daysText(c.spanDays)})${c.perWeek === null ? " : moins d'une semaine d'historique, pas de rythme hebdomadaire" : ""} · plus long écart entre deux publications ${daysText(c.longestGap?.days)}${c.longestGap?.pinned ? " (avant une publication épinglée)" : ""}${c.dormant ? ` · à l'arrêt : aucune publication depuis ${daysText(c.lastPostDaysAgo)} au relevé` : Number.isFinite(c.lastPostDaysAgo) ? ` · dernière publication ${daysText(c.lastPostDaysAgo)} avant le relevé` : ""}`,
       c.dormant
         ? "Ce rythme décrit la période d'activité, pas le présent."
         : c.regularity ? `Rythme ${c.regularity.label} (écarts : coefficient de variation ${nf(c.regularity.cv, 2)})` : "Régularité : pas assez de publications pour la juger"));
@@ -3330,8 +3330,8 @@ function indicatorTiles(a) {
         : "Aucune famille de publications n'a 12 publications comparables assez anciennes : pas d'évolution mesurée.", null));
   tiles.push(m.growth
     ? tile("Croissance", `${m.growth.approximate ? "≈ " : ""}${m.growth.followersDelta >= 0 ? "+" : ""}${nf(m.growth.followersDelta)} abonnés`,
-        `en ${nf(m.growth.days, 1)} jours (${m.growth.followersPct >= 0 ? "+" : ""}${nf(m.growth.followersPct, 2)} %) · ${m.growth.points.length} analyses`,
-        m.growth.approximate ? `abonnés relevés à chaque analyse faite ici, arrondis par YouTube à ${nf(m.growth.precision)} près` : "abonnés relevés à chaque analyse faite ici")
+        `en ${nf(m.growth.days, 1)} jours (${m.growth.approximate ? "≈ " : ""}${m.growth.followersPct >= 0 ? "+" : ""}${nf(m.growth.followersPct, m.growth.approximate ? 1 : 2)} %) · ${m.growth.points.length} analyses`,
+        m.growth.approximate ? `abonnés relevés à chaque analyse faite ici, arrondis par YouTube à ${nf(m.growth.precision)} près : la variation réelle est dans le même sens, à un pas d'arrondi près` : "abonnés relevés à chaque analyse faite ici")
     : tile("Croissance", "—", noGrowthText(a), null));
   return el("section", { class: "acct-section", "aria-labelledby": "acct-figures-title" },
     el("h2", { class: "scan-h2", id: "acct-figures-title" }, "Les chiffres"),
@@ -3356,7 +3356,11 @@ function insightsBlocks(a) {
   out.push(el("section", { class: "acct-section card acct-portrait", "aria-labelledby": "acct-portrait-title" },
     el("div", { class: "fronts-head" }, el("h2", { class: "section-title", id: "acct-portrait-title" }, "Le portrait"), el("span", { class: "hint" }, "Lecture par Claude")),
     el("p", { class: "acct-positioning" }, I.positionnement),
-    I.themes?.length ? el("ul", { class: "acct-themes" }, I.themes.map((t) => el("li", {}, el("b", {}, t.nom), t.posts.length ? ` · ${plural(t.posts.length, "publication", "publications")}` : ""))) : null,
+    // Thèmes : les publications citées pour l'illustrer (ce n'est pas la taille du thème).
+    I.themes?.length ? el("ul", { class: "acct-themes" }, I.themes.map((t) => {
+      const posts = (t.posts || []).map((id) => byId[id]).filter(Boolean);
+      return el("li", {}, el("b", {}, t.nom), posts.length ? el("ul", { class: "acct-posts", "aria-label": `Publications qui illustrent « ${t.nom} »` }, posts.map((p) => postLink(p, a))) : null);
+    })) : null,
   ));
   const col = (title, items, empty) => el("div", { class: "acct-col" },
     el("h3", {}, title),
@@ -3512,7 +3516,7 @@ function slotRows(list, label, minPerSlot) {
       el("span", { class: "acct-slot-name" }, label(s.key)),
       el("span", { class: "acct-slot-bar", "aria-hidden": "true" }, el("i", { vars: { "--v": `${(s.count / max) * 100}%` } })),
       el("span", { class: "acct-slot-n" }, plural(s.count, "publication", "publications")),
-      el("span", { class: "acct-slot-r", title: s.medianRatio !== null ? null : `Moins de ${minPerSlot} publications comparables` }, s.medianRatio !== null ? `médiane ${ratioText(s.medianRatio)}` : "trop peu"),
+      el("span", { class: "acct-slot-r", title: s.medianRatio !== null ? null : `Moins de ${minPerSlot} publications comparables` }, s.medianRatio !== null ? `médiane ${ratioText(s.medianRatio)} sur ${s.comparable}` : "trop peu"),
     ),
   ));
 }
@@ -3582,7 +3586,7 @@ function figuresBlocks(a) {
         el("p", {}, el("b", {}, `${nf(m.captions.medianLength)} caractères`), m.captions.source ? " en médiane, liens retirés · " : " en médiane · ", `${m.captions.withQuestion} sur ${m.captions.posts ?? m.sample.analysed} ${m.captions.withQuestion > 1 ? "posent" : "pose"} une question`),
         el("h3", {}, "Hashtags"),
         el("p", {}, el("b", {}, nf(h.perPostMedian, 1)), " par publication (médiane) · ", plural(h.postsWithout, "publication sans hashtag", "publications sans hashtag")),
-        h.top.length ? el("p", { class: "acct-tags" }, h.top.map((x) => el("span", { class: "word" }, `#${x.tag} · ${x.count}${x.medianRatio !== null ? ` · ${ratioText(x.medianRatio)}` : ""}`))) : null,
+        h.top.length ? el("p", { class: "acct-tags" }, h.top.map((x) => el("span", { class: "word" }, `#${x.tag} · ${x.count}${x.medianRatio !== null ? ` · ${ratioText(x.medianRatio)}${Number.isFinite(x.comparable) ? ` sur ${x.comparable}` : ""}` : ""}`))) : null,
       ),
       m.sounds
         ? el("div", { class: "acct-col" },
@@ -3602,10 +3606,10 @@ function figuresBlocks(a) {
         sp.kinds ? el("ul", { class: "acct-kv" }, Object.entries(sp.kinds).filter(([, v]) => v).map(([k, v]) => el("li", {}, el("span", {}, X_KINDS[k] || k), el("b", {}, String(v))))) : null,
         sp.reactions ? el("ul", { class: "acct-kv" }, sp.reactions.map((r) => el("li", {}, el("span", {}, r.type), el("b", {}, `${r.share} %`)))) : null,
         sp.formats ? el("ul", { class: "acct-kv" }, sp.formats.filter((f) => f.count).map((f) => {
-          const period = (n, med, when) => (n ? `${n} publiés ${when} : médiane ${med !== null && med !== undefined ? `${fmtCompact(med)} vues` : "trop peu pour la calculer"}` : null);
+          const period = (n, med, when, comp) => (n ? `${n} publiés ${when} : médiane ${med !== null && med !== undefined ? `${fmtCompact(med)} vues${Number.isFinite(comp) ? ` sur ${comp} assez anciennes` : ""}` : "trop peu pour la calculer"}` : null);
           const med = (v) => (v !== null && v !== undefined ? `${fmtCompact(v)} vues` : "—");
           const parts = "countAfter" in f
-            ? [period(f.countAfter, f.medianViews, "depuis le 24 août 2026"), period(f.countBefore, f.medianViewsBefore, "avant")].filter(Boolean)
+            ? [period(f.countAfter, f.medianViews, "depuis le 24 août 2026", f.comparableAfter), period(f.countBefore, f.medianViewsBefore, "avant", f.comparableBefore)].filter(Boolean)
             : "medianViewsBefore" in f
               ? [`${f.count} · médiane des publiées depuis le 24 août 2026 : ${med(f.medianViews)} · avant : ${med(f.medianViewsBefore)}`]
               : [`${f.count} · médiane ${med(f.medianViews)}`];
@@ -3636,11 +3640,11 @@ function methodBlock(a) {
         el("li", {}, `Publications analysées : les ${m.sample.fetched} dernières relevées, moins ${plural(m.sample.pinned, "épinglée", "épinglées")} (remontées en tête du profil, souvent anciennes), ${m.sample.notOwn} republication(s), retweet(s) ou réponse(s) à d'autres comptes${m.sample.threadParts ? ` et ${m.sample.threadParts} suite(s) de fil (un fil compte une fois, par son premier post)` : ""}.`),
         el("li", {}, "Familles : une publication n'est comparée qu'à sa famille (Reels entre eux, photos et carrousels entre eux, Shorts entre eux, posts X avec impressions entre eux…), sur la même mesure, jamais deux compteurs mélangés. Sur YouTube, les vidéos publiées avant le 24 août 2026 (ancien décompte des vues) forment leurs propres familles. « Au-dessus » : au moins ×1,5 la médiane ; « en dessous » : ×0,67 ou moins, lus sur le ratio affiché."),
         el("li", {}, "Trop récent : moins de 3 jours (1 jour sur X, 7 jours pour une vidéo YouTube longue). La publication accumule encore, elle n'est pas jugée."),
-        el("li", {}, "Rythme : (publications − 1) ÷ jours entre la première et la dernière × 7, calculé à partir d'une semaine d'écart entre elles. Un compte sans publication depuis plus de 14 jours, plus de 3 fois son écart médian comme 1,5 fois sa plus longue pause, est signalé en pause : le rythme décrit alors sa période d'activité. Régularité : écart-type des écarts entre publications ÷ leur moyenne (moins de 0,5 : régulier ; moins de 1 : plutôt régulier)."),
+        el("li", {}, "Rythme : (publications − 1) ÷ jours entre la première et la dernière × 7, calculé à partir d'une semaine d'écart entre elles. Un compte sans publication depuis plus de 14 jours, plus de 3 fois son écart médian comme 1,5 fois sa plus longue pause, est signalé « à l'arrêt » : le rythme décrit alors sa période d'activité. Une publication épinglée plus récente que les autres compte dans le plus long écart. Régularité : écart-type des écarts entre publications ÷ leur moyenne (moins de 0,5 : régulier ; moins de 1 : plutôt régulier)."),
         el("li", {}, `Engagement : (${a.formula?.engagement}) ÷ abonnés, en médiane sur les publications passées leur période de démarrage. Un compteur que le relevé ne donne pas n'est compté pour personne ; une publication dont un compteur est masqué n'a pas d'engagement connu.`),
         el("li", {}, "Moments : heure de Paris. La médiane d'un créneau s'affiche à partir de 3 publications comparables ; un jour ou un moment ne « ressort » qu'avec au moins 5 publications comparables, face à au moins deux autres créneaux mesurés, une médiane au-dessus de la normale du compte et au moins 1,25 fois celle des autres créneaux comme celle du deuxième."),
         el("li", {}, "Évolution : sur une seule famille, la plus fournie (son nom est affiché), et seulement si elle compte au moins 12 publications d'au moins deux fois leur période de démarrage : la moitié la plus récente contre la précédente, en médiane de leurs ratios. Si la moitié précédente a une médiane nulle, rien n'est calculé (aucune autre famille ne la remplace). Les familles ne sont jamais mélangées. Les âges médians sont affichés : les plus anciennes ont eu plus de temps pour accumuler."),
-        el("li", {}, "Croissance : seulement entre deux analyses du même compte faites ici, à au moins 12 h d'écart, à partir des abonnés relevés à chaque fois. Sur YouTube, les abonnés sont arrondis à trois chiffres : une variation plus petite que l'arrondi n'est pas affichée. Aucune estimation."),
+        el("li", {}, "Croissance : seulement entre deux analyses du même compte faites ici, à au moins 12 h d'écart, à partir des abonnés relevés à chaque fois. Sur YouTube, les abonnés sont arrondis à trois chiffres : une variation de moins de deux pas d'arrondi n'est pas affichée (elle peut venir d'un seul abonné) ; une variation affichée est dans le bon sens, à un pas d'arrondi près. Aucune estimation."),
         el("li", {}, "Claude lit le contenu des publications, pas les chiffres : il ne parle ni de nombres, ni de jours ou d'heures, ni de rythme, ni de croissance, ni d'évolution, ni de comparaison de formats, de durées ou de hashtags, ni de comparaison avec d'autres comptes. Ces sujets sont montrés ici, par les calculs. Seuls le titre, le format et l'accroche de ses idées peuvent contenir des nombres : ce sont des propositions, leurs nombres ne viennent pas des calculs et ne disent rien des résultats du compte. Chaque constat sur ce qui marche (ou moins) et chaque force (ou faiblesse) cite des publications au-dessus (ou en dessous) de leur médiane. Tout texte qui aborde un sujet réservé ou n'est pas prouvé est écarté, puis une seconde lecture par Claude contrôle chaque phrase restante ; ce qui est écarté est listé plus haut."),
       ),
       a.notes?.length ? el("ul", { class: "veille-list" }, a.notes.map((n) => el("li", {}, n))) : null,
