@@ -76,7 +76,7 @@ Le score est un **potentiel relatif, jamais une promesse de vues** : la viralit�
 | `YOUTUBE_API_KEY` | source YouTube du radar, YouTube Shorts dans « Idées », analyse des chaînes dans « Comptes » (optionnelle) | désactivée |
 | `APIFY_TOKEN` | relevé TikTok, Instagram, X et LinkedIn dans « Idées » et « Comptes » (optionnel, payant à l'usage) | désactivé |
 | `CRON_SECRET` | protège le scan quotidien sur Vercel (optionnel, recommandé) | — |
-| `CLAUDE_ANALYSIS_MODEL` | modèle qui lit les posts dans « Idées » | le modèle principal |
+| `CLAUDE_ANALYSIS_MODEL` | modèle qui lit les posts dans « Idées » et fait la seconde lecture de contrôle dans « Comptes » | le modèle principal |
 | `CLAUDE_WEB_RESEARCH` | `off` pour couper la veille web de Claude | activée |
 | `CLAUDE_MODEL` | modèle utilisé | `claude-opus-5-5` |
 | `CLAUDE_EFFORT` | profondeur de raisonnement (`low`→`max`) | `high` en local, `medium` sur Vercel |

@@ -224,7 +224,7 @@ async function api(path, options = {}) {
     if (data?.error) throw Object.assign(new Error(data.error), { status: res.status });
     // Réponse non JSON : coupure par l'hébergeur (Vercel renvoie 504 au-delà de 5 min).
     if (res.status === 504) {
-      throw new Error("Délai dépassé (limite de 5 min par requête sur Vercel). Mets CLAUDE_EFFORT à « low » dans les variables Vercel, puis réessaie.");
+      throw Object.assign(new Error("Délai dépassé (limite de 5 min par requête sur Vercel). Mets CLAUDE_EFFORT à « low » dans les variables Vercel, puis réessaie."), { status: 504 });
     }
     throw new Error(`Erreur serveur (HTTP ${res.status}). Réessaie dans un instant.`);
   }
@@ -3044,9 +3044,11 @@ function makeAccountInsights({ force = false } = {}) {
         return;
       }
       // 409 : une lecture tourne déjà ; réseau coupé (TypeError) : la lecture continue côté serveur.
+      // 504 : l'hébergeur a coupé la requête ; l'effort de cette lecture est fixe, CLAUDE_EFFORT n'y peut rien.
+      const msg = err.status === 504 ? "La lecture a dépassé la limite de 5 min par requête sur Vercel. Relance-la : les chiffres sont gardés, seule la lecture par Claude est refaite." : err.message;
       next = err.status === 409 || err instanceof TypeError
         ? await waitAccountInsights(a.id).catch((e) => ({ ...a, insightsError: e.message }))
-        : await api(`/api/account?id=${encodeURIComponent(a.id)}`).then((x) => ({ ...x, insightsError: x.insightsError || err.message }), () => ({ ...a, insightsError: err.message }));
+        : await api(`/api/account?id=${encodeURIComponent(a.id)}`).then((x) => ({ ...x, insightsError: x.insightsError || msg }), () => ({ ...a, insightsError: msg }));
     }
     if (state.accounts.job === job) state.accounts.job = null;
     if (state.accounts.current?.id !== a.id) return;
@@ -3322,7 +3324,9 @@ function indicatorTiles(a) {
     ? tile(m.trend.familyLabel ? `Évolution · ${m.trend.familyLabel}` : "Évolution", `${m.trend.changePct > 0 ? "+" : ""}${nf(m.trend.changePct)} %`,
         `${m.trend.familyLabel ? `${m.trend.familyLabel} : ` : ""}les ${m.trend.n} plus récentes (${ratioText(m.trend.recentMedianRatio)}, âge médian ${daysText(m.trend.recentMedianAgeDays)}) contre les ${m.trend.n} précédentes (${ratioText(m.trend.previousMedianRatio)}, âge médian ${daysText(m.trend.previousMedianAgeDays)})`,
         "médiane des ratios à la médiane de la famille ; les plus anciennes ont eu plus de temps pour accumuler")
-    : tile("Évolution", "—", "Aucune famille de publications n'a 12 publications comparables assez anciennes : pas d'évolution mesurée.", null));
+    : tile("Évolution", "—", m.trendNote?.reason === "previous-zero"
+        ? `Les publications précédentes${m.trendNote.familyLabel ? ` (${m.trendNote.familyLabel})` : ""} ont une médiane nulle : pas d'évolution en pourcentage.`
+        : "Aucune famille de publications n'a 12 publications comparables assez anciennes : pas d'évolution mesurée.", null));
   tiles.push(m.growth
     ? tile("Croissance", `${m.growth.approximate ? "≈ " : ""}${m.growth.followersDelta >= 0 ? "+" : ""}${nf(m.growth.followersDelta)} abonnés`,
         `en ${nf(m.growth.days, 1)} jours (${m.growth.followersPct >= 0 ? "+" : ""}${nf(m.growth.followersPct, 2)} %) · ${m.growth.points.length} analyses`,
@@ -3631,10 +3635,10 @@ function methodBlock(a) {
         el("li", {}, `Publications analysées : les ${m.sample.fetched} dernières relevées, moins ${plural(m.sample.pinned, "épinglée", "épinglées")} (remontées en tête du profil, souvent anciennes), ${m.sample.notOwn} republication(s), retweet(s) ou réponse(s) à d'autres comptes${m.sample.threadParts ? ` et ${m.sample.threadParts} suite(s) de fil (un fil compte une fois, par son premier post)` : ""}.`),
         el("li", {}, "Familles : une publication n'est comparée qu'à sa famille (Reels entre eux, photos et carrousels entre eux, Shorts entre eux, posts X avec impressions entre eux…), sur la même mesure, jamais deux compteurs mélangés. Sur YouTube, les vidéos publiées avant le 24 août 2026 (ancien décompte des vues) forment leurs propres familles. « Au-dessus » : au moins ×1,5 la médiane ; « en dessous » : ×0,67 ou moins, lus sur le ratio affiché."),
         el("li", {}, "Trop récent : moins de 3 jours (1 jour sur X, 7 jours pour une vidéo YouTube longue). La publication accumule encore, elle n'est pas jugée."),
-        el("li", {}, "Rythme : (publications − 1) ÷ jours entre la première et la dernière × 7. Régularité : écart-type des écarts entre publications ÷ leur moyenne (moins de 0,5 : régulier ; moins de 1 : plutôt régulier)."),
+        el("li", {}, "Rythme : (publications − 1) ÷ jours entre la première et la dernière × 7, calculé à partir d'une semaine d'écart entre elles. Un compte sans publication depuis plus de 14 jours, plus de 3 fois son écart médian comme 1,5 fois sa plus longue pause, est signalé en pause : le rythme décrit alors sa période d'activité. Régularité : écart-type des écarts entre publications ÷ leur moyenne (moins de 0,5 : régulier ; moins de 1 : plutôt régulier)."),
         el("li", {}, `Engagement : (${a.formula?.engagement}) ÷ abonnés, en médiane sur les publications passées leur période de démarrage. Un compteur que le relevé ne donne pas n'est compté pour personne ; une publication dont un compteur est masqué n'a pas d'engagement connu.`),
         el("li", {}, "Moments : heure de Paris. La médiane d'un créneau s'affiche à partir de 3 publications comparables ; un jour ou un moment ne « ressort » qu'avec au moins 5 publications comparables, face à au moins deux autres créneaux mesurés, une médiane au-dessus de la normale du compte et au moins 1,25 fois celle des autres créneaux comme celle du deuxième."),
-        el("li", {}, "Évolution : à l'intérieur de chaque famille (6 publications au moins), la moitié la plus récente contre la précédente, sur les publications d'au moins deux fois leur période de démarrage (12 au minimum au total). Les âges médians sont affichés : les plus anciennes ont eu plus de temps pour accumuler."),
+        el("li", {}, "Évolution : sur une seule famille, la plus fournie (son nom est affiché), et seulement si elle compte au moins 12 publications d'au moins deux fois leur période de démarrage : la moitié la plus récente contre la précédente, en médiane de leurs ratios. Les familles ne sont jamais mélangées. Les âges médians sont affichés : les plus anciennes ont eu plus de temps pour accumuler."),
         el("li", {}, "Croissance : seulement entre deux analyses du même compte faites ici, à au moins 12 h d'écart, à partir des abonnés relevés à chaque fois. Sur YouTube, les abonnés sont arrondis à trois chiffres : une variation plus petite que l'arrondi n'est pas affichée. Aucune estimation."),
         el("li", {}, "Claude lit le contenu des publications, pas les chiffres : il ne parle ni de nombres, ni de jours ou d'heures, ni de rythme, ni de croissance, ni d'évolution, ni de comparaison de formats, de durées ou de hashtags, ni de comparaison avec d'autres comptes. Ces sujets sont montrés ici, par les calculs. Chaque constat sur ce qui marche (ou moins) et chaque force (ou faiblesse) cite des publications au-dessus (ou en dessous) de leur médiane. Tout texte qui aborde un sujet réservé ou n'est pas prouvé est écarté, puis une seconde lecture par Claude contrôle chaque phrase restante ; ce qui est écarté est listé plus haut."),
       ),
